@@ -151,9 +151,40 @@ create policy "orgs writable to admins" on organizations for update using (auth.
 
 alter table org_members enable row level security;
 create policy "members readable to org" on org_members for select using (auth.uid_in_org(org_id));
-create policy "members admin control" on org_members for insert with check (auth.has_role(org_id, array['admin']))
-, update using (auth.has_role(org_id, array['admin']))
-, delete using (auth.has_role(org_id, array['admin']));
+-- Split action-specific policies (Postgres does not allow comma-chained actions in one CREATE POLICY)
+create policy "org_members admin insert"
+  on org_members for insert
+  with check (auth.has_role(org_id, array['admin']));
 
--- Repeat enable+policy for projects, vendors, bills, bill_occurrences with role checks as described in agent.md
+create policy "org_members admin update"
+  on org_members for update
+  using (auth.has_role(org_id, array['admin']))
+  with check (auth.has_role(org_id, array['admin']));
 
+create policy "org_members admin delete"
+  on org_members for delete
+  using (auth.has_role(org_id, array['admin']));
+
+-- Enable RLS and basic policies for key tables used by the app
+
+alter table vendors enable row level security;
+create policy "vendors read by org members" on vendors for select using (auth.uid_in_org(org_id));
+create policy "vendors write by data_entry or admin" on vendors
+  for insert with check (auth.has_role(org_id, array['admin','data_entry']));
+create policy "vendors update by data_entry or admin" on vendors
+  for update using (auth.has_role(org_id, array['admin','data_entry']))
+  with check (auth.has_role(org_id, array['admin','data_entry']));
+
+alter table bills enable row level security;
+create policy "bills read by org members" on bills for select using (auth.uid_in_org(org_id));
+create policy "bills insert by data_entry or admin" on bills
+  for insert with check (auth.has_role(org_id, array['admin','data_entry']));
+create policy "bills update by data_entry or accountant or admin" on bills
+  for update using (auth.has_role(org_id, array['admin','data_entry','accountant']))
+  with check (auth.has_role(org_id, array['admin','data_entry','accountant']));
+
+alter table bill_occurrences enable row level security;
+create policy "occurrences read by org members" on bill_occurrences for select using (auth.uid_in_org(org_id));
+create policy "occurrences update by accountant or admin" on bill_occurrences
+  for update using (auth.has_role(org_id, array['admin','accountant']))
+  with check (auth.has_role(org_id, array['admin','accountant']));
