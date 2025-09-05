@@ -10,9 +10,10 @@ export default function LoginPage() {
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
     setStatus(null);
+    const redirectTo = typeof window !== 'undefined' ? `${window.location.origin}/auth/callback` : undefined;
     const { error } = await supabase.auth.signInWithOtp({
       email,
-      options: { emailRedirectTo: typeof window !== 'undefined' ? window.location.origin : undefined }
+      options: { emailRedirectTo: redirectTo }
     });
     if (error) setStatus(error.message);
     else setStatus('Check your email for a login link.');
@@ -39,4 +40,3 @@ export default function LoginPage() {
     </div>
   );
 }
-
