@@ -1,0 +1,9 @@
+export default function AdminUsersPage() {
+  return (
+    <div className="space-y-4">
+      <h1 className="text-xl font-semibold">Admin • Users</h1>
+      <div className="rounded border border-neutral-200 dark:border-neutral-800 p-4">Org members table placeholder</div>
+    </div>
+  );
+}
+
