@@ -8,9 +8,9 @@ export async function getDefaultOrgId(supabase: SupabaseClient): Promise<string 
   const { data, error } = await supabase
     .from('org_members')
     .select('org_id')
+    .eq('user_id', user.id)
     .order('created_at', { ascending: true })
     .limit(1);
   if (error) return null;
   return data?.[0]?.org_id ?? null;
 }
-

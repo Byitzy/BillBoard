@@ -9,6 +9,7 @@ BillBoard is a multi-tenant web app for managing organization bills and project-
 - Approvals & Accounting: approve/hold, mark paid/failed.
 - Vendors & Projects: simple directories per org.
 - Quebec banking holidays: previous business day helper for submissions.
+- Theme: 2025-style dark/light with system preference and smooth transitions.
 - Exports: CSV and PDF (scaffolded).
 - CI: GitHub Actions for lint/typecheck/test.
 
@@ -53,9 +54,17 @@ pnpm install
   - `NEXT_PUBLIC_APP_NAME` (optional, defaults BillBoard)
   - `NEXT_PUBLIC_DEFAULT_LOCALE` (default `en-CA`)
 
+ Auth (Email Magic Link)
+ - In Supabase → Authentication → Providers → Email: enable Email provider.
+ - In Supabase → Authentication → URL Configuration: set Site URL (e.g. `http://localhost:3000`) and add Allowed Redirect `http://localhost:3000/auth/callback`.
+ - To allow signups via magic link, enable “Allow email signups”. The app is configured to create users via magic link.
+
 3) Database schema
 - Apply `supabase/schema.sql` to your Supabase Postgres instance (via Supabase Studio SQL editor or CLI).
 - RLS helper functions and example policies are included; extend to all tables as needed.
+ - Notes:
+   - Requires `pgcrypto` extension for `gen_random_uuid()`.
+   - `has_role` expects a `role[]` enum array (e.g. `ARRAY['admin','data_entry']::role[]`).
 
 4) Edge Function (Occurrences)
 - The generator logic is implemented in `src/lib/occurrences.ts`.
@@ -67,6 +76,10 @@ pnpm install
 pnpm dev
 ```
 App runs at `http://localhost:3000`.
+
+### Theme
+- Toggle between Light, Dark, or System from the topbar.
+- Remembers choice in `localStorage` and applies on first paint to avoid flash.
 
 ### Scripts
 - `pnpm dev` – Start Next.js dev server
@@ -105,4 +118,3 @@ See `todo.md` for planned sprints and features (auth, RBAC/RLS coverage, tables,
 
 ## License
 Not specified. If open-sourcing, add a LICENSE file; otherwise keep private.
-
