@@ -23,3 +23,7 @@ a {
   @apply mx-auto max-w-7xl px-4 py-6;
 }
 
+/* Focus outline baseline */
+:where(button, a, input, summary, details) {
+  @apply outline-none focus-visible:ring-2 ring-blue-500;
+}

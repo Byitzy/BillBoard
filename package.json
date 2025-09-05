@@ -18,7 +18,13 @@
   "dependencies": {
     "next": "14.2.5",
     "react": "18.3.1",
-    "react-dom": "18.3.1"
+    "react-dom": "18.3.1",
+    "lucide-react": "0.441.0",
+    "framer-motion": "11.2.10",
+    "recharts": "2.12.7",
+    "class-variance-authority": "0.7.0",
+    "clsx": "2.1.1",
+    "tailwind-merge": "2.5.2"
   },
   "devDependencies": {
     "@types/node": "20.14.9",
@@ -34,4 +40,3 @@
     "vitest": "1.6.0"
   }
 }
-
