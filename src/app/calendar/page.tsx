@@ -1,4 +1,4 @@
-import CalendarMonth from '@/src/components/CalendarMonth';
+import CalendarMonth from '@/components/CalendarMonth';
 
 export default function CalendarPage() {
   return (
@@ -8,4 +8,3 @@ export default function CalendarPage() {
     </div>
   );
 }
-
