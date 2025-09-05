@@ -5,6 +5,7 @@ import { cn } from '@/lib/utils';
 import { getSupabaseClient } from '@/lib/supabase/client';
 import Link from 'next/link';
 import type { Session } from '@supabase/supabase-js';
+import ThemeToggle from '@/components/theme/ThemeToggle';
 
 export default function Topbar() {
   const [menuOpen, setMenuOpen] = useState(false);
@@ -30,6 +31,7 @@ export default function Topbar() {
           />
         </div>
         <div className="flex items-center gap-2">
+          <ThemeToggle />
           <div className="relative">
             <button
               aria-haspopup="menu"

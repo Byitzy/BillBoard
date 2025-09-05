@@ -13,7 +13,10 @@ export default function LoginPage() {
     const redirectTo = typeof window !== 'undefined' ? `${window.location.origin}/auth/callback` : undefined;
     const { error } = await supabase.auth.signInWithOtp({
       email,
-      options: { emailRedirectTo: redirectTo }
+      options: {
+        emailRedirectTo: redirectTo,
+        shouldCreateUser: true
+      }
     });
     if (error) setStatus(error.message);
     else setStatus('Check your email for a login link.');
