@@ -1,12 +1,25 @@
 "use client";
-import { Bell, ChevronDown, Plus, Search } from 'lucide-react';
-import { useState } from 'react';
+import { Bell, ChevronDown, Plus, Search, LogIn, LogOut } from 'lucide-react';
+import { useEffect, useState } from 'react';
 import { cn } from '@/lib/utils';
+import { getSupabaseClient } from '@/lib/supabase/client';
+import Link from 'next/link';
+import type { Session } from '@supabase/supabase-js';
 
 export default function Topbar() {
   const [menuOpen, setMenuOpen] = useState(false);
+  const [signedIn, setSignedIn] = useState(false);
+  const supabase = getSupabaseClient();
+
+  useEffect(() => {
+    supabase.auth.getSession().then((res) => setSignedIn(!!res.data.session));
+    const { data: sub } = supabase.auth.onAuthStateChange((_e: string, session: Session | null) =>
+      setSignedIn(!!session)
+    );
+    return () => sub.subscription.unsubscribe();
+  }, []);
   return (
-    <header className="sticky top-0 z-10 border-b border-neutral-200 bg-white/80 backdrop-blur dark:border-neutral-800 dark:bg-neutral-950/80">
+    <header className="sticky top-0 z-10 bg-[hsl(var(--surface))]/80 backdrop-blur" style={{ borderBottom: '1px solid hsl(var(--border))' }}>
       <div className="container-page flex items-center justify-between gap-4">
         <div className="relative w-full max-w-sm">
           <Search className="pointer-events-none absolute left-2 top-1/2 -translate-y-1/2 h-4 w-4 text-neutral-400" aria-hidden />
@@ -52,13 +65,28 @@ export default function Topbar() {
           <button aria-label="Notifications" className="rounded-xl p-2 hover:bg-neutral-100 focus-visible:outline-none focus-visible:ring-2 ring-blue-500 dark:hover:bg-neutral-900">
             <Bell className="h-5 w-5" />
           </button>
-          <button aria-label="Account" className="flex items-center gap-2 rounded-xl border border-neutral-200 p-1 pl-2 hover:bg-neutral-100 focus-visible:outline-none focus-visible:ring-2 ring-blue-500 dark:border-neutral-800 dark:hover:bg-neutral-900">
-            <span className="text-sm">Alex</span>
-            <span className="inline-grid h-7 w-7 place-items-center rounded-full bg-neutral-200 text-xs dark:bg-neutral-800">A</span>
-          </button>
+          {signedIn ? (
+            <button
+              aria-label="Sign out"
+              onClick={async () => {
+                await supabase.auth.signOut();
+              }}
+              className="inline-flex items-center gap-2 rounded-xl border border-neutral-200 p-2 hover:bg-neutral-100 focus-visible:outline-none focus-visible:ring-2 ring-blue-500 dark:border-neutral-800 dark:hover:bg-neutral-900"
+            >
+              <LogOut className="h-4 w-4" />
+              <span className="hidden sm:inline text-sm">Sign out</span>
+            </button>
+          ) : (
+            <Link
+              href="/login"
+              className="inline-flex items-center gap-2 rounded-xl border border-neutral-200 p-2 hover:bg-neutral-100 focus-visible:outline-none focus-visible:ring-2 ring-blue-500 dark:border-neutral-800 dark:hover:bg-neutral-900"
+            >
+              <LogIn className="h-4 w-4" />
+              <span className="hidden sm:inline text-sm">Sign in</span>
+            </Link>
+          )}
         </div>
       </div>
     </header>
   );
 }
-

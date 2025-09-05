@@ -2,25 +2,55 @@
 @tailwind components;
 @tailwind utilities;
 
+/* 2025-style theme tokens (HSL) */
 :root {
-  --bg: #0b0c10;
-  --fg: #111827;
+  --bg: 0 0% 100%;
+  --surface: 0 0% 100%;
+  --text: 222 47% 11%;
+  --muted: 215 16% 47%;
+  --border: 215 20% 90%;
+  --accent: 217 91% 60%;
+  --accent-fg: 0 0% 100%;
 }
 
-html {
-  color-scheme: light dark;
+.dark {
+  --bg: 240 10% 6%;
+  --surface: 240 6% 8%;
+  --text: 210 40% 96%;
+  --muted: 214 15% 65%;
+  --border: 240 5% 18%;
+  --accent: 217 92% 76%;
+  --accent-fg: 222 47% 11%;
 }
+
+html { color-scheme: light dark; }
 
 body {
-  @apply bg-white text-gray-900 dark:bg-neutral-950 dark:text-neutral-100;
+  background-color: hsl(var(--bg));
+  color: hsl(var(--text));
 }
 
 a {
-  @apply text-blue-600 dark:text-blue-400 hover:underline;
+  color: hsl(var(--accent));
+  text-decoration: none;
 }
 
+a:hover { text-decoration: underline; }
+
+/* Subtle container rhythm */
 .container-page {
   @apply mx-auto max-w-7xl px-4 py-6;
+}
+
+/* Elevation & borders via tokens */
+.card-surface {
+  background-color: hsl(var(--surface));
+  border-color: hsl(var(--border));
+}
+
+/* Focus outline baseline */
+:where(button, a, input, summary, details) {
+  @apply outline-none focus-visible:ring-2 ring-blue-500;
 }
 
 /* Focus outline baseline */
