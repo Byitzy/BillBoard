@@ -2,16 +2,23 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { cn } from '@/lib/utils';
-import { BarChart3, LayoutDashboard, Settings, Folder, FileText, Layers } from 'lucide-react';
+import { BarChart3, LayoutDashboard, Settings, Folder, FileText, Layers, CalendarDays } from 'lucide-react';
+import type { Route } from 'next';
+import type { ComponentType } from 'react';
 
 const nav = [
   { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
-  { href: '/section-a', label: 'Section A', icon: Layers },
-  { href: '/section-b', label: 'Section B', icon: Folder },
-  { href: '/section-c', label: 'Section C', icon: FileText },
-  { href: '/reports', label: 'Reports', icon: BarChart3 },
+  { href: '/calendar', label: 'Calendar', icon: CalendarDays },
+  { href: '/bills', label: 'Bills', icon: FileText },
+  { href: '/vendors', label: 'Vendors', icon: Layers },
+  { href: '/projects', label: 'Projects', icon: Folder },
+  { href: '/updates', label: 'Updates', icon: BarChart3 },
   { href: '/settings/profile', label: 'Settings', icon: Settings }
-];
+] as const satisfies ReadonlyArray<{
+  href: Route;
+  label: string;
+  icon: ComponentType<{ className?: string }>;
+}>;
 
 export default function Sidebar() {
   const pathname = usePathname();
@@ -43,4 +50,3 @@ export default function Sidebar() {
     </aside>
   );
 }
-
