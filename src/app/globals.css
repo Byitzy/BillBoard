@@ -25,13 +25,32 @@
 
 /* BillBoard brand mode (deep navy + cyan accent) */
 .billboard {
-  --bg: 222 50% 9%;          /* ~#0b1220 */
-  --surface: 220 45% 11%;     /* slightly lighter card surface */
-  --text: 210 40% 96%;
-  --muted: 210 15% 70%;
-  --border: 220 25% 20%;
-  --accent: 189 88% 47%;      /* ~#06b6d4 */
-  --accent-fg: 222 47% 11%;
+  --bg: 222 50% 9%;           /* deep navy */
+  --surface: 222 40% 12%;     /* card surface */
+  --text: 210 40% 96%;        /* high contrast text */
+  --muted: 210 18% 75%;       /* clearer muted text */
+  --border: 222 30% 22%;      /* stronger borders for separation */
+  --accent: 189 80% 50%;      /* cyan accent */
+  --accent-fg: 222 47% 11%;   /* dark text on accent */
+}
+
+/* Subtle gradient background in brand mode */
+.billboard body {
+  background:
+    radial-gradient(1200px 600px at 20% -10%, rgba(6,182,212,0.08), transparent),
+    radial-gradient(800px 400px at 110% 10%, rgba(6,182,212,0.06), transparent),
+    hsl(var(--bg));
+}
+
+/* Elevation for cards in brand mode */
+.billboard .card-surface {
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.02);
+}
+
+/* Buttons and focus rings feel */
+.billboard :where(button, a, input, summary, details) {
+  @apply focus-visible:ring-2;
+  --ring-color: hsl(var(--accent));
 }
 
 html { color-scheme: light dark; }

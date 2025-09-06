@@ -138,13 +138,21 @@ create table feedback (
 
 -- RLS Helpers
 create or replace function uid_in_org(target_org uuid)
-returns boolean language sql stable as $$
-  select exists(select 1 from org_members where org_id = target_org and user_id = auth.uid());
+returns boolean
+language sql
+stable
+set search_path = public, auth
+as $$
+  select exists(select 1 from public.org_members where org_id = target_org and user_id = auth.uid());
 $$;
 
 create or replace function has_role(target_org uuid, roles role[])
-returns boolean language sql stable as $$
-  select exists(select 1 from org_members where org_id = target_org and user_id = auth.uid() and role = any(roles));
+returns boolean
+language sql
+stable
+set search_path = public, auth
+as $$
+  select exists(select 1 from public.org_members where org_id = target_org and user_id = auth.uid() and role = any(roles));
 $$;
 
 -- Enable RLS and policies
