@@ -184,6 +184,8 @@ create policy "vendors insert by data_entry or admin" on vendors
 create policy "vendors update by data_entry or admin" on vendors
   for update using (has_role(org_id, array['admin','data_entry']::role[]))
   with check (has_role(org_id, array['admin','data_entry']::role[]));
+create policy "vendors delete by data_entry or admin" on vendors
+  for delete using (has_role(org_id, array['admin','data_entry']::role[]));
 
 -- Bills
 alter table bills enable row level security;

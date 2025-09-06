@@ -82,9 +82,72 @@ export default function BillDetailPage({ params }: Props) {
         </div>
         <div className="space-y-3">
           <div className="rounded-2xl border border-neutral-200 p-4 shadow-sm dark:border-neutral-800 card-surface">Approval Panel</div>
-          <div className="rounded-2xl border border-neutral-200 p-4 shadow-sm dark:border-neutral-800 card-surface">Metadata</div>
+          <div className="rounded-2xl border border-neutral-200 p-4 shadow-sm dark:border-neutral-800 card-surface">
+            <h2 className="text-sm font-semibold mb-2">Edit Bill</h2>
+            {bill ? (
+              <EditBillMini id={bill.id} amount={bill.amount_total} due={bill.due_date} onSaved={load} />
+            ) : (
+              <div className="text-sm text-neutral-500">Loading…</div>
+            )}
+          </div>
         </div>
       </div>
     </div>
+  );
+}
+
+function EditBillMini({ id, amount, due, onSaved }: { id: string; amount: number; due: string | null; onSaved: () => void }) {
+  const supabase = getSupabaseClient();
+  const [amt, setAmt] = useState(String(amount));
+  const [date, setDate] = useState(due ?? '');
+  const [saving, setSaving] = useState(false);
+  const [err, setErr] = useState<string | null>(null);
+  return (
+    <form
+      className="space-y-2"
+      onSubmit={async (e) => {
+        e.preventDefault();
+        setSaving(true);
+        setErr(null);
+        const n = parseFloat(amt);
+        if (Number.isNaN(n)) {
+          setErr('Enter a valid amount');
+          setSaving(false);
+          return;
+        }
+        const { error } = await supabase.from('bills').update({ amount_total: n, due_date: date || null }).eq('id', id);
+        if (error) setErr(error.message);
+        else {
+          const { data: sessionRes } = await supabase.auth.getSession();
+          const access = sessionRes.session?.access_token;
+          await fetch(`/api/bills/${id}/generate`, { method: 'POST', headers: access ? { Authorization: `Bearer ${access}` } : undefined });
+          onSaved();
+        }
+        setSaving(false);
+      }}
+    >
+      <div>
+        <label className="block text-xs text-neutral-500 mb-1">Amount</label>
+        <input
+          className="w-full rounded-xl border border-neutral-200 bg-transparent px-3 py-2 text-sm dark:border-neutral-800"
+          value={amt}
+          onChange={(e) => setAmt(e.target.value)}
+          inputMode="decimal"
+        />
+      </div>
+      <div>
+        <label className="block text-xs text-neutral-500 mb-1">Due date (one-off)</label>
+        <input
+          type="date"
+          className="w-full rounded-xl border border-neutral-200 bg-transparent px-3 py-2 text-sm dark:border-neutral-800"
+          value={date}
+          onChange={(e) => setDate(e.target.value)}
+        />
+      </div>
+      {err && <div className="text-xs text-red-600">{err}</div>}
+      <button type="submit" disabled={saving} className="rounded-xl bg-blue-600 px-3 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-50">
+        {saving ? 'Saving…' : 'Save'}
+      </button>
+    </form>
   );
 }

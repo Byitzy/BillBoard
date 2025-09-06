@@ -16,6 +16,7 @@ export default function BillsPage() {
   const supabase = getSupabaseClient();
   const [orgId, setOrgId] = useState<string | null>(null);
   const [bills, setBills] = useState<BillRow[]>([]);
+  const [nextDue, setNextDue] = useState<Record<string, string | undefined>>({});
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -36,7 +37,29 @@ export default function BillsPage() {
       .eq('org_id', id)
       .order('created_at', { ascending: false });
     if (error) setError(error.message);
-    else setBills((data ?? []) as BillRow[]);
+    else {
+      const rows = (data ?? []) as BillRow[];
+      setBills(rows);
+      // compute next due for recurring bills
+      const ids = rows.filter((b) => !b.due_date).map((b) => b.id);
+      if (ids.length > 0) {
+        const today = new Date();
+        const iso = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
+        const { data: occ } = await supabase
+          .from('bill_occurrences')
+          .select('bill_id,due_date')
+          .in('bill_id', ids)
+          .gte('due_date', iso)
+          .order('due_date', { ascending: true });
+        const map: Record<string, string> = {};
+        occ?.forEach((o: any) => {
+          if (!map[o.bill_id]) map[o.bill_id] = o.due_date;
+        });
+        setNextDue(map);
+      } else {
+        setNextDue({});
+      }
+    }
     setLoading(false);
   }
 
@@ -84,7 +107,7 @@ export default function BillsPage() {
                 <tr key={b.id} className="border-t border-neutral-100 dark:border-neutral-800">
                   <td className="px-3 py-2">{b.title}</td>
                   <td className="px-3 py-2">${b.amount_total.toFixed(2)}</td>
-                  <td className="px-3 py-2">{b.due_date ?? '—'}</td>
+                  <td className="px-3 py-2">{b.due_date ?? nextDue[b.id] ?? '-'}</td>
                   <td className="px-3 py-2 text-right">
                     <Link href={`/bills/${b.id}`} className="rounded-lg border px-2 py-1 hover:bg-neutral-50 dark:border-neutral-800 dark:hover:bg-neutral-900">
                       View

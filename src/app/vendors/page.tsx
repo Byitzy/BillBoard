@@ -3,7 +3,7 @@ import { useEffect, useState } from 'react';
 import { getSupabaseClient } from '@/lib/supabase/client';
 import { getDefaultOrgId } from '@/lib/org';
 
-type Vendor = { id: string; name: string; contact?: string | null; email?: string | null };
+type Vendor = { id: string; name: string; bills?: { count: number }[] };
 
 export default function VendorsPage() {
   const supabase = getSupabaseClient();
@@ -24,7 +24,7 @@ export default function VendorsPage() {
     }
     const { data, error } = await supabase
       .from('vendors')
-      .select('id,name,contact,email')
+      .select('id,name,bills(count)')
       .eq('org_id', orgId)
       .order('name');
     if (error) setError(error.message);
@@ -96,7 +96,7 @@ export default function VendorsPage() {
         <table className="w-full">
           <thead>
             <tr className="text-left">
-              {['Name', 'Contact', 'Email'].map((h) => (
+              {['Name', 'Bills', 'Actions'].map((h) => (
                 <th key={h} className="px-3 py-2 text-neutral-500">
                   {h}
                 </th>
@@ -130,10 +130,9 @@ export default function VendorsPage() {
                       v.name
                     )}
                   </td>
-                  <td className="px-3 py-2">{v.contact ?? '-'}</td>
+                  <td className="px-3 py-2">{v.bills?.[0]?.count ?? 0}</td>
                   <td className="px-3 py-2">
-                    <div className="flex items-center gap-2">
-                      <span>{v.email ?? '-'}</span>
+                    <div className="flex justify-end gap-2">
                       {editing === v.id ? (
                         <>
                           <button
