@@ -49,4 +49,4 @@ export async function POST(req: NextRequest, { params }: { params: { orgId: stri
 
   return NextResponse.json({ ok: true });
 }
-
+export const dynamic = 'force-dynamic';

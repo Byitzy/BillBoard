@@ -42,4 +42,4 @@ export async function GET(_req: NextRequest, { params }: { params: { orgId: stri
 
   return NextResponse.json({ members: enriched });
 }
-
+export const dynamic = 'force-dynamic';

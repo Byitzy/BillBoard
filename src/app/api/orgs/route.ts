@@ -28,4 +28,4 @@ export async function POST(req: NextRequest) {
 
   return NextResponse.json({ organization: org }, { status: 201 });
 }
-
+export const dynamic = 'force-dynamic';
