@@ -131,10 +131,30 @@ export default function DashboardClient() {
 
   const kpis = useMemo(
     () => [
-      { label: 'Today', value: `$${todayTotal.toFixed(2)}` },
-      { label: 'This Week', value: `$${weekTotal.toFixed(2)}` },
-      { label: 'Next 2 Weeks', value: `$${twoWeeksTotal.toFixed(2)}` },
-      { label: 'On Hold', value: onHoldCount }
+      {
+        label: 'Today',
+        value: `$${todayTotal.toFixed(2)}`,
+        tooltip: 'Total scheduled/approved for today',
+        href: '/reports/today'
+      },
+      {
+        label: 'This Week',
+        value: `$${weekTotal.toFixed(2)}`,
+        tooltip: 'Total scheduled/approved this calendar week',
+        href: '/reports/week'
+      },
+      {
+        label: 'Next 2 Weeks',
+        value: `$${twoWeeksTotal.toFixed(2)}`,
+        tooltip: 'Total scheduled/approved in next 14 days',
+        href: '/reports/two-weeks'
+      },
+      {
+        label: 'On Hold',
+        value: onHoldCount,
+        tooltip: 'Occurrences on hold in next 14 days',
+        href: '/reports/on-hold'
+      }
     ],
     [todayTotal, weekTotal, twoWeeksTotal, onHoldCount]
   );
@@ -144,7 +164,7 @@ export default function DashboardClient() {
       {error && <div className="text-sm text-red-600">{error}</div>}
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
         {kpis.map((k, i) => (
-          <KPI key={k.label} label={k.label} value={k.value} index={i} />
+          <KPI key={k.label} label={k.label} value={k.value} index={i} tooltip={k.tooltip as any} href={k.href as any} />
         ))}
       </div>
 

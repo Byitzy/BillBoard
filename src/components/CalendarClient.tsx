@@ -3,6 +3,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { getSupabaseClient } from '@/lib/supabase/client';
 import { getDefaultOrgId } from '@/lib/org';
 import CalendarMonth from './CalendarMonth';
+import { isQuebecBankHoliday } from '@/lib/businessDays';
 
 type Occ = { id: string; due_date: string; state: string; amount_due: number };
 
@@ -78,9 +79,13 @@ export default function CalendarClient() {
         renderDay={(d) => {
           const iso = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
           const items = byDay.get(iso) ?? [];
+          const holiday = isQuebecBankHoliday(d);
           if (items.length === 0) return null;
           return (
-            <div className="mt-1 space-y-1">
+            <div className="mt-1 space-y-1 relative">
+              {holiday && (
+                <div className="absolute right-0 top-0 text-[10px] rounded px-1 py-0.5 bg-red-600 text-white">H</div>
+              )}
               {items.slice(0, 3).map((o) => (
                 <div
                   key={o.id}

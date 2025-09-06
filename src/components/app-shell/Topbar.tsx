@@ -61,7 +61,7 @@ export default function Topbar() {
             {menuOpen && (
               <ul
                 role="menu"
-                className="absolute right-0 mt-2 w-40 overflow-hidden rounded-xl border border-neutral-200 bg-white p-1 text-sm shadow-sm dark:border-neutral-800 dark:bg-neutral-900"
+                className="absolute right-0 mt-2 w-40 overflow-hidden rounded-xl border border-neutral-200 bg-[hsl(var(--surface))] p-1 text-sm shadow-sm dark:border-neutral-800"
                 onKeyDown={(e) => {
                   if (e.key === 'Escape') setMenuOpen(false);
                 }}
