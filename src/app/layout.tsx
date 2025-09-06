@@ -4,6 +4,9 @@ import Sidebar from '@/components/app-shell/Sidebar';
 import Topbar from '@/components/app-shell/Topbar';
 import { ThemeProvider, ThemeScript } from '@/components/theme/ThemeProvider';
 
+// Disable static pre-render; rely on runtime (auth-driven app)
+export const dynamic = 'force-dynamic';
+
 export const metadata: Metadata = {
   title: 'BillBoard',
   description: 'Multi-tenant bill management with calendar and approvals'
