@@ -1,17 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getServerClient, getServiceClient } from '@/lib/supabase/server';
+import { getServiceClient, getUserFromRequest } from '@/lib/supabase/server';
 
 export async function GET(_req: NextRequest, { params }: { params: { orgId: string } }) {
   const orgId = params.orgId;
 
-  const userClient = getServerClient();
-  const {
-    data: { user }
-  } = await userClient.auth.getUser();
+  const user = await getUserFromRequest(_req as any);
   if (!user) return NextResponse.json({ error: 'unauthorized' }, { status: 401 });
 
   // Ensure requester is admin of org
-  const { data: me, error: meErr } = await userClient
+  const admin = getServiceClient();
+  const { data: me, error: meErr } = await admin
     .from('org_members')
     .select('role')
     .eq('org_id', orgId)
@@ -20,7 +18,6 @@ export async function GET(_req: NextRequest, { params }: { params: { orgId: stri
   if (meErr) return NextResponse.json({ error: meErr.message }, { status: 400 });
   if (!me || me.role !== 'admin') return NextResponse.json({ error: 'forbidden' }, { status: 403 });
 
-  const admin = getServiceClient();
   const { data: members, error: mErr } = await admin
     .from('org_members')
     .select('id, user_id, role, created_at')
