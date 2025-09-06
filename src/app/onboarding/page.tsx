@@ -14,9 +14,16 @@ export default function OnboardingPage() {
     setLoading(true);
     setError(null);
     try {
+      // Include Supabase session token so API can authenticate if cookies are not available
+      const { getSupabaseClient } = await import('@/lib/supabase/client');
+      const supabase = getSupabaseClient();
+      const { data: sessionRes } = await supabase.auth.getSession();
+      const access = sessionRes.session?.access_token;
       const res = await fetch('/api/orgs', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: access
+          ? { 'Content-Type': 'application/json', Authorization: `Bearer ${access}` }
+          : { 'Content-Type': 'application/json' },
         body: JSON.stringify({ name, slug: slug || undefined })
       });
       const data = await res.json();
@@ -61,4 +68,3 @@ export default function OnboardingPage() {
     </div>
   );
 }
-

@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getServerClient, getServiceClient } from '@/lib/supabase/server';
+import { getServiceClient, getUserFromRequest } from '@/lib/supabase/server';
 
 export async function POST(req: NextRequest, { params }: { params: { orgId: string } }) {
   const body = await req.json().catch(() => null);
@@ -9,13 +9,11 @@ export async function POST(req: NextRequest, { params }: { params: { orgId: stri
   const orgId = params.orgId;
 
   // Verify requester is admin of org using cookie-authenticated client
-  const userClient = getServerClient();
-  const {
-    data: { user }
-  } = await userClient.auth.getUser();
+  const user = await getUserFromRequest(req);
   if (!user) return NextResponse.json({ error: 'unauthorized' }, { status: 401 });
 
-  const { data: me, error: meErr } = await userClient
+  const admin = getServiceClient();
+  const { data: me, error: meErr } = await admin
     .from('org_members')
     .select('role')
     .eq('org_id', orgId)
@@ -25,7 +23,6 @@ export async function POST(req: NextRequest, { params }: { params: { orgId: stri
   if (!me || me.role !== 'admin') return NextResponse.json({ error: 'forbidden' }, { status: 403 });
 
   // Use service role to invite/create user and assign membership
-  const admin = getServiceClient();
   const inviteRes = await admin.auth.admin.inviteUserByEmail(email).catch((e: any) => ({ error: e }));
   const invitedUser = (inviteRes as any)?.user;
 

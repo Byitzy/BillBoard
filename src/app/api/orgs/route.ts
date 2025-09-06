@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getServerClient, getServiceClient } from '@/lib/supabase/server';
+import { getServiceClient, getUserFromRequest } from '@/lib/supabase/server';
 
 export async function POST(req: NextRequest) {
   const body = await req.json().catch(() => null);
@@ -7,10 +7,7 @@ export async function POST(req: NextRequest) {
   const slug = body?.slug?.toString().trim() || null;
   if (!name) return NextResponse.json({ error: 'name is required' }, { status: 400 });
 
-  const userClient = getServerClient();
-  const {
-    data: { user }
-  } = await userClient.auth.getUser();
+  const user = await getUserFromRequest(req);
   if (!user) return NextResponse.json({ error: 'unauthorized' }, { status: 401 });
 
   const admin = getServiceClient();
