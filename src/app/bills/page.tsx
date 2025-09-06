@@ -3,6 +3,7 @@ import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import { getSupabaseClient } from '@/lib/supabase/client';
 import { getDefaultOrgId } from '@/lib/org';
+import BillForm from '@/components/BillForm';
 
 type BillRow = {
   id: string;
@@ -18,9 +19,6 @@ export default function BillsPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  const [title, setTitle] = useState('');
-  const [amount, setAmount] = useState('');
-  const [due, setDue] = useState('');
 
   async function load() {
     setLoading(true);
@@ -42,25 +40,6 @@ export default function BillsPage() {
     setLoading(false);
   }
 
-  async function createBill(e: React.FormEvent) {
-    e.preventDefault();
-    if (!orgId) return;
-    const amt = parseFloat(amount);
-    if (!title.trim() || Number.isNaN(amt)) return;
-    setLoading(true);
-    setError(null);
-    const { error } = await supabase.from('bills').insert({
-      org_id: orgId,
-      title: title.trim(),
-      amount_total: amt,
-      due_date: due ? due : null
-    });
-    if (error) setError(error.message);
-    setTitle('');
-    setAmount('');
-    setDue('');
-    await load();
-  }
 
   useEffect(() => {
     load();
@@ -72,33 +51,7 @@ export default function BillsPage() {
         <h1 className="text-xl font-semibold">Bills</h1>
       </div>
 
-      <form onSubmit={createBill} className="grid grid-cols-1 gap-2 sm:grid-cols-3">
-        <input
-          placeholder="Title"
-          value={title}
-          onChange={(e) => setTitle(e.target.value)}
-          className="rounded-xl border border-neutral-200 bg-transparent px-3 py-2 text-sm dark:border-neutral-800"
-        />
-        <input
-          placeholder="Amount (CAD)"
-          inputMode="decimal"
-          value={amount}
-          onChange={(e) => setAmount(e.target.value)}
-          className="rounded-xl border border-neutral-200 bg-transparent px-3 py-2 text-sm dark:border-neutral-800"
-        />
-        <input
-          type="date"
-          placeholder="Due date"
-          value={due}
-          onChange={(e) => setDue(e.target.value)}
-          className="rounded-xl border border-neutral-200 bg-transparent px-3 py-2 text-sm dark:border-neutral-800"
-        />
-        <div>
-          <button type="submit" className="rounded-xl bg-blue-600 px-3 py-2 text-sm font-medium text-white hover:bg-blue-700">
-            Create Bill
-          </button>
-        </div>
-      </form>
+      <BillForm onCreated={load} />
 
       {error && <div className="text-sm text-red-600">{error}</div>}
 

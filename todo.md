@@ -12,6 +12,10 @@
 
 ## Sprint 2  Core Data & Calendar
 - [ ] CRUD: organizations, members (admin), vendors, projects
+- [ ] Vendors: enforce per‑org uniqueness by name (case‑insensitive)
+      - DB: unique index on `(org_id, lower(name))`
+      - App: when adding vendor, normalize and check existing; if found, notify and reuse
+      - Admin: optional dedupe tool to merge duplicates
 - [ ] Bills: create one-off & recurring; installments option
 - [ ] Edge Function: `generate_occurrences` + triggers
 - [ ] Quebec holidays provider + business-day helper
@@ -38,4 +42,3 @@
 - [ ] Saved search views per user
 - [ ] Role customizations per org (granular perms)
 - [ ] Bulk import from CSV
-
