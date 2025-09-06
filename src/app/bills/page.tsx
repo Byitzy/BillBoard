@@ -28,9 +28,8 @@ export default function BillsPage() {
     const id = await getDefaultOrgId(supabase);
     setOrgId(id);
     if (!id) {
-      setError('No organization found. Ask an admin to add you.');
-      setBills([]);
-      setLoading(false);
+      // Redirect to onboarding if no org
+      window.location.href = '/onboarding';
       return;
     }
     const { data, error } = await supabase

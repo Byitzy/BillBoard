@@ -17,9 +17,7 @@ export default function VendorsPage() {
     setError(null);
     const orgId = await getDefaultOrgId(supabase);
     if (!orgId) {
-      setError('No organization found. Ask an admin to add you.');
-      setVendors([]);
-      setLoading(false);
+      window.location.href = '/onboarding';
       return;
     }
     const { data, error } = await supabase
