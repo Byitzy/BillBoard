@@ -25,13 +25,13 @@ export default function Sidebar() {
   return (
     <aside aria-label="Primary" className="sticky top-0 h-dvh w-64 shrink-0 border-r hidden lg:block card-surface">
       <div className="p-4" style={{ borderRight: '1px solid hsl(var(--border))' }}>
-        <div className="mb-6 flex items-center gap-2">
+        <div className="mb-6 flex items-center gap-3">
           <img
             src="https://aytzgpwkjmdgznxxtrdd.supabase.co/storage/v1/object/public/brand/BillBoard_icon.jpg"
             alt="BillBoard"
-            className="h-6 w-6 rounded-sm object-cover"
+            className="h-8 w-8 rounded-md object-cover shadow-sm"
           />
-          <div className="text-sm font-semibold tracking-wide">BillBoard</div>
+          <div className="text-base font-semibold tracking-wide">BillBoard</div>
         </div>
         <nav className="space-y-1">
           {nav.map(({ href, label, icon: Icon }) => {

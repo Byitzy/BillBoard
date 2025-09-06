@@ -11,10 +11,12 @@ export async function middleware(req: NextRequest) {
   const url = new URL(req.url);
   const pathname = url.pathname;
   const isAuthRoute = pathname.startsWith('/login') || pathname.startsWith('/auth/callback');
+  const isApi = pathname.startsWith('/api');
   const isPublicAsset =
     pathname.startsWith('/_next') || pathname.startsWith('/favicon') || pathname.startsWith('/robots');
 
-  if (!session && !isAuthRoute && !isPublicAsset) {
+  // Allow API routes to handle auth themselves (avoid redirects breaking fetch)
+  if (!session && !isAuthRoute && !isPublicAsset && !isApi) {
     url.pathname = '/login';
     return NextResponse.redirect(url);
   }
