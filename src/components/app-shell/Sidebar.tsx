@@ -25,7 +25,14 @@ export default function Sidebar() {
   return (
     <aside aria-label="Primary" className="sticky top-0 h-dvh w-64 shrink-0 border-r hidden lg:block card-surface">
       <div className="p-4" style={{ borderRight: '1px solid hsl(var(--border))' }}>
-        <div className="mb-6 text-sm font-semibold tracking-wide text-neutral-700 dark:text-neutral-300">Admin UI</div>
+        <div className="mb-6 flex items-center gap-2">
+          <img
+            src="https://aytzgpwkjmdgznxxtrdd.supabase.co/storage/v1/object/public/brand/BillBoard_icon.jpg"
+            alt="BillBoard"
+            className="h-6 w-6 rounded-sm object-cover"
+          />
+          <div className="text-sm font-semibold tracking-wide">BillBoard</div>
+        </div>
         <nav className="space-y-1">
           {nav.map(({ href, label, icon: Icon }) => {
             const active = pathname?.startsWith(href);

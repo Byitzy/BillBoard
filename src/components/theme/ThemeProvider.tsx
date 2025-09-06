@@ -1,7 +1,7 @@
 "use client";
 import { createContext, useContext, useEffect, useMemo, useState } from 'react';
 
-type Theme = 'light' | 'dark' | 'system';
+type Theme = 'light' | 'dark' | 'system' | 'billboard';
 
 type ThemeContextValue = {
   theme: Theme;
@@ -21,8 +21,14 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     const root = document.documentElement;
     const prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
-    const isDark = theme === 'dark' || (theme === 'system' && prefersDark);
-    root.classList.toggle('dark', isDark);
+    // clear previous theme classes
+    root.classList.remove('dark');
+    root.classList.remove('billboard');
+    if (theme === 'dark' || (theme === 'system' && prefersDark)) {
+      root.classList.add('dark');
+    } else if (theme === 'billboard') {
+      root.classList.add('billboard');
+    }
     localStorage.setItem('theme', theme);
   }, [theme]);
 
@@ -45,9 +51,13 @@ export function ThemeScript() {
       const stored = localStorage.getItem('theme');
       const mql = window.matchMedia('(prefers-color-scheme: dark)');
       const prefersDark = mql.matches;
-      const theme = stored === 'light' || stored === 'dark' || stored === 'system' ? stored : 'system';
-      const isDark = theme === 'dark' || (theme === 'system' && prefersDark);
-      document.documentElement.classList.toggle('dark', isDark);
+      const allowed = ['light','dark','system','billboard'];
+      const theme = allowed.includes(stored || '') ? stored : 'system';
+      const root = document.documentElement;
+      root.classList.remove('dark');
+      root.classList.remove('billboard');
+      if (theme === 'dark' || (theme === 'system' && prefersDark)) root.classList.add('dark');
+      else if (theme === 'billboard') root.classList.add('billboard');
     } catch {}
   })();`;
   return <script dangerouslySetInnerHTML={{ __html: code }} />;

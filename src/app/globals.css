@@ -23,6 +23,17 @@
   --accent-fg: 222 47% 11%;
 }
 
+/* BillBoard brand mode (deep navy + cyan accent) */
+.billboard {
+  --bg: 222 50% 9%;          /* ~#0b1220 */
+  --surface: 220 45% 11%;     /* slightly lighter card surface */
+  --text: 210 40% 96%;
+  --muted: 210 15% 70%;
+  --border: 220 25% 20%;
+  --accent: 189 88% 47%;      /* ~#06b6d4 */
+  --accent-fg: 222 47% 11%;
+}
+
 html { color-scheme: light dark; }
 
 body {
