@@ -14,10 +14,10 @@ export default function DashboardClient() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  const [vendorsCount, setVendorsCount] = useState(0);
-  const [projectsCount, setProjectsCount] = useState(0);
-  const [pendingCount, setPendingCount] = useState(0);
-  const [upcomingCount, setUpcomingCount] = useState(0);
+  const [todayTotal, setTodayTotal] = useState(0);
+  const [weekTotal, setWeekTotal] = useState(0);
+  const [twoWeeksTotal, setTwoWeeksTotal] = useState(0);
+  const [onHoldCount, setOnHoldCount] = useState(0);
   const [chart, setChart] = useState<ChartPoint[]>([]);
   const [rows, setRows] = useState<Row[]>([]);
 
@@ -33,45 +33,69 @@ export default function DashboardClient() {
       }
       setOrgId(id);
       try {
-        // Counts
-        const [{ count: vCount }, { count: pCount }] = await Promise.all([
-          supabase.from('vendors').select('*', { count: 'exact', head: true }).eq('org_id', id),
-          supabase.from('projects').select('*', { count: 'exact', head: true }).eq('org_id', id)
-        ]);
-        setVendorsCount(vCount ?? 0);
-        setProjectsCount(pCount ?? 0);
-
-        // Pending approvals count
-        const { count: pend } = await supabase
-          .from('bill_occurrences')
-          .select('*', { count: 'exact', head: true })
-          .eq('org_id', id)
-          .eq('state', 'pending_approval');
-        setPendingCount(pend ?? 0);
-
-        // Upcoming 7 days scheduled
+        // Totals
         const today = new Date();
-        const in7 = new Date(today.getFullYear(), today.getMonth(), today.getDate() + 7);
+        const startOfWeek = new Date(today);
+        startOfWeek.setDate(today.getDate() - today.getDay()); // Sunday start
+        const endOfWeek = new Date(startOfWeek);
+        endOfWeek.setDate(startOfWeek.getDate() + 6);
+        const endTwoWeeks = new Date(today);
+        endTwoWeeks.setDate(today.getDate() + 14);
+
         const tISO = today.toISOString().slice(0, 10);
-        const nISO = in7.toISOString().slice(0, 10);
-        const { count: upc } = await supabase
+        const wStartISO = startOfWeek.toISOString().slice(0, 10);
+        const wEndISO = endOfWeek.toISOString().slice(0, 10);
+        const twEndISO = endTwoWeeks.toISOString().slice(0, 10);
+
+        const states = ['scheduled', 'approved'];
+
+        const [{ data: tRows }, { data: wRows }, { data: twRows }] = await Promise.all([
+          supabase
+            .from('bill_occurrences')
+            .select('amount_due')
+            .eq('org_id', id)
+            .in('state', states)
+            .eq('due_date', tISO),
+          supabase
+            .from('bill_occurrences')
+            .select('amount_due')
+            .eq('org_id', id)
+            .in('state', states)
+            .gte('due_date', wStartISO)
+            .lte('due_date', wEndISO),
+          supabase
+            .from('bill_occurrences')
+            .select('amount_due')
+            .eq('org_id', id)
+            .in('state', states)
+            .gte('due_date', tISO)
+            .lte('due_date', twEndISO)
+        ]);
+        setTodayTotal(sumAmounts(tRows));
+        setWeekTotal(sumAmounts(wRows));
+        setTwoWeeksTotal(sumAmounts(twRows));
+
+        // On hold count (upcoming two weeks)
+        const { count: hold } = await supabase
           .from('bill_occurrences')
           .select('*', { count: 'exact', head: true })
           .eq('org_id', id)
-          .eq('state', 'scheduled')
+          .eq('state', 'on_hold')
           .gte('due_date', tISO)
-          .lte('due_date', nISO);
-        setUpcomingCount(upc ?? 0);
+          .lte('due_date', twEndISO);
+        setOnHoldCount(hold ?? 0);
 
-        // Chart: last 6 months totals
-        const start = new Date(today.getFullYear(), today.getMonth() - 5, 1);
-        const startISO = start.toISOString().slice(0, 10);
+        // Chart: 3 months prior and 9 months ahead (total 13 months)
+        const chartStart = new Date(today.getFullYear(), today.getMonth() - 3, 1);
+        const chartEnd = new Date(today.getFullYear(), today.getMonth() + 10, 0); // end of +9 month
+        const chartStartISO = chartStart.toISOString().slice(0, 10);
+        const chartEndISO = chartEnd.toISOString().slice(0, 10);
         const { data: occ } = await supabase
           .from('bill_occurrences')
           .select('amount_due,due_date')
           .eq('org_id', id)
-          .gte('due_date', startISO)
-          .lte('due_date', nISO);
+          .gte('due_date', chartStartISO)
+          .lte('due_date', chartEndISO);
         const map = new Map<string, number>();
         (occ ?? []).forEach((o: any) => {
           const d = new Date(o.due_date);
@@ -79,10 +103,11 @@ export default function DashboardClient() {
           map.set(key, (map.get(key) ?? 0) + Number(o.amount_due || 0));
         });
         const pts: ChartPoint[] = [];
-        for (let i = 5; i >= 0; i--) {
-          const d = new Date(today.getFullYear(), today.getMonth() - i, 1);
+        for (let i = -3; i <= 9; i++) {
+          const d = new Date(today.getFullYear(), today.getMonth() + i, 1);
           const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
-          pts.push({ m: d.toLocaleString(undefined, { month: 'short' }), v: Math.round((map.get(key) ?? 0) * 100) / 100 });
+          const label = d.toLocaleString(undefined, { month: 'short', year: '2-digit' });
+          pts.push({ m: label, v: Math.round((map.get(key) ?? 0) * 100) / 100 });
         }
         setChart(pts);
 
@@ -106,12 +131,12 @@ export default function DashboardClient() {
 
   const kpis = useMemo(
     () => [
-      { label: 'Upcoming (7d)', value: upcomingCount },
-      { label: 'Pending', value: pendingCount },
-      { label: 'Vendors', value: vendorsCount },
-      { label: 'Projects', value: projectsCount }
+      { label: 'Today', value: `$${todayTotal.toFixed(2)}` },
+      { label: 'This Week', value: `$${weekTotal.toFixed(2)}` },
+      { label: 'Next 2 Weeks', value: `$${twoWeeksTotal.toFixed(2)}` },
+      { label: 'On Hold', value: onHoldCount }
     ],
-    [upcomingCount, pendingCount, vendorsCount, projectsCount]
+    [todayTotal, weekTotal, twoWeeksTotal, onHoldCount]
   );
 
   return (
@@ -180,3 +205,7 @@ export default function DashboardClient() {
   );
 }
 
+function sumAmounts(rows?: any[] | null) {
+  if (!rows) return 0;
+  return rows.reduce((acc, r) => acc + Number(r.amount_due || 0), 0);
+}

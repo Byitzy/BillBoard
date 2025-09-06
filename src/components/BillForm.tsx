@@ -98,6 +98,13 @@ export default function BillForm({ onCreated }: Props) {
     if (!norm) return null;
     const existing = vendorOptions.find((v) => v.name.toLowerCase() === norm.toLowerCase());
     if (existing) return existing;
+    const { data: exists } = await supabase
+      .from('vendors')
+      .select('id,name')
+      .eq('org_id', orgId)
+      .ilike('name', norm)
+      .limit(1);
+    if (exists && exists.length > 0) return exists[0] as Option;
     const { data, error } = await supabase
       .from('vendors')
       .insert({ org_id: orgId, name: norm })
@@ -116,6 +123,13 @@ export default function BillForm({ onCreated }: Props) {
     if (!norm) return null;
     const existing = projectOptions.find((p) => p.name.toLowerCase() === norm.toLowerCase());
     if (existing) return existing;
+    const { data: exists } = await supabase
+      .from('projects')
+      .select('id,name')
+      .eq('org_id', orgId)
+      .ilike('name', norm)
+      .limit(1);
+    if (exists && exists.length > 0) return exists[0] as Option;
     const { data, error } = await supabase
       .from('projects')
       .insert({ org_id: orgId, name: norm })

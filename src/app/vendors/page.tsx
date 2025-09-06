@@ -41,6 +41,17 @@ export default function VendorsPage() {
       setError('No organization found.');
       return;
     }
+    // Check existing by case-insensitive match
+    const { data: existing } = await supabase
+      .from('vendors')
+      .select('id')
+      .eq('org_id', orgId)
+      .ilike('name', name.trim());
+    if (existing && existing.length > 0) {
+      setError('Vendor already exists');
+      setLoading(false);
+      return;
+    }
     const { error } = await supabase.from('vendors').insert({ name: name.trim(), org_id: orgId });
     if (error) setError(error.message);
     setName('');
