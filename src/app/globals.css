@@ -25,6 +25,7 @@
 
 /* BillBoard brand mode (deep navy + cyan accent) */
 .billboard {
+<<<<<<< HEAD
   --bg: 222 50% 9%;           /* deep navy */
   --surface: 222 40% 12%;     /* card surface */
   --text: 210 40% 96%;        /* high contrast text */
@@ -51,6 +52,15 @@
 .billboard :where(button, a, input, summary, details) {
   @apply focus-visible:ring-2;
   --ring-color: hsl(var(--accent));
+=======
+  --bg: 222 50% 9%;          /* ~#0b1220 */
+  --surface: 220 45% 11%;     /* slightly lighter card surface */
+  --text: 210 40% 96%;
+  --muted: 210 15% 70%;
+  --border: 220 25% 20%;
+  --accent: 189 88% 47%;      /* ~#06b6d4 */
+  --accent-fg: 222 47% 11%;
+>>>>>>> df64012 (feat: brand theme + favicon; onboarding + invites; dynamic APIs)
 }
 
 html { color-scheme: light dark; }
