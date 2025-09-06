@@ -11,7 +11,6 @@ export default function BillForm({ onCreated }: Props) {
   const supabase = getSupabaseClient();
 
   const [orgId, setOrgId] = useState<string | null>(null);
-  const [title, setTitle] = useState('');
   const [amount, setAmount] = useState('');
   const [currency, setCurrency] = useState('CAD');
 
@@ -24,7 +23,8 @@ export default function BillForm({ onCreated }: Props) {
   const [project, setProject] = useState<Option | null>(null);
 
   const [isRecurring, setIsRecurring] = useState(false);
-  const [dueDate, setDueDate] = useState('');
+  const [dueDate, setDueDate] = useState(''); // for one-off
+  const [startDate, setStartDate] = useState(''); // for recurring
   const [frequency, setFrequency] = useState<'weekly' | 'biweekly' | 'monthly' | 'quarterly' | 'annually'>('monthly');
   const [endDate, setEndDate] = useState('');
   const [notes, setNotes] = useState('');
@@ -147,11 +147,12 @@ export default function BillForm({ onCreated }: Props) {
       }
 
       const amt = parseFloat(amount);
-      if (!title.trim() || Number.isNaN(amt)) throw new Error('Please provide a title and a valid amount.');
+      if (Number.isNaN(amt)) throw new Error('Please provide a valid amount.');
 
+      const computedTitle = `${vendor?.name || vendorQuery || 'Bill'} ${currency} ${amt.toFixed(2)}`;
       const payload: any = {
         org_id: orgId,
-        title: title.trim(),
+        title: computedTitle,
         amount_total: amt,
         currency,
         vendor_id: vendorId,
@@ -174,8 +175,8 @@ export default function BillForm({ onCreated }: Props) {
         } else if (frequency === 'annually') {
           rule.frequency = 'yearly';
         }
-        // set start date to today if not dueDate provided
-        const start = dueDate || new Date().toISOString().slice(0, 10);
+        // set start date to provided startDate or today
+        const start = startDate || new Date().toISOString().slice(0, 10);
         rule.start_date = start;
         if (endDate) rule.end_date = endDate;
         payload.recurring_rule = rule;
@@ -200,7 +201,6 @@ export default function BillForm({ onCreated }: Props) {
       }
 
       // reset
-      setTitle('');
       setAmount('');
       setCurrency('CAD');
       setVendor(null);
@@ -209,6 +209,7 @@ export default function BillForm({ onCreated }: Props) {
       setProjectQuery('');
       setIsRecurring(false);
       setDueDate('');
+      setStartDate('');
       setEndDate('');
       setFrequency('monthly');
       setNotes('');
@@ -226,13 +227,6 @@ export default function BillForm({ onCreated }: Props) {
   return (
     <form onSubmit={onSubmit} className="space-y-3">
       <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-        <input
-          className="rounded-xl border border-neutral-200 bg-transparent px-3 py-2 text-sm dark:border-neutral-800"
-          placeholder="Title"
-          value={title}
-          onChange={(e) => setTitle(e.target.value)}
-          required
-        />
         <div className="flex gap-2">
           <input
             className="flex-1 rounded-xl border border-neutral-200 bg-transparent px-3 py-2 text-sm dark:border-neutral-800"
@@ -382,33 +376,52 @@ export default function BillForm({ onCreated }: Props) {
           </label>
         </div>
         {!isRecurring ? (
-          <input
-            type="date"
-            value={dueDate}
-            onChange={(e) => setDueDate(e.target.value)}
-            className="rounded-xl border border-neutral-200 bg-transparent px-3 py-2 text-sm dark:border-neutral-800"
-            placeholder="Due date"
-          />
-        ) : (
-          <div className="flex flex-wrap items-center gap-2">
-            <select
-              className="rounded-xl border border-neutral-200 bg-transparent px-3 py-2 text-sm dark:border-neutral-800"
-              value={frequency}
-              onChange={(e) => setFrequency(e.target.value as any)}
-            >
-              <option value="weekly">Weekly</option>
-              <option value="biweekly">Bi-weekly</option>
-              <option value="monthly">Monthly</option>
-              <option value="quarterly">Quarterly</option>
-              <option value="annually">Annually</option>
-            </select>
+          <div className="space-y-1">
+            <label className="block text-xs text-neutral-500">Due date</label>
             <input
               type="date"
-              value={endDate}
-              onChange={(e) => setEndDate(e.target.value)}
-              className="rounded-xl border border-neutral-200 bg-transparent px-3 py-2 text-sm dark:border-neutral-800"
-              placeholder="End date (optional)"
+              value={dueDate}
+              onChange={(e) => setDueDate(e.target.value)}
+              className="w-full rounded-xl border border-neutral-200 bg-transparent px-3 py-2 text-sm dark:border-neutral-800"
+              placeholder="Due date"
             />
+          </div>
+        ) : (
+          <div className="flex flex-wrap items-end gap-2">
+            <div className="space-y-1">
+              <label className="block text-xs text-neutral-500">Frequency</label>
+              <select
+                className="rounded-xl border border-neutral-200 bg-transparent px-3 py-2 text-sm dark:border-neutral-800"
+                value={frequency}
+                onChange={(e) => setFrequency(e.target.value as any)}
+              >
+                <option value="weekly">Weekly</option>
+                <option value="biweekly">Bi-weekly</option>
+                <option value="monthly">Monthly</option>
+                <option value="quarterly">Quarterly</option>
+                <option value="annually">Annually</option>
+              </select>
+            </div>
+            <div className="space-y-1">
+              <label className="block text-xs text-neutral-500">Start date</label>
+              <input
+                type="date"
+                value={startDate}
+                onChange={(e) => setStartDate(e.target.value)}
+                className="rounded-xl border border-neutral-200 bg-transparent px-3 py-2 text-sm dark:border-neutral-800"
+                placeholder="Start date"
+              />
+            </div>
+            <div className="space-y-1">
+              <label className="block text-xs text-neutral-500">End date (optional)</label>
+              <input
+                type="date"
+                value={endDate}
+                onChange={(e) => setEndDate(e.target.value)}
+                className="rounded-xl border border-neutral-200 bg-transparent px-3 py-2 text-sm dark:border-neutral-800"
+                placeholder="End date (optional)"
+              />
+            </div>
           </div>
         )}
       </div>
