@@ -9,6 +9,8 @@ export default function VendorsPage() {
   const supabase = getSupabaseClient();
   const [vendors, setVendors] = useState<Vendor[]>([]);
   const [name, setName] = useState('');
+  const [editing, setEditing] = useState<string | null>(null);
+  const [editName, setEditName] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -39,9 +41,32 @@ export default function VendorsPage() {
       setError('No organization found.');
       return;
     }
-    const { error } = await supabase.from('vendors').insert({ name, org_id: orgId });
+    const { error } = await supabase.from('vendors').insert({ name: name.trim(), org_id: orgId });
     if (error) setError(error.message);
     setName('');
+    await load();
+  }
+
+  async function startEdit(v: Vendor) {
+    setEditing(v.id);
+    setEditName(v.name);
+  }
+
+  async function saveEdit(id: string) {
+    if (!editName.trim()) return;
+    setLoading(true);
+    const { error } = await supabase.from('vendors').update({ name: editName.trim() }).eq('id', id);
+    if (error) setError(error.message);
+    setEditing(null);
+    setEditName('');
+    await load();
+  }
+
+  async function removeVendor(id: string) {
+    if (!confirm('Delete this vendor? This cannot be undone.')) return;
+    setLoading(true);
+    const { error } = await supabase.from('vendors').delete().eq('id', id);
+    if (error) setError(error.message);
     await load();
   }
 
@@ -94,9 +119,57 @@ export default function VendorsPage() {
             ) : (
               vendors.map((v) => (
                 <tr key={v.id} className="border-t border-neutral-100 dark:border-neutral-800">
-                  <td className="px-3 py-2">{v.name}</td>
-                  <td className="px-3 py-2">{v.contact ?? '—'}</td>
-                  <td className="px-3 py-2">{v.email ?? '—'}</td>
+                  <td className="px-3 py-2">
+                    {editing === v.id ? (
+                      <input
+                        className="w-full rounded-xl border border-neutral-200 bg-transparent px-2 py-1 text-sm dark:border-neutral-800"
+                        value={editName}
+                        onChange={(e) => setEditName(e.target.value)}
+                      />
+                    ) : (
+                      v.name
+                    )}
+                  </td>
+                  <td className="px-3 py-2">{v.contact ?? '-'}</td>
+                  <td className="px-3 py-2">
+                    <div className="flex items-center gap-2">
+                      <span>{v.email ?? '-'}</span>
+                      {editing === v.id ? (
+                        <>
+                          <button
+                            className="rounded-lg border px-2 py-1 text-xs hover:bg-neutral-100 dark:border-neutral-800 dark:hover:bg-neutral-900"
+                            onClick={() => saveEdit(v.id)}
+                          >
+                            Save
+                          </button>
+                          <button
+                            className="rounded-lg border px-2 py-1 text-xs hover:bg-neutral-100 dark:border-neutral-800 dark:hover:bg-neutral-900"
+                            onClick={() => {
+                              setEditing(null);
+                              setEditName('');
+                            }}
+                          >
+                            Cancel
+                          </button>
+                        </>
+                      ) : (
+                        <>
+                          <button
+                            className="rounded-lg border px-2 py-1 text-xs hover:bg-neutral-100 dark:border-neutral-800 dark:hover:bg-neutral-900"
+                            onClick={() => startEdit(v)}
+                          >
+                            Edit
+                          </button>
+                          <button
+                            className="rounded-lg border px-2 py-1 text-xs text-red-600 hover:bg-red-50 dark:border-neutral-800 dark:hover:bg-neutral-900"
+                            onClick={() => removeVendor(v.id)}
+                          >
+                            Delete
+                          </button>
+                        </>
+                      )}
+                    </div>
+                  </td>
                 </tr>
               ))
             )}

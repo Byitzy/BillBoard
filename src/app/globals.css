@@ -85,3 +85,9 @@ a:hover { text-decoration: underline; }
   color: hsl(var(--text));
   border-color: hsl(var(--border));
 }
+
+/* Darken selects a bit more in dark/brand for readability */
+.dark :where(select),
+.billboard :where(select) {
+  background-color: hsl(var(--bg));
+}

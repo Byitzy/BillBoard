@@ -376,22 +376,24 @@ export default function BillForm({ onCreated }: Props) {
           </label>
         </div>
         {!isRecurring ? (
-          <div className="space-y-1">
-            <label className="block text-xs text-neutral-500">Due date</label>
-            <input
-              type="date"
-              value={dueDate}
-              onChange={(e) => setDueDate(e.target.value)}
-              className="w-full rounded-xl border border-neutral-200 bg-transparent px-3 py-2 text-sm dark:border-neutral-800"
-              placeholder="Due date"
-            />
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-2 items-end">
+            <div className="space-y-1 md:col-span-1">
+              <label className="block text-xs text-neutral-500">Due date</label>
+              <input
+                type="date"
+                value={dueDate}
+                onChange={(e) => setDueDate(e.target.value)}
+                className="w-full rounded-xl border border-neutral-200 bg-transparent px-3 py-2 text-sm dark:border-neutral-800"
+                placeholder="Due date"
+              />
+            </div>
           </div>
         ) : (
-          <div className="flex flex-wrap items-end gap-2">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-2 items-end">
             <div className="space-y-1">
               <label className="block text-xs text-neutral-500">Frequency</label>
               <select
-                className="rounded-xl border border-neutral-200 bg-transparent px-3 py-2 text-sm dark:border-neutral-800"
+                className="w-full rounded-xl border border-neutral-200 bg-transparent px-3 py-2 text-sm dark:border-neutral-800"
                 value={frequency}
                 onChange={(e) => setFrequency(e.target.value as any)}
               >
@@ -408,7 +410,7 @@ export default function BillForm({ onCreated }: Props) {
                 type="date"
                 value={startDate}
                 onChange={(e) => setStartDate(e.target.value)}
-                className="rounded-xl border border-neutral-200 bg-transparent px-3 py-2 text-sm dark:border-neutral-800"
+                className="w-full rounded-xl border border-neutral-200 bg-transparent px-3 py-2 text-sm dark:border-neutral-800"
                 placeholder="Start date"
               />
             </div>
@@ -418,7 +420,7 @@ export default function BillForm({ onCreated }: Props) {
                 type="date"
                 value={endDate}
                 onChange={(e) => setEndDate(e.target.value)}
-                className="rounded-xl border border-neutral-200 bg-transparent px-3 py-2 text-sm dark:border-neutral-800"
+                className="w-full rounded-xl border border-neutral-200 bg-transparent px-3 py-2 text-sm dark:border-neutral-800"
                 placeholder="End date (optional)"
               />
             </div>
