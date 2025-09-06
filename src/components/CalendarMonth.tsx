@@ -1,6 +1,6 @@
-type Props = { date: Date; renderDay?: (d: Date) => React.ReactNode };
+type Props = { date: Date; renderDay?: (d: Date) => React.ReactNode; getDayClass?: (d: Date) => string };
 
-export default function CalendarMonth({ date, renderDay }: Props) {
+export default function CalendarMonth({ date, renderDay, getDayClass }: Props) {
   const year = date.getFullYear();
   const month = date.getMonth();
   const start = new Date(year, month, 1);
@@ -23,7 +23,7 @@ export default function CalendarMonth({ date, renderDay }: Props) {
       {days.map((d) => (
         <div
           key={d.toISOString()}
-          className="min-h-24 border border-neutral-200 dark:border-neutral-800 rounded p-2"
+          className={cn('min-h-24 border border-neutral-200 dark:border-neutral-800 rounded p-2', getDayClass ? getDayClass(d) : '')}
         >
           <div className="text-xs text-neutral-500">{d.getDate()}</div>
           {renderDay ? renderDay(d) : null}
@@ -32,3 +32,4 @@ export default function CalendarMonth({ date, renderDay }: Props) {
     </div>
   );
 }
+import { cn } from '@/lib/utils';

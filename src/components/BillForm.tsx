@@ -344,22 +344,26 @@ export default function BillForm({ onCreated }: Props) {
                 setProjectQuery(e.target.value);
               }}
             />
-            {project === null && projectQuery && projectOptions.length > 0 && (
-              <ul className="absolute z-10 mt-1 w-full overflow-hidden rounded-xl border border-neutral-200 bg-[hsl(var(--surface))] text-sm shadow-sm dark:border-neutral-800 dark:bg-neutral-900">
-                {projectOptions.map((p) => (
-                  <li key={p.id}>
-                    <button
-                      type="button"
-                      className="w-full px-3 py-2 text-left hover:bg-neutral-100 dark:hover:bg-neutral-800"
-                      onClick={() => {
-                        setProject(p);
-                        setProjectQuery('');
-                      }}
-                    >
-                      {p.name}
-                    </button>
-                  </li>
-                ))}
+            {project === null && projectQuery && (
+              <ul className="absolute z-10 mt-1 w-full overflow-hidden rounded-xl border border-neutral-200 bg-[hsl(var(--surface))] text-sm shadow-sm dark:border-neutral-800">
+                {projectOptions.length === 0 ? (
+                  <li className="px-3 py-2 text-neutral-500">No matches</li>
+                ) : (
+                  projectOptions.map((p) => (
+                    <li key={p.id}>
+                      <button
+                        type="button"
+                        className="w-full px-3 py-2 text-left hover:bg-neutral-100 dark:hover:bg-neutral-800"
+                        onClick={() => {
+                          setProject(p);
+                          setProjectQuery('');
+                        }}
+                      >
+                        {p.name}
+                      </button>
+                    </li>
+                  ))
+                )}
                 <li>
                   <button
                     type="button"
