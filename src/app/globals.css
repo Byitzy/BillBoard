@@ -25,7 +25,6 @@
 
 /* BillBoard brand mode (deep navy + cyan accent) */
 .billboard {
-<<<<<<< HEAD
   --bg: 222 50% 9%;           /* deep navy */
   --surface: 222 40% 12%;     /* card surface */
   --text: 210 40% 96%;        /* high contrast text */
@@ -46,21 +45,6 @@
 /* Elevation for cards in brand mode */
 .billboard .card-surface {
   box-shadow: 0 6px 18px rgba(0, 0, 0, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.02);
-}
-
-/* Buttons and focus rings feel */
-.billboard :where(button, a, input, summary, details) {
-  @apply focus-visible:ring-2;
-  --ring-color: hsl(var(--accent));
-=======
-  --bg: 222 50% 9%;          /* ~#0b1220 */
-  --surface: 220 45% 11%;     /* slightly lighter card surface */
-  --text: 210 40% 96%;
-  --muted: 210 15% 70%;
-  --border: 220 25% 20%;
-  --accent: 189 88% 47%;      /* ~#06b6d4 */
-  --accent-fg: 222 47% 11%;
->>>>>>> df64012 (feat: brand theme + favicon; onboarding + invites; dynamic APIs)
 }
 
 html { color-scheme: light dark; }
@@ -90,6 +74,7 @@ a:hover { text-decoration: underline; }
   transition: background-color 0.25s ease, border-color 0.25s ease;
 }
 
+/* Focus outline baseline */
 :where(button, a, input, summary, details) {
   @apply outline-none focus-visible:ring-2 ring-blue-500;
 }
