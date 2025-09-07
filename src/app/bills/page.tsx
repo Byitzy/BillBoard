@@ -1,6 +1,7 @@
 import { createServerComponentClient } from '@supabase/auth-helpers-nextjs';
 import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
+import { getDefaultOrgId } from '@/lib/org';
 import ClientBillsPage from '@/components/ClientBillsPage';
 import RequireOrg from '@/components/RequireOrg';
 
@@ -20,6 +21,7 @@ type BillsPageProps = {
 export default async function BillsPage({ searchParams }: BillsPageProps) {
   const supabase = createServerComponentClient({ cookies });
   const { data: { user } } = await supabase.auth.getUser();
+  console.log('SSR Bills user:', user?.id);
   if (!user) {
     // Let client guard handle auth - avoid SSR redirect loop
     return (
@@ -36,12 +38,8 @@ export default async function BillsPage({ searchParams }: BillsPageProps) {
     );
   }
   
-  const { data: m } = await supabase.from('org_members')
-    .select('org_id').eq('user_id', user.id).eq('status','active')
-    .order('created_at', { ascending: true }).limit(1).maybeSingle();
-  if (!m?.org_id) redirect('/onboarding');
-  
-  const orgId = m.org_id;
+  const orgId = await getDefaultOrgId(supabase);
+  if (!orgId) redirect('/onboarding');
 
   // Build the query with optional filters
   let query = supabase
