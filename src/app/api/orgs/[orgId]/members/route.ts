@@ -1,11 +1,16 @@
-import { NextRequest, NextResponse } from 'next/server';
+import type { NextRequest } from 'next/server';
+import { NextResponse } from 'next/server';
 import { getServiceClient, getUserFromRequest } from '@/lib/supabase/server';
 
-export async function GET(_req: NextRequest, { params }: { params: { orgId: string } }) {
+export async function GET(
+  _req: NextRequest,
+  { params }: { params: { orgId: string } }
+) {
   const orgId = params.orgId;
 
   const user = await getUserFromRequest(_req as any);
-  if (!user) return NextResponse.json({ error: 'unauthorized' }, { status: 401 });
+  if (!user)
+    return NextResponse.json({ error: 'unauthorized' }, { status: 401 });
 
   // Ensure requester is admin of org
   const admin = getServiceClient();
@@ -15,8 +20,10 @@ export async function GET(_req: NextRequest, { params }: { params: { orgId: stri
     .eq('org_id', orgId)
     .eq('user_id', user.id)
     .maybeSingle();
-  if (meErr) return NextResponse.json({ error: meErr.message }, { status: 400 });
-  if (!me || me.role !== 'admin') return NextResponse.json({ error: 'forbidden' }, { status: 403 });
+  if (meErr)
+    return NextResponse.json({ error: meErr.message }, { status: 400 });
+  if (!me || me.role !== 'admin')
+    return NextResponse.json({ error: 'forbidden' }, { status: 403 });
 
   const { data: members, error: mErr } = await admin
     .from('org_members')

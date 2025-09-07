@@ -1,7 +1,7 @@
-"use client";
-import Link from 'next/link';
-import type { Route } from 'next';
+'use client';
 import { X } from 'lucide-react';
+import type { Route } from 'next';
+import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { cn } from '@/lib/utils';
 
@@ -14,16 +14,24 @@ const items = [
   { href: '/vendors', label: 'Vendors' },
   { href: '/projects', label: 'Projects' },
   { href: '/updates', label: 'Updates' },
-  { href: '/settings/profile', label: 'Settings' }
+  { href: '/settings/profile', label: 'Settings' },
 ] as const satisfies ReadonlyArray<Item>;
 
-export default function MobileSidebar({ open, onClose }: { open: boolean; onClose: () => void }) {
+export default function MobileSidebar({
+  open,
+  onClose,
+}: {
+  open: boolean;
+  onClose: () => void;
+}) {
   const pathname = usePathname();
   return (
     <div
       className={cn(
         'fixed inset-0 z-40 bg-black/40 backdrop-blur-sm transition-opacity lg:hidden',
-        open ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'
+        open
+          ? 'opacity-100 pointer-events-auto'
+          : 'opacity-0 pointer-events-none'
       )}
       onClick={onClose}
     >
@@ -43,7 +51,10 @@ export default function MobileSidebar({ open, onClose }: { open: boolean; onClos
             />
             <div className="text-sm font-semibold">BillBoard</div>
           </div>
-          <button onClick={onClose} className="rounded-xl p-2 hover:bg-neutral-100 dark:hover:bg-neutral-900">
+          <button
+            onClick={onClose}
+            className="rounded-xl p-2 hover:bg-neutral-100 dark:hover:bg-neutral-900"
+          >
             <X className="h-5 w-5" />
           </button>
         </div>

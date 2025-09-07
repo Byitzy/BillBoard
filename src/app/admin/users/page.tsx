@@ -1,11 +1,23 @@
-"use client";
+'use client';
 import { useEffect, useMemo, useState } from 'react';
-import { getSupabaseClient } from '@/lib/supabase/client';
 import { getDefaultOrgId } from '@/lib/org';
+import { getSupabaseClient } from '@/lib/supabase/client';
 
-type Member = { id: string; user_id: string; role: string; email: string | null };
+type Member = {
+  id: string;
+  user_id: string;
+  role: string;
+  email: string | null;
+};
 
-const ROLES = ['admin', 'approver', 'accountant', 'data_entry', 'analyst', 'viewer'] as const;
+const ROLES = [
+  'admin',
+  'approver',
+  'accountant',
+  'data_entry',
+  'analyst',
+  'viewer',
+] as const;
 
 export default function AdminUsersPage() {
   const supabase = getSupabaseClient();
@@ -15,7 +27,7 @@ export default function AdminUsersPage() {
   const [error, setError] = useState<string | null>(null);
 
   const [email, setEmail] = useState('');
-  const [role, setRole] = useState<typeof ROLES[number]>('viewer');
+  const [role, setRole] = useState<(typeof ROLES)[number]>('viewer');
 
   async function load() {
     setLoading(true);
@@ -47,7 +59,7 @@ export default function AdminUsersPage() {
       const res = await fetch(`/api/orgs/${orgId}/invite`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, role })
+        body: JSON.stringify({ email, role }),
       });
       const data = await res.json().catch(() => ({}));
       if (!res.ok) throw new Error(data.error || 'Invite failed');
@@ -90,7 +102,7 @@ export default function AdminUsersPage() {
           <label className="block text-xs text-neutral-500 mb-1">Role</label>
           <select
             value={role}
-            onChange={(e) => setRole(e.target.value as typeof ROLES[number])}
+            onChange={(e) => setRole(e.target.value as (typeof ROLES)[number])}
             className="rounded-xl border border-neutral-200  px-3 py-2 text-sm dark:border-neutral-800"
           >
             {ROLES.map((r) => (
@@ -137,7 +149,10 @@ export default function AdminUsersPage() {
               </tr>
             ) : (
               rows.map((m) => (
-                <tr key={m.id} className="border-t border-neutral-100 dark:border-neutral-800">
+                <tr
+                  key={m.id}
+                  className="border-t border-neutral-100 dark:border-neutral-800"
+                >
                   <td className="px-3 py-2">{m.email ?? '-'}</td>
                   <td className="px-3 py-2">{m.user_id}</td>
                   <td className="px-3 py-2">{m.role}</td>
@@ -150,4 +165,3 @@ export default function AdminUsersPage() {
     </div>
   );
 }
-

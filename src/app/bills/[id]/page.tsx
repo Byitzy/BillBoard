@@ -1,4 +1,4 @@
-"use client";
+'use client';
 import { useEffect, useState } from 'react';
 import { getSupabaseClient } from '@/lib/supabase/client';
 
@@ -59,7 +59,8 @@ export default function BillDetailPage({ params }: Props) {
         <h1 className="text-xl font-semibold">{bill ? bill.title : 'Bill'}</h1>
         {bill && (
           <p className="text-sm text-neutral-500">
-            Total {bill.currency ?? 'CAD'} ${bill.amount_total.toFixed(2)}{bill.due_date ? ` · Due ${bill.due_date}` : ''}
+            Total {bill.currency ?? 'CAD'} ${bill.amount_total.toFixed(2)}
+            {bill.due_date ? ` · Due ${bill.due_date}` : ''}
           </p>
         )}
       </div>
@@ -71,7 +72,9 @@ export default function BillDetailPage({ params }: Props) {
             {loading ? (
               <div className="text-sm text-neutral-500">Loading...</div>
             ) : occ.length === 0 ? (
-              <div className="text-sm text-neutral-500">No occurrences. Create or adjust the schedule to generate them.</div>
+              <div className="text-sm text-neutral-500">
+                No occurrences. Create or adjust the schedule to generate them.
+              </div>
             ) : (
               <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
                 {occ.map((o) => (
@@ -80,15 +83,25 @@ export default function BillDetailPage({ params }: Props) {
               </div>
             )}
           </div>
-          <div className="rounded-2xl border border-neutral-200 p-4 shadow-sm dark:border-neutral-800 card-surface">Attachments</div>
-          <div className="rounded-2xl border border-neutral-200 p-4 shadow-sm dark:border-neutral-800 card-surface">Comments</div>
+          <div className="rounded-2xl border border-neutral-200 p-4 shadow-sm dark:border-neutral-800 card-surface">
+            Attachments
+          </div>
+          <div className="rounded-2xl border border-neutral-200 p-4 shadow-sm dark:border-neutral-800 card-surface">
+            Comments
+          </div>
         </div>
         <div className="space-y-3">
           <div className="rounded-2xl border border-neutral-200 p-4 shadow-sm dark:border-neutral-800 card-surface">
             <h2 className="text-sm font-semibold mb-2">Edit Schedule</h2>
-            {bill ? <EditSchedule bill={bill} onSaved={load} /> : <div className="text-sm text-neutral-500">Loading…</div>}
+            {bill ? (
+              <EditSchedule bill={bill} onSaved={load} />
+            ) : (
+              <div className="text-sm text-neutral-500">Loading…</div>
+            )}
           </div>
-          <div className="rounded-2xl border border-neutral-200 p-4 shadow-sm dark:border-neutral-800 card-surface">Approval Panel</div>
+          <div className="rounded-2xl border border-neutral-200 p-4 shadow-sm dark:border-neutral-800 card-surface">
+            Approval Panel
+          </div>
         </div>
       </div>
     </div>
@@ -98,14 +111,18 @@ export default function BillDetailPage({ params }: Props) {
 function EditSchedule({ bill, onSaved }: { bill: Bill; onSaved: () => void }) {
   const supabase = getSupabaseClient();
   const [isRecurring, setIsRecurring] = useState(!!bill.recurring_rule);
-  const [frequency, setFrequency] = useState<'weekly' | 'biweekly' | 'monthly' | 'quarterly' | 'annually'>(
+  const [frequency, setFrequency] = useState<
+    'weekly' | 'biweekly' | 'monthly' | 'quarterly' | 'annually'
+  >(
     bill.recurring_rule?.frequency === 'weekly'
       ? 'weekly'
       : bill.recurring_rule?.frequency === 'yearly'
-      ? 'annually'
-      : 'monthly'
+        ? 'annually'
+        : 'monthly'
   );
-  const [startDate, setStartDate] = useState(bill.recurring_rule?.start_date ?? bill.due_date ?? '');
+  const [startDate, setStartDate] = useState(
+    bill.recurring_rule?.start_date ?? bill.due_date ?? ''
+  );
   const [endDate, setEndDate] = useState(bill.recurring_rule?.end_date ?? '');
   const [dueDate, setDueDate] = useState(bill.due_date ?? '');
   const [saving, setSaving] = useState(false);
@@ -136,26 +153,39 @@ function EditSchedule({ bill, onSaved }: { bill: Bill; onSaved: () => void }) {
           update.recurring_rule = rule;
           update.due_date = null;
         }
-        const { error } = await supabase.from('bills').update(update).eq('id', bill.id);
+        const { error } = await supabase
+          .from('bills')
+          .update(update)
+          .eq('id', bill.id);
         if (error) setErr(error.message);
         else {
           const { data: sessionRes } = await supabase.auth.getSession();
           const access = sessionRes.session?.access_token;
-          await fetch(`/api/bills/${bill.id}/generate`, { method: 'POST', headers: access ? { Authorization: `Bearer ${access}` } : undefined });
+          await fetch(`/api/bills/${bill.id}/generate`, {
+            method: 'POST',
+            headers: access ? { Authorization: `Bearer ${access}` } : undefined,
+          });
           onSaved();
         }
         setSaving(false);
       }}
     >
       <div className="flex items-center gap-2">
-        <input id="rec" type="checkbox" checked={isRecurring} onChange={(e) => setIsRecurring(e.target.checked)} />
+        <input
+          id="rec"
+          type="checkbox"
+          checked={isRecurring}
+          onChange={(e) => setIsRecurring(e.target.checked)}
+        />
         <label htmlFor="rec" className="text-sm">
           Recurring
         </label>
       </div>
       {!isRecurring ? (
         <div>
-          <label className="block text-xs text-neutral-500 mb-1">Due date</label>
+          <label className="block text-xs text-neutral-500 mb-1">
+            Due date
+          </label>
           <input
             type="date"
             className="w-full rounded-xl border border-neutral-200  px-3 py-2 text-sm dark:border-neutral-800"
@@ -166,7 +196,9 @@ function EditSchedule({ bill, onSaved }: { bill: Bill; onSaved: () => void }) {
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-3 gap-2 items-end">
           <div>
-            <label className="block text-xs text-neutral-500 mb-1">Frequency</label>
+            <label className="block text-xs text-neutral-500 mb-1">
+              Frequency
+            </label>
             <select
               className="w-full rounded-xl border border-neutral-200  px-3 py-2 text-sm dark:border-neutral-800"
               value={frequency}
@@ -180,7 +212,9 @@ function EditSchedule({ bill, onSaved }: { bill: Bill; onSaved: () => void }) {
             </select>
           </div>
           <div>
-            <label className="block text-xs text-neutral-500 mb-1">Start date</label>
+            <label className="block text-xs text-neutral-500 mb-1">
+              Start date
+            </label>
             <input
               type="date"
               className="w-full rounded-xl border border-neutral-200  px-3 py-2 text-sm dark:border-neutral-800"
@@ -189,7 +223,9 @@ function EditSchedule({ bill, onSaved }: { bill: Bill; onSaved: () => void }) {
             />
           </div>
           <div>
-            <label className="block text-xs text-neutral-500 mb-1">End date (optional)</label>
+            <label className="block text-xs text-neutral-500 mb-1">
+              End date (optional)
+            </label>
             <input
               type="date"
               className="w-full rounded-xl border border-neutral-200  px-3 py-2 text-sm dark:border-neutral-800"
@@ -200,7 +236,11 @@ function EditSchedule({ bill, onSaved }: { bill: Bill; onSaved: () => void }) {
         </div>
       )}
       {err && <div className="text-xs text-red-600">{err}</div>}
-      <button type="submit" disabled={saving} className="rounded-xl bg-blue-600 px-3 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-50">
+      <button
+        type="submit"
+        disabled={saving}
+        className="rounded-xl bg-blue-600 px-3 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-50"
+      >
         {saving ? 'Saving…' : 'Save schedule'}
       </button>
     </form>
@@ -219,7 +259,9 @@ function OccurrenceEditor({ occ, onSaved }: { occ: Occ; onSaved: () => void }) {
       {!editing ? (
         <div className="space-y-1">
           <div className="flex items-center justify-between">
-            <div className="font-medium">${occ.amount_due.toFixed(2)} · Due {occ.due_date}</div>
+            <div className="font-medium">
+              ${occ.amount_due.toFixed(2)} · Due {occ.due_date}
+            </div>
             <div className="flex items-center gap-2">
               <button
                 className="rounded-lg border px-2 py-1 text-xs hover:bg-neutral-100 dark:border-neutral-800 dark:hover:bg-neutral-900"
@@ -232,10 +274,16 @@ function OccurrenceEditor({ occ, onSaved }: { occ: Occ; onSaved: () => void }) {
                     const uid = me.user?.id;
                     if (!uid) throw new Error('Not signed in');
                     // Insert approval (requires approver/admin)
+                    await supabase.from('approvals').insert({
+                      org_id: (occ as any).org_id,
+                      bill_occurrence_id: occ.id,
+                      approver_id: uid,
+                      decision: 'approved',
+                    });
                     await supabase
-                      .from('approvals')
-                      .insert({ org_id: (occ as any).org_id, bill_occurrence_id: occ.id, approver_id: uid, decision: 'approved' });
-                    await supabase.from('bill_occurrences').update({ state: 'approved' }).eq('id', occ.id);
+                      .from('bill_occurrences')
+                      .update({ state: 'approved' })
+                      .eq('id', occ.id);
                     onSaved();
                   } catch (e: any) {
                     setErr(e.message || 'Failed to approve');
@@ -256,10 +304,16 @@ function OccurrenceEditor({ occ, onSaved }: { occ: Occ; onSaved: () => void }) {
                     const { data: me } = await supabase.auth.getUser();
                     const uid = me.user?.id;
                     if (!uid) throw new Error('Not signed in');
+                    await supabase.from('approvals').insert({
+                      org_id: (occ as any).org_id,
+                      bill_occurrence_id: occ.id,
+                      approver_id: uid,
+                      decision: 'hold',
+                    });
                     await supabase
-                      .from('approvals')
-                      .insert({ org_id: (occ as any).org_id, bill_occurrence_id: occ.id, approver_id: uid, decision: 'hold' });
-                    await supabase.from('bill_occurrences').update({ state: 'on_hold' }).eq('id', occ.id);
+                      .from('bill_occurrences')
+                      .update({ state: 'on_hold' })
+                      .eq('id', occ.id);
                     onSaved();
                   } catch (e: any) {
                     setErr(e.message || 'Failed to hold');
@@ -270,12 +324,19 @@ function OccurrenceEditor({ occ, onSaved }: { occ: Occ; onSaved: () => void }) {
               >
                 Hold
               </button>
-              <button className="rounded-lg border px-2 py-1 text-xs hover:bg-neutral-100 dark:border-neutral-800 dark:hover:bg-neutral-900" onClick={() => setEditing(true)}>
+              <button
+                className="rounded-lg border px-2 py-1 text-xs hover:bg-neutral-100 dark:border-neutral-800 dark:hover:bg-neutral-900"
+                onClick={() => setEditing(true)}
+              >
                 Edit
               </button>
             </div>
           </div>
-          {occ.suggested_submission_date && <div className="text-amber-600 dark:text-amber-400">Submit by {occ.suggested_submission_date}</div>}
+          {occ.suggested_submission_date && (
+            <div className="text-amber-600 dark:text-amber-400">
+              Submit by {occ.suggested_submission_date}
+            </div>
+          )}
           <div className="text-xs text-neutral-500">State: {occ.state}</div>
           {err && <div className="text-xs text-red-600">{err}</div>}
         </div>
@@ -294,7 +355,11 @@ function OccurrenceEditor({ occ, onSaved }: { occ: Occ; onSaved: () => void }) {
             }
             const { error } = await supabase
               .from('bill_occurrences')
-              .update({ amount_due: n, due_date: due || occ.due_date, moved_from_date: occ.due_date })
+              .update({
+                amount_due: n,
+                due_date: due || occ.due_date,
+                moved_from_date: occ.due_date,
+              })
               .eq('id', occ.id);
             if (error) setErr(error.message);
             else {
@@ -320,10 +385,18 @@ function OccurrenceEditor({ occ, onSaved }: { occ: Occ; onSaved: () => void }) {
           </div>
           {err && <div className="text-xs text-red-600">{err}</div>}
           <div className="flex items-center gap-2">
-            <button type="submit" disabled={saving} className="rounded-lg bg-blue-600 px-2 py-1 text-xs font-medium text-white hover:bg-blue-700 disabled:opacity-50">
+            <button
+              type="submit"
+              disabled={saving}
+              className="rounded-lg bg-blue-600 px-2 py-1 text-xs font-medium text-white hover:bg-blue-700 disabled:opacity-50"
+            >
               {saving ? 'Saving…' : 'Save'}
             </button>
-            <button type="button" className="rounded-lg border px-2 py-1 text-xs hover:bg-neutral-100 dark:border-neutral-800 dark:hover:bg-neutral-900" onClick={() => setEditing(false)}>
+            <button
+              type="button"
+              className="rounded-lg border px-2 py-1 text-xs hover:bg-neutral-100 dark:border-neutral-800 dark:hover:bg-neutral-900"
+              onClick={() => setEditing(false)}
+            >
               Cancel
             </button>
           </div>

@@ -1,5 +1,10 @@
 import { describe, it, expect } from 'vitest';
-import { isBusinessDay, previousBusinessDay, isQuebecBankHoliday, formatISODate } from './businessDays';
+import {
+  isBusinessDay,
+  previousBusinessDay,
+  isQuebecBankHoliday,
+  formatISODate,
+} from './businessDays';
 
 describe('businessDays (QC)', () => {
   it('detects weekends as non-business days', () => {
@@ -23,6 +28,8 @@ describe('businessDays (QC)', () => {
     expect(formatISODate(previousBusinessDay(sat))).toBe('2025-09-05');
 
     // 2025-07-01 Canada Day (observed) -> previous business day 2025-06-30
-    expect(formatISODate(previousBusinessDay(new Date(2025, 6, 1)))).toBe('2025-06-30');
+    expect(formatISODate(previousBusinessDay(new Date(2025, 6, 1)))).toBe(
+      '2025-06-30'
+    );
   });
 });

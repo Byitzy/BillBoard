@@ -14,7 +14,7 @@ export async function DELETE(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const { error } = await supabase
+    const { error } = await (supabase as any)
       .from('org_invites')
       .delete()
       .eq('id', params.inviteId)

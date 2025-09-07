@@ -1,25 +1,25 @@
-"use client";
+'use client';
 import { Download, Loader2 } from 'lucide-react';
 import { useCSVExport } from '@/hooks/useCSVExport';
-import { CSVOptions } from '@/lib/csv';
+import type { CSVOptions } from '@/lib/csv';
 
 interface CSVExportButtonProps {
   type: 'data' | 'table' | 'summary';
   filename?: string;
   className?: string;
   children?: React.ReactNode;
-  
+
   // For data export
   data?: any[];
   columns?: string[];
-  
+
   // For table export
   tableSelector?: string;
-  
+
   // For summary export
   title?: string;
   summary?: Record<string, string | number>;
-  
+
   // CSV options
   options?: CSVOptions;
 }
@@ -34,13 +34,20 @@ export default function CSVExportButton({
   tableSelector,
   title = 'Report',
   summary = {},
-  options = {}
+  options = {},
 }: CSVExportButtonProps) {
-  const { isExporting, error, exportData, exportTable, exportSummary, clearError } = useCSVExport();
+  const {
+    isExporting,
+    error,
+    exportData,
+    exportTable,
+    exportSummary,
+    clearError,
+  } = useCSVExport();
 
   const handleExport = () => {
     clearError();
-    
+
     const csvOptions = { filename, ...options };
 
     try {
@@ -52,24 +59,28 @@ export default function CSVExportButton({
             throw new Error('No data to export');
           }
           break;
-          
+
         case 'table':
           if (tableSelector) {
-            const table = document.querySelector(tableSelector) as HTMLTableElement;
+            const table = document.querySelector(
+              tableSelector
+            ) as HTMLTableElement;
             if (table) {
               exportTable(table, csvOptions);
             } else {
-              throw new Error(`Table with selector "${tableSelector}" not found`);
+              throw new Error(
+                `Table with selector "${tableSelector}" not found`
+              );
             }
           } else {
             throw new Error('Table selector is required for table export');
           }
           break;
-          
+
         case 'summary':
           exportSummary(title, summary, data, csvOptions);
           break;
-          
+
         default:
           throw new Error('Invalid export type');
       }
@@ -98,11 +109,7 @@ export default function CSVExportButton({
       >
         {children || defaultContent}
       </button>
-      {error && (
-        <div className="mt-2 text-sm text-red-600">
-          {error}
-        </div>
-      )}
+      {error && <div className="mt-2 text-sm text-red-600">{error}</div>}
     </div>
   );
 }

@@ -1,6 +1,7 @@
-# BillBoard  TODO (MVP  GA)
+# BillBoard TODO (MVP GA)
 
-## Sprint 1  Project Bootstrap
+## Sprint 1 Project Bootstrap
+
 - [ ] Init Next.js 14 + TS + App Router + pnpm
 - [ ] Tailwind + shadcn/ui + Radix setup; dark mode (class strategy)
 - [ ] Supabase project, env wiring, local dev scripts
@@ -10,26 +11,26 @@
 - [ ] Layout shell (sidebar, header, user/org switcher, command palette)
 - [ ] GitHub Actions (lint/typecheck/test), Vercel preview on `beta`
 
-## Sprint 2  Core Data & Calendar
+## Sprint 2 Core Data & Calendar
+
 - [ ] CRUD: organizations, members (admin), vendors, projects
-- [ ] Vendors: enforce per‑org uniqueness by name (case‑insensitive)
-      - DB: unique index on `(org_id, lower(name))`
-      - App: when adding vendor, normalize and check existing; if found, notify and reuse
-      - Admin: optional dedupe tool to merge duplicates
+- [ ] Vendors: enforce per‑org uniqueness by name (case‑insensitive) - DB: unique index on `(org_id, lower(name))` - App: when adding vendor, normalize and check existing; if found, notify and reuse - Admin: optional dedupe tool to merge duplicates
 - [ ] Bills: create one-off & recurring; installments option
 - [ ] Edge Function: `generate_occurrences` + triggers
 - [ ] Quebec holidays provider + business-day helper
 - [ ] Calendar month view with due markers + holiday highlighting
 - [ ] Dashboard summary cards + filters
 
-## Sprint 3  Approvals, Payments, Exports
+## Sprint 3 Approvals, Payments, Exports
+
 - [ ] Approvals flow (approve/hold) with comments
 - [ ] Accountant actions (mark paid/failed, move dates)
 - [ ] Attachments upload (RLS-safe storage)
 - [ ] CSV export (tables) + PDF export (record/selection)
 - [ ] Notifications (in-app); email optional later
 
-## Sprint 4  Settings, Updates, Polish
+## Sprint 4 Settings, Updates, Polish
+
 - [ ] Profile settings (locale, timezone, theme)
 - [ ] Organization branding (prefix, logo)
 - [ ] Updates tab (changelog) + Feedback submission
@@ -37,6 +38,7 @@
 - [ ] Performance passes, a11y audit, empty states, skeletons
 
 ## Backlog / Nice-to-Have
+
 - [ ] ICS calendar export
 - [ ] Slack/email reminders (upcoming due, on hold)
 - [ ] Saved search views per user

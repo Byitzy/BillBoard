@@ -141,8 +141,8 @@ export default function BillForm({ onCreated }: Props) {
     setLoading(true);
     setError(null);
     try {
-      let vendorId: string | null = vendor?.id ?? null;
-      let projectId: string | null = project?.id ?? null;
+      const vendorId: string | null = vendor?.id ?? null;
+      const projectId: string | null = project?.id ?? null;
 
       const amt = parseFloat(amount);
       if (Number.isNaN(amt)) throw new Error('Please provide a valid amount.');

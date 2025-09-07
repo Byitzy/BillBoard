@@ -1,4 +1,4 @@
-"use client";
+'use client';
 import { createContext, useContext, useEffect, useMemo, useState } from 'react';
 
 type Theme = 'light' | 'dark' | 'system' | 'billboard';
@@ -14,13 +14,16 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
   const [theme, setTheme] = useState<Theme>('system');
 
   useEffect(() => {
-    const stored = (typeof window !== 'undefined' && localStorage.getItem('theme')) as Theme | null;
+    const stored = (typeof window !== 'undefined' &&
+      localStorage.getItem('theme')) as Theme | null;
     if (stored) setTheme(stored);
   }, []);
 
   useEffect(() => {
     const root = document.documentElement;
-    const prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+    const prefersDark =
+      window.matchMedia &&
+      window.matchMedia('(prefers-color-scheme: dark)').matches;
     // clear previous theme classes
     root.classList.remove('dark');
     root.classList.remove('billboard');
@@ -34,7 +37,9 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
 
   const value = useMemo(() => ({ theme, setTheme }), [theme]);
 
-  return <ThemeContext.Provider value={value}>{children}</ThemeContext.Provider>;
+  return (
+    <ThemeContext.Provider value={value}>{children}</ThemeContext.Provider>
+  );
 }
 
 export function useTheme() {
@@ -62,4 +67,3 @@ export function ThemeScript() {
   })();`;
   return <script dangerouslySetInnerHTML={{ __html: code }} />;
 }
-

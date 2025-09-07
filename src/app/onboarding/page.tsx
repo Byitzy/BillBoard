@@ -1,6 +1,6 @@
-"use client";
-import { useState } from 'react';
+'use client';
 import { useRouter } from 'next/navigation';
+import { useState } from 'react';
 
 export default function OnboardingPage() {
   const [name, setName] = useState('');
@@ -22,12 +22,16 @@ export default function OnboardingPage() {
       const res = await fetch('/api/orgs', {
         method: 'POST',
         headers: access
-          ? { 'Content-Type': 'application/json', Authorization: `Bearer ${access}` }
+          ? {
+              'Content-Type': 'application/json',
+              Authorization: `Bearer ${access}`,
+            }
           : { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name, slug: slug || undefined })
+        body: JSON.stringify({ name, slug: slug || undefined }),
       });
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error || 'Failed to create organization');
+      if (!res.ok)
+        throw new Error(data.error || 'Failed to create organization');
       router.push('/dashboard');
     } catch (e: any) {
       setError(e.message || 'Error');
@@ -40,7 +44,9 @@ export default function OnboardingPage() {
     <div className="mx-auto max-w-md space-y-6">
       <div className="space-y-1">
         <h1 className="text-2xl font-semibold">Create your organization</h1>
-        <p className="text-sm text-neutral-500">You’ll be added as an admin; invite teammates next.</p>
+        <p className="text-sm text-neutral-500">
+          You’ll be added as an admin; invite teammates next.
+        </p>
       </div>
       <form onSubmit={createOrg} className="space-y-3">
         <input

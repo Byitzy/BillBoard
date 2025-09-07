@@ -1,8 +1,10 @@
-import { SupabaseClient } from '@supabase/supabase-js';
+import type { SupabaseClient } from '@supabase/supabase-js';
 
-export async function getDefaultOrgId(supabase: SupabaseClient): Promise<string | null> {
+export async function getDefaultOrgId(
+  supabase: SupabaseClient
+): Promise<string | null> {
   const {
-    data: { user }
+    data: { user },
   } = await supabase.auth.getUser();
   if (!user) return null;
   const { data, error } = await supabase

@@ -1,4 +1,5 @@
-import { NextRequest, NextResponse } from 'next/server';
+import type { NextRequest } from 'next/server';
+import { NextResponse } from 'next/server';
 import { getServiceClient, getUserFromRequest } from '@/lib/supabase/server';
 import { z } from 'zod';
 
@@ -17,18 +18,20 @@ export async function POST(request: NextRequest) {
     const admin = getServiceClient();
     
     // Call the accept_invite function
-    const { data, error } = await admin
+    const { data, error } = await (admin as any)
       .rpc('accept_invite', { invite_token: token });
 
     if (error) {
       return NextResponse.json({ error: error.message }, { status: 500 });
     }
 
-    if (data.error) {
-      return NextResponse.json({ error: data.error }, { status: 400 });
+    // The function returns a JSON object
+    const result = data as any;
+    if (result.error) {
+      return NextResponse.json({ error: result.error }, { status: 400 });
     }
 
-    return NextResponse.json({ success: true, org_id: data.org_id, role: data.role });
+    return NextResponse.json({ success: true, org_id: result.org_id, role: result.role });
   } catch (error) {
     if (error instanceof z.ZodError) {
       return NextResponse.json({ error: 'Invalid input', details: error.issues }, { status: 400 });

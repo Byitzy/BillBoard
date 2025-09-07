@@ -1,9 +1,9 @@
-"use client";
+'use client';
 import { useState, useEffect, useCallback } from 'react';
-import { getSupabaseClient } from '@/lib/supabase/client';
-import { useTheme } from '@/components/theme/ThemeProvider';
 import { useLocale } from '@/components/i18n/LocaleProvider';
+import { useTheme } from '@/components/theme/ThemeProvider';
 import type { Locale } from '@/lib/i18n';
+import { getSupabaseClient } from '@/lib/supabase/client';
 
 export default function ProfileSettingsPage() {
   const supabase = getSupabaseClient();
@@ -22,8 +22,10 @@ export default function ProfileSettingsPage() {
   const loadSettings = useCallback(async () => {
     try {
       setLoading(true);
-      const { data: { user } } = await supabase.auth.getUser();
-      
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+
       if (user) {
         // Load user preferences from metadata or default values (theme and locale handled globally)
         const metadata = user.user_metadata || {};
@@ -48,7 +50,9 @@ export default function ProfileSettingsPage() {
       setError(null);
       setSuccess(null);
 
-      const { data: { user } } = await supabase.auth.getUser();
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
       if (!user) throw new Error('Not authenticated');
 
       const { error } = await supabase.auth.updateUser({
@@ -57,8 +61,8 @@ export default function ProfileSettingsPage() {
           locale,
           timezone,
           dateFormat,
-          currency
-        }
+          currency,
+        },
       });
 
       if (error) throw error;
@@ -70,7 +74,9 @@ export default function ProfileSettingsPage() {
         document.documentElement.classList.remove('dark');
       } else {
         // System theme
-        const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+        const prefersDark = window.matchMedia(
+          '(prefers-color-scheme: dark)'
+        ).matches;
         document.documentElement.classList.toggle('dark', prefersDark);
       }
 
@@ -90,20 +96,20 @@ export default function ProfileSettingsPage() {
     'Europe/London',
     'Europe/Paris',
     'Asia/Tokyo',
-    'Australia/Sydney'
+    'Australia/Sydney',
   ];
 
   const locales = [
     { value: 'en-US' as Locale, label: 'English (US)' },
     { value: 'fr-FR' as Locale, label: 'Français (France)' },
-    { value: 'es-ES' as Locale, label: 'Español (España)' }
+    { value: 'es-ES' as Locale, label: 'Español (España)' },
   ];
 
   const currencies = [
     { value: 'CAD', label: 'CAD - Canadian Dollar' },
     { value: 'USD', label: 'USD - US Dollar' },
     { value: 'EUR', label: 'EUR - Euro' },
-    { value: 'GBP', label: 'GBP - British Pound' }
+    { value: 'GBP', label: 'GBP - British Pound' },
   ];
 
   if (loading) {
@@ -133,7 +139,7 @@ export default function ProfileSettingsPage() {
                   { value: 'light', label: 'Light' },
                   { value: 'dark', label: 'Dark' },
                   { value: 'system', label: 'System' },
-                  { value: 'billboard', label: 'BillBoard' }
+                  { value: 'billboard', label: 'BillBoard' },
                 ].map((option) => (
                   <button
                     key={option.value}
@@ -164,8 +170,10 @@ export default function ProfileSettingsPage() {
                 onChange={(e) => setLocale(e.target.value as Locale)}
                 className="w-full rounded-xl border border-neutral-200  px-3 py-2 text-sm dark:border-neutral-800"
               >
-                {locales.map(l => (
-                  <option key={l.value} value={l.value}>{l.label}</option>
+                {locales.map((l) => (
+                  <option key={l.value} value={l.value}>
+                    {l.label}
+                  </option>
                 ))}
               </select>
             </div>
@@ -177,14 +185,18 @@ export default function ProfileSettingsPage() {
                 onChange={(e) => setTimezone(e.target.value)}
                 className="w-full rounded-xl border border-neutral-200  px-3 py-2 text-sm dark:border-neutral-800"
               >
-                {timezones.map(tz => (
-                  <option key={tz} value={tz}>{tz}</option>
+                {timezones.map((tz) => (
+                  <option key={tz} value={tz}>
+                    {tz}
+                  </option>
                 ))}
               </select>
             </div>
 
             <div>
-              <label className="block text-sm font-medium mb-2">Date Format</label>
+              <label className="block text-sm font-medium mb-2">
+                Date Format
+              </label>
               <select
                 value={dateFormat}
                 onChange={(e) => setDateFormat(e.target.value as any)}
@@ -203,8 +215,10 @@ export default function ProfileSettingsPage() {
                 onChange={(e) => setCurrency(e.target.value)}
                 className="w-full rounded-xl border border-neutral-200  px-3 py-2 text-sm dark:border-neutral-800"
               >
-                {currencies.map(curr => (
-                  <option key={curr.value} value={curr.value}>{curr.label}</option>
+                {currencies.map((curr) => (
+                  <option key={curr.value} value={curr.value}>
+                    {curr.label}
+                  </option>
                 ))}
               </select>
             </div>

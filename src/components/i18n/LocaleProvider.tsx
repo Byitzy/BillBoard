@@ -1,7 +1,8 @@
-"use client";
+'use client';
 import { createContext, useContext, useEffect, useMemo, useState } from 'react';
+import type { Locale, TranslationKey } from '@/lib/i18n';
+import { setLocale as setGlobalLocale, t } from '@/lib/i18n';
 import { getSupabaseClient } from '@/lib/supabase/client';
-import { Locale, setLocale as setGlobalLocale, t, TranslationKey } from '@/lib/i18n';
 
 type LocaleContextValue = {
   locale: Locale;
@@ -19,7 +20,9 @@ export function LocaleProvider({ children }: { children: React.ReactNode }) {
     // Load saved locale from user preferences
     async function loadLocale() {
       try {
-        const { data: { user } } = await supabase.auth.getUser();
+        const {
+          data: { user },
+        } = await supabase.auth.getUser();
         if (user?.user_metadata?.locale) {
           const userLocale = user.user_metadata.locale as Locale;
           setLocale(userLocale);
@@ -37,13 +40,18 @@ export function LocaleProvider({ children }: { children: React.ReactNode }) {
     setGlobalLocale(newLocale);
   };
 
-  const value = useMemo(() => ({
-    locale,
-    setLocale: handleSetLocale,
-    t
-  }), [locale]);
+  const value = useMemo(
+    () => ({
+      locale,
+      setLocale: handleSetLocale,
+      t,
+    }),
+    [locale]
+  );
 
-  return <LocaleContext.Provider value={value}>{children}</LocaleContext.Provider>;
+  return (
+    <LocaleContext.Provider value={value}>{children}</LocaleContext.Provider>
+  );
 }
 
 export function useLocale() {

@@ -20,7 +20,7 @@ export async function GET(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const { data: invites, error } = await supabase
+    const { data: invites, error } = await (supabase as any)
       .from('org_invites')
       .select(`
         id,
@@ -74,7 +74,7 @@ export async function POST(
     }
 
     // Create the invite
-    const { data: invite, error } = await supabase
+    const { data: invite, error } = await (supabase as any)
       .from('org_invites')
       .insert({
         org_id: params.orgId,

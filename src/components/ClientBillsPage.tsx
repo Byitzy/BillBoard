@@ -68,14 +68,17 @@ export default function ClientBillsPage({
       .eq('org_id', orgId);
 
     // Apply same filters as server-side
-    if (urlParams.get('vendorId')) {
-      query = query.eq('vendor_id', urlParams.get('vendorId'));
+    const vendorId = urlParams.get('vendorId');
+    if (vendorId) {
+      query = query.eq('vendor_id', vendorId);
     }
-    if (urlParams.get('projectId')) {
-      query = query.eq('project_id', urlParams.get('projectId'));
+    const projectId = urlParams.get('projectId');
+    if (projectId) {
+      query = query.eq('project_id', projectId);
     }
-    if (urlParams.get('status')) {
-      query = query.eq('status', urlParams.get('status'));
+    const status = urlParams.get('status');
+    if (status) {
+      query = query.eq('status', status);
     }
 
     const { data, error } = await query.order('created_at', { ascending: false });
