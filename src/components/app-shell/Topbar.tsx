@@ -7,6 +7,7 @@ import { getSupabaseClient } from '@/lib/supabase/client';
 import Link from 'next/link';
 import type { Session } from '@supabase/supabase-js';
 import MobileSidebar from '@/components/app-shell/MobileSidebar';
+import { useLocale } from '@/components/i18n/LocaleProvider';
 
 export default function Topbar() {
   const [menuOpen, setMenuOpen] = useState(false);
@@ -14,6 +15,7 @@ export default function Topbar() {
   const [signedIn, setSignedIn] = useState(false);
   const supabase = getSupabaseClient();
   const pathname = usePathname();
+  const { t } = useLocale();
 
   useEffect(() => {
     supabase.auth.getSession().then((res) => setSignedIn(!!res.data.session));
@@ -56,7 +58,7 @@ export default function Topbar() {
               onClick={() => setMenuOpen((v) => !v)}
               className="inline-flex items-center gap-1 rounded-xl bg-blue-600 px-3 py-2 text-sm font-medium text-white hover:bg-blue-700 focus-visible:outline-none focus-visible:ring-2 ring-blue-500"
             >
-              <Plus className="h-4 w-4" /> New <ChevronDown className="h-4 w-4" />
+              <Plus className="h-4 w-4" /> {t('common.new')} <ChevronDown className="h-4 w-4" />
             </button>
             {menuOpen && (
               <ul

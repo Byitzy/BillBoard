@@ -6,6 +6,7 @@ import { getDefaultOrgId } from '@/lib/org';
 import PDFExportButton from '@/components/PDFExportButton';
 import CSVExportButton from '@/components/CSVExportButton';
 import BillForm from '@/components/BillForm';
+import { useLocale } from '@/components/i18n/LocaleProvider';
 
 type BillRow = {
   id: string;
@@ -16,6 +17,7 @@ type BillRow = {
 
 export default function BillsPage() {
   const supabase = getSupabaseClient();
+  const { t } = useLocale();
   const [orgId, setOrgId] = useState<string | null>(null);
   const [bills, setBills] = useState<BillRow[]>([]);
   const [nextDue, setNextDue] = useState<Record<string, string | undefined>>({});
@@ -73,7 +75,7 @@ export default function BillsPage() {
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
-        <h1 className="text-xl font-semibold">Bills</h1>
+        <h1 className="text-xl font-semibold">{t('bills.title')}</h1>
         {bills.length > 0 && (
           <div className="flex items-center gap-2">
             <CSVExportButton

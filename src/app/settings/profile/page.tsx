@@ -2,17 +2,19 @@
 import { useState, useEffect, useCallback } from 'react';
 import { getSupabaseClient } from '@/lib/supabase/client';
 import { useTheme } from '@/components/theme/ThemeProvider';
+import { useLocale } from '@/components/i18n/LocaleProvider';
+import type { Locale } from '@/lib/i18n';
 
 export default function ProfileSettingsPage() {
   const supabase = getSupabaseClient();
   const { theme, setTheme } = useTheme();
+  const { locale, setLocale, t } = useLocale();
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
 
   // Profile settings state
-  const [locale, setLocale] = useState('en-US');
   const [timezone, setTimezone] = useState('America/Toronto');
   const [dateFormat, setDateFormat] = useState<'iso' | 'us' | 'local'>('local');
   const [currency, setCurrency] = useState('CAD');
@@ -23,10 +25,8 @@ export default function ProfileSettingsPage() {
       const { data: { user } } = await supabase.auth.getUser();
       
       if (user) {
-        // Load user preferences from metadata or default values
+        // Load user preferences from metadata or default values (theme and locale handled globally)
         const metadata = user.user_metadata || {};
-        if (metadata.theme) setTheme(metadata.theme);
-        setLocale(metadata.locale || 'en-US');
         setTimezone(metadata.timezone || 'America/Toronto');
         setDateFormat(metadata.dateFormat || 'local');
         setCurrency(metadata.currency || 'CAD');
@@ -36,7 +36,7 @@ export default function ProfileSettingsPage() {
     } finally {
       setLoading(false);
     }
-  }, [supabase, setTheme]);
+  }, [supabase]);
 
   useEffect(() => {
     loadSettings();
@@ -94,11 +94,9 @@ export default function ProfileSettingsPage() {
   ];
 
   const locales = [
-    { value: 'en-US', label: 'English (US)' },
-    { value: 'en-CA', label: 'English (Canada)' },
-    { value: 'fr-CA', label: 'Français (Canada)' },
-    { value: 'fr-FR', label: 'Français (France)' },
-    { value: 'es-ES', label: 'Español' }
+    { value: 'en-US' as Locale, label: 'English (US)' },
+    { value: 'fr-FR' as Locale, label: 'Français (France)' },
+    { value: 'es-ES' as Locale, label: 'Español (España)' }
   ];
 
   const currencies = [
@@ -163,7 +161,7 @@ export default function ProfileSettingsPage() {
               <label className="block text-sm font-medium mb-2">Language</label>
               <select
                 value={locale}
-                onChange={(e) => setLocale(e.target.value)}
+                onChange={(e) => setLocale(e.target.value as Locale)}
                 className="w-full rounded-xl border border-neutral-200  px-3 py-2 text-sm dark:border-neutral-800"
               >
                 {locales.map(l => (
