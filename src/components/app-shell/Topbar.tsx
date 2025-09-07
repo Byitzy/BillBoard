@@ -1,7 +1,7 @@
 "use client";
 import { Bell, ChevronDown, Plus, Search, LogIn, LogOut, Menu } from 'lucide-react';
 import { useEffect, useState } from 'react';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import { cn } from '@/lib/utils';
 import { getSupabaseClient } from '@/lib/supabase/client';
 import Link from 'next/link';
@@ -13,9 +13,38 @@ export default function Topbar() {
   const [menuOpen, setMenuOpen] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
   const [signedIn, setSignedIn] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
   const supabase = getSupabaseClient();
   const pathname = usePathname();
+  const router = useRouter();
   const { t } = useLocale();
+
+  // Get context-aware search placeholder
+  const getSearchPlaceholder = () => {
+    if (pathname.startsWith('/bills')) return 'Search bills...';
+    if (pathname.startsWith('/vendors')) return 'Search vendors...';
+    if (pathname.startsWith('/projects')) return 'Search projects...';
+    return 'Search...';
+  };
+
+  const handleSearch = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!searchQuery.trim()) return;
+
+    // Redirect to appropriate page with search query
+    if (pathname.startsWith('/bills')) {
+      router.push(`/bills?search=${encodeURIComponent(searchQuery)}`);
+    } else if (pathname.startsWith('/vendors')) {
+      router.push(`/vendors?search=${encodeURIComponent(searchQuery)}`);
+    } else if (pathname.startsWith('/projects')) {
+      router.push(`/projects?search=${encodeURIComponent(searchQuery)}`);
+    } else {
+      // Default to bills search
+      router.push(`/bills?search=${encodeURIComponent(searchQuery)}`);
+    }
+    
+    setSearchQuery('');
+  };
 
   useEffect(() => {
     supabase.auth.getSession().then((res) => setSignedIn(!!res.data.session));
@@ -41,14 +70,16 @@ export default function Topbar() {
           >
             <Menu className="h-5 w-5" />
           </button>
-          <div className="relative flex-1">
-          <Search className="pointer-events-none absolute left-2 top-1/2 -translate-y-1/2 h-4 w-4 text-neutral-400" aria-hidden />
-          <input
-            aria-label="Search"
-            placeholder="Search"
-            className="w-full rounded-xl border border-neutral-200 bg-white pl-8 pr-3 py-2 text-sm outline-none ring-0 focus-visible:ring-2 ring-blue-500 dark:bg-neutral-950 dark:border-neutral-800"
-          />
-          </div>
+          <form onSubmit={handleSearch} className="relative flex-1">
+            <Search className="pointer-events-none absolute left-2 top-1/2 -translate-y-1/2 h-4 w-4 text-neutral-400" aria-hidden />
+            <input
+              aria-label="Search"
+              placeholder={getSearchPlaceholder()}
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="w-full rounded-xl border border-neutral-200 bg-white pl-8 pr-3 py-2 text-sm outline-none ring-0 focus-visible:ring-2 ring-blue-500 dark:bg-neutral-950 dark:border-neutral-800"
+            />
+          </form>
         </div>
         <div className="flex items-center gap-2">
           <div className="relative">

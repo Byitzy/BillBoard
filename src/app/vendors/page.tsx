@@ -1,6 +1,7 @@
 "use client";
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import Link from 'next/link';
+import { useSearchParams } from 'next/navigation';
 import { getSupabaseClient } from '@/lib/supabase/client';
 import { getDefaultOrgId } from '@/lib/org';
 import { useLocale } from '@/components/i18n/LocaleProvider';
@@ -9,6 +10,7 @@ type Vendor = { id: string; name: string; bills?: { count: number }[]; totalAmou
 
 export default function VendorsPage() {
   const supabase = getSupabaseClient();
+  const searchParams = useSearchParams();
   const { t } = useLocale();
   const [vendors, setVendors] = useState<Vendor[]>([]);
   const [name, setName] = useState('');
@@ -16,6 +18,16 @@ export default function VendorsPage() {
   const [editName, setEditName] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [searchQuery, setSearchQuery] = useState(searchParams.get('search') || '');
+
+  // Filter vendors based on search query
+  const filteredVendors = useMemo(() => {
+    if (!searchQuery.trim()) return vendors;
+    const searchLower = searchQuery.toLowerCase();
+    return vendors.filter(vendor => 
+      vendor.name.toLowerCase().includes(searchLower)
+    );
+  }, [vendors, searchQuery]);
 
   async function load() {
     setLoading(true);
@@ -118,17 +130,30 @@ export default function VendorsPage() {
         <h1 className="text-xl font-semibold">{t('vendors.title')}</h1>
         <p className="text-sm text-neutral-500">{t('vendors.manageDirectory')}</p>
       </div>
-      <form onSubmit={createVendor} className="flex gap-2">
-        <input
-          placeholder={t('vendors.newVendorName')}
-          value={name}
-          onChange={(e) => setName(e.target.value)}
-          className="w-full max-w-sm rounded-xl border border-neutral-200  px-3 py-2 text-sm dark:border-neutral-800"
-        />
-        <button type="submit" className="rounded-xl bg-blue-600 px-3 py-2 text-sm font-medium text-white hover:bg-blue-700">
-          {t('bills.add')}
-        </button>
-      </form>
+      <div className="space-y-3">
+        <form onSubmit={createVendor} className="flex gap-2">
+          <input
+            placeholder={t('vendors.newVendorName')}
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            className="w-full max-w-sm rounded-xl border border-neutral-200  px-3 py-2 text-sm dark:border-neutral-800"
+          />
+          <button type="submit" className="rounded-xl bg-blue-600 px-3 py-2 text-sm font-medium text-white hover:bg-blue-700">
+            {t('bills.add')}
+          </button>
+        </form>
+        
+        {/* Search input */}
+        <div className="max-w-sm">
+          <input
+            type="text"
+            placeholder="Search vendors..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="w-full rounded-xl border border-neutral-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 dark:border-neutral-800 dark:bg-neutral-900"
+          />
+        </div>
+      </div>
       {error && <div className="text-sm text-red-600">{error}</div>}
       <div className="overflow-x-auto rounded-2xl border border-neutral-200 text-sm shadow-sm dark:border-neutral-800">
         <table className="w-full">
@@ -148,14 +173,14 @@ export default function VendorsPage() {
                   {t('common.loading')}
                 </td>
               </tr>
-            ) : vendors.length === 0 ? (
+            ) : filteredVendors.length === 0 ? (
               <tr>
                 <td className="px-3 py-4 text-neutral-500" colSpan={4}>
-                  No vendors yet.
+                  {vendors.length === 0 ? 'No vendors yet.' : 'No vendors match your search.'}
                 </td>
               </tr>
             ) : (
-              vendors.map((v) => (
+              filteredVendors.map((v) => (
                 <tr key={v.id} className="border-t border-neutral-100 dark:border-neutral-800">
                   <td className="px-3 py-2">
                     {editing === v.id ? (
