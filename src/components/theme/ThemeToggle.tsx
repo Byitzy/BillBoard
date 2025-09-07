@@ -3,14 +3,21 @@ import { useTheme } from './ThemeProvider';
 import { Moon, Sun, Monitor } from 'lucide-react';
 import { useState } from 'react';
 
+const BILLBOARD_ICON = 'https://aytzgpwkjmdgznxxtrdd.supabase.co/storage/v1/object/public/brand/BillBoard_icon.jpg';
+
 export default function ThemeToggle() {
   const { theme, setTheme } = useTheme();
   const [open, setOpen] = useState(false);
 
-  const items: { key: 'light' | 'dark' | 'system'; label: string; icon: React.ReactNode }[] = [
+  const items: { key: 'light' | 'dark' | 'system' | 'billboard'; label: string; icon: React.ReactNode }[] = [
     { key: 'light', label: 'Light', icon: <Sun className="h-4 w-4" /> },
     { key: 'dark', label: 'Dark', icon: <Moon className="h-4 w-4" /> },
-    { key: 'system', label: 'System', icon: <Monitor className="h-4 w-4" /> }
+    { key: 'system', label: 'System', icon: <Monitor className="h-4 w-4" /> },
+    {
+      key: 'billboard',
+      label: 'BillBoard',
+      icon: <img src={BILLBOARD_ICON} alt="BillBoard" className="h-4 w-4 rounded-sm object-cover" />
+    }
   ];
 
   const active = items.find((i) => i.key === theme) ?? items[2];

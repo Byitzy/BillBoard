@@ -22,6 +22,11 @@ export default function UpdatesPage() {
       title: 'Onboarding + Invites',
       body: 'Create your org, invite teammates by email, pretend you run a tiny empire.',
       date: '2025-09-06'
+    },
+    {
+      title: 'Bills: smarter creation',
+      body: 'Search-or-create vendors and projects as you type. Choose currency. One-off or recurring with weekly/bi-weekly/monthly/quarterly/annual options. Notes and status included.',
+      date: '2025-09-06'
     }
   ];
 
@@ -47,4 +52,3 @@ export default function UpdatesPage() {
     </div>
   );
 }
-

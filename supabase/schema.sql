@@ -138,13 +138,21 @@ create table feedback (
 
 -- RLS Helpers
 create or replace function uid_in_org(target_org uuid)
-returns boolean language sql stable as $$
-  select exists(select 1 from org_members where org_id = target_org and user_id = auth.uid());
+returns boolean
+language sql
+stable
+set search_path = public, auth
+as $$
+  select exists(select 1 from public.org_members where org_id = target_org and user_id = auth.uid());
 $$;
 
 create or replace function has_role(target_org uuid, roles role[])
-returns boolean language sql stable as $$
-  select exists(select 1 from org_members where org_id = target_org and user_id = auth.uid() and role = any(roles));
+returns boolean
+language sql
+stable
+set search_path = public, auth
+as $$
+  select exists(select 1 from public.org_members where org_id = target_org and user_id = auth.uid() and role = any(roles));
 $$;
 
 -- Enable RLS and policies
@@ -176,6 +184,10 @@ create policy "vendors insert by data_entry or admin" on vendors
 create policy "vendors update by data_entry or admin" on vendors
   for update using (has_role(org_id, array['admin','data_entry']::role[]))
   with check (has_role(org_id, array['admin','data_entry']::role[]));
+create policy "vendors delete by data_entry or admin" on vendors
+  for delete using (has_role(org_id, array['admin','data_entry']::role[]));
+-- Per-org vendor name uniqueness (case-insensitive)
+create unique index if not exists vendors_org_name_uniq on vendors (org_id, lower(name));
 
 -- Bills
 alter table bills enable row level security;
@@ -203,6 +215,8 @@ create policy "projects update by data_entry or admin" on projects
   with check (has_role(org_id, array['admin','data_entry']::role[]));
 create policy "projects delete by admin" on projects
   for delete using (has_role(org_id, array['admin']::role[]));
+-- Per-org project name uniqueness (case-insensitive)
+create unique index if not exists projects_org_name_uniq on projects (org_id, lower(name));
 
 -- Approvals
 alter table approvals enable row level security;

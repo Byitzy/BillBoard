@@ -10,7 +10,7 @@ export default function ProfileSettingsPage() {
   const [success, setSuccess] = useState<string | null>(null);
 
   // Profile settings state
-  const [theme, setTheme] = useState<'light' | 'dark' | 'system'>('system');
+  const [theme, setTheme] = useState<'light' | 'dark' | 'system' | 'billboard'>('system');
   const [locale, setLocale] = useState('en-US');
   const [timezone, setTimezone] = useState('America/Toronto');
   const [dateFormat, setDateFormat] = useState<'iso' | 'us' | 'local'>('local');
@@ -133,7 +133,8 @@ export default function ProfileSettingsPage() {
                 {[
                   { value: 'light', label: 'Light' },
                   { value: 'dark', label: 'Dark' },
-                  { value: 'system', label: 'System' }
+                  { value: 'system', label: 'System' },
+                  { value: 'billboard', label: 'BillBoard' }
                 ].map((option) => (
                   <button
                     key={option.value}
@@ -236,4 +237,3 @@ export default function ProfileSettingsPage() {
     </div>
   );
 }
-

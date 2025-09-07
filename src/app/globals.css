@@ -23,6 +23,30 @@
   --accent-fg: 222 47% 11%;
 }
 
+/* BillBoard brand mode (deep navy + cyan accent) */
+.billboard {
+  --bg: 222 50% 9%;           /* deep navy */
+  --surface: 222 40% 12%;     /* card surface */
+  --text: 210 40% 96%;        /* high contrast text */
+  --muted: 210 18% 75%;       /* clearer muted text */
+  --border: 222 30% 22%;      /* stronger borders for separation */
+  --accent: 189 80% 50%;      /* cyan accent */
+  --accent-fg: 222 47% 11%;   /* dark text on accent */
+}
+
+/* Subtle gradient background in brand mode */
+.billboard body {
+  background:
+    radial-gradient(1200px 600px at 20% -10%, rgba(6,182,212,0.08), transparent),
+    radial-gradient(800px 400px at 110% 10%, rgba(6,182,212,0.06), transparent),
+    hsl(var(--bg));
+}
+
+/* Elevation for cards in brand mode */
+.billboard .card-surface {
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.02);
+}
+
 html { color-scheme: light dark; }
 
 body {
@@ -50,6 +74,20 @@ a:hover { text-decoration: underline; }
   transition: background-color 0.25s ease, border-color 0.25s ease;
 }
 
+/* Focus outline baseline */
 :where(button, a, input, summary, details) {
   @apply outline-none focus-visible:ring-2 ring-blue-500;
+}
+
+/* Ensure selects are readable in dark/brand modes */
+:where(select) {
+  background-color: hsl(var(--surface));
+  color: hsl(var(--text));
+  border-color: hsl(var(--border));
+}
+
+/* Darken selects a bit more in dark/brand for readability */
+.dark :where(select),
+.billboard :where(select) {
+  background-color: hsl(var(--bg));
 }
