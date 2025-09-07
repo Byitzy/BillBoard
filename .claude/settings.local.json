@@ -15,7 +15,11 @@
       "Bash(git checkout:*)",
       "Bash(git reset:*)",
       "Bash(git push:*)",
-      "Bash(SKIP_ENV_VALIDATION=true pnpm build)"
+      "Bash(SKIP_ENV_VALIDATION=true pnpm build)",
+      "Bash(git fetch:*)",
+      "Bash(git merge:*)",
+      "Bash(git diff:*)",
+      "WebSearch"
     ],
     "deny": [],
     "ask": []
