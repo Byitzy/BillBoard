@@ -16,17 +16,19 @@
     "gen:schema": "echo 'Use supabase gen types --local > src/types/supabase.ts'"
   },
   "dependencies": {
+    "@supabase/auth-helpers-nextjs": "0.10.0",
+    "@supabase/supabase-js": "2.45.6",
+    "class-variance-authority": "0.7.0",
+    "clsx": "2.1.1",
+    "framer-motion": "11.2.10",
+    "html2canvas": "^1.4.1",
+    "jspdf": "^3.0.2",
+    "lucide-react": "0.441.0",
     "next": "14.2.5",
     "react": "18.3.1",
     "react-dom": "18.3.1",
-    "lucide-react": "0.441.0",
-    "framer-motion": "11.2.10",
     "recharts": "2.12.7",
-    "class-variance-authority": "0.7.0",
-    "clsx": "2.1.1",
-    "tailwind-merge": "2.5.2",
-    "@supabase/supabase-js": "2.45.6",
-    "@supabase/auth-helpers-nextjs": "0.10.0"
+    "tailwind-merge": "2.5.2"
   },
   "devDependencies": {
     "@types/node": "20.14.9",

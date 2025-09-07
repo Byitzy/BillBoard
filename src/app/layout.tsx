@@ -3,6 +3,7 @@ import './globals.css';
 import Sidebar from '@/components/app-shell/Sidebar';
 import Topbar from '@/components/app-shell/Topbar';
 import { ThemeProvider, ThemeScript } from '@/components/theme/ThemeProvider';
+import { LocaleProvider } from '@/components/i18n/LocaleProvider';
 
 // Disable static pre-render; rely on runtime (auth-driven app)
 export const dynamic = 'force-dynamic';
@@ -35,13 +36,15 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       </head>
       <body className="min-h-screen">
         <ThemeProvider>
-          <div className="flex min-h-screen">
-            <Sidebar />
-            <main className="flex-1">
-              <Topbar />
-              <div className="container-page">{children}</div>
-            </main>
-          </div>
+          <LocaleProvider>
+            <div className="flex min-h-screen">
+              <Sidebar />
+              <main className="flex-1">
+                <Topbar />
+                <div className="container-page">{children}</div>
+              </main>
+            </div>
+          </LocaleProvider>
         </ThemeProvider>
       </body>
     </html>

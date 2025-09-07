@@ -2,6 +2,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { getSupabaseClient } from '@/lib/supabase/client';
 import { getDefaultOrgId } from '@/lib/org';
+import { useLocale } from '@/components/i18n/LocaleProvider';
 
 type Props = { onCreated?: () => void };
 
@@ -9,6 +10,7 @@ type Option = { id: string; name: string };
 
 export default function BillForm({ onCreated }: Props) {
   const supabase = getSupabaseClient();
+  const { t } = useLocale();
 
   const [orgId, setOrgId] = useState<string | null>(null);
   const [amount, setAmount] = useState('');
@@ -243,7 +245,7 @@ export default function BillForm({ onCreated }: Props) {
       <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
         <div className="flex gap-2">
           <input
-            className="flex-1 rounded-xl border border-neutral-200 bg-transparent px-3 py-2 text-sm dark:border-neutral-800"
+            className="flex-1 rounded-xl border border-neutral-200 px-3 py-2 text-sm dark:border-neutral-800"
             placeholder="Amount"
             inputMode="decimal"
             value={amount}
@@ -251,7 +253,7 @@ export default function BillForm({ onCreated }: Props) {
             required
           />
           <select
-            className="w-28 rounded-xl border border-neutral-200 bg-transparent px-3 py-2 text-sm dark:border-neutral-800"
+            className="w-28 rounded-xl border border-neutral-200  px-3 py-2 text-sm dark:border-neutral-800"
             value={currency}
             onChange={(e) => setCurrency(e.target.value)}
           >
@@ -263,7 +265,7 @@ export default function BillForm({ onCreated }: Props) {
           </select>
         </div>
         <select
-          className="rounded-xl border border-neutral-200 bg-transparent px-3 py-2 text-sm dark:border-neutral-800"
+          className="rounded-xl border border-neutral-200 px-3 py-2 text-sm dark:border-neutral-800"
           value={status}
           onChange={(e) => setStatus(e.target.value as any)}
           title="Status"
@@ -287,7 +289,7 @@ export default function BillForm({ onCreated }: Props) {
           <div className="text-xs text-neutral-500 mb-1">Vendor</div>
           <div className="relative">
             <input
-              className="w-full rounded-xl border border-neutral-200 bg-transparent px-3 py-2 text-sm dark:border-neutral-800"
+              className="w-full rounded-xl border border-neutral-200  px-3 py-2 text-sm dark:border-neutral-800"
               placeholder="Type to search or create vendor"
               value={vendor ? vendor.name : vendorQuery}
               onChange={(e) => {
@@ -295,26 +297,30 @@ export default function BillForm({ onCreated }: Props) {
                 setVendorQuery(e.target.value);
               }}
             />
-            {vendor === null && vendorQuery && vendorOptions.length > 0 && (
-              <ul className="absolute z-10 mt-1 w-full overflow-hidden rounded-xl border border-neutral-200 bg-[hsl(var(--surface))] text-sm shadow-sm dark:border-neutral-800 dark:bg-neutral-900">
-                {vendorOptions.map((v) => (
-                  <li key={v.id}>
-                    <button
-                      type="button"
-                      className="w-full px-3 py-2 text-left hover:bg-neutral-100 dark:hover:bg-neutral-800"
-                      onClick={() => {
-                        setVendor(v);
-                        setVendorQuery('');
-                      }}
-                    >
-                      {v.name}
-                    </button>
-                  </li>
-                ))}
+            {vendor === null && vendorQuery && (
+              <ul className="absolute z-10 mt-1 w-full overflow-hidden rounded-xl border border-neutral-200 bg-white text-sm shadow-sm dark:border-neutral-800 dark:bg-neutral-900">
+                {vendorOptions.length === 0 ? (
+                  <li className="px-3 py-2 text-neutral-500">{t('common.noMatches')}</li>
+                ) : (
+                  vendorOptions.map((v) => (
+                    <li key={v.id}>
+                      <button
+                        type="button"
+                        className="w-full px-3 py-2 text-left hover:bg-blue-50 dark:hover:bg-blue-900/20"
+                        onClick={() => {
+                          setVendor(v);
+                          setVendorQuery('');
+                        }}
+                      >
+                        {v.name}
+                      </button>
+                    </li>
+                  ))
+                )}
                 <li>
                   <button
                     type="button"
-                    className="w-full px-3 py-2 text-left hover:bg-neutral-100 dark:hover:bg-neutral-800"
+                    className="w-full px-3 py-2 text-left hover:bg-blue-50 dark:hover:bg-blue-900/20"
                     onClick={async () => {
                       const v = await ensureVendor(vendorQuery);
                       if (v) {
@@ -323,7 +329,7 @@ export default function BillForm({ onCreated }: Props) {
                       }
                     }}
                   >
-                    Create “{vendorQuery}”
+{t('common.create')} &quot;{vendorQuery}&quot;
                   </button>
                 </li>
               </ul>
@@ -336,7 +342,7 @@ export default function BillForm({ onCreated }: Props) {
           <div className="text-xs text-neutral-500 mb-1">Project</div>
           <div className="relative">
             <input
-              className="w-full rounded-xl border border-neutral-200 bg-transparent px-3 py-2 text-sm dark:border-neutral-800"
+              className="w-full rounded-xl border border-neutral-200  px-3 py-2 text-sm dark:border-neutral-800"
               placeholder="Type to search or create project"
               value={project ? project.name : projectQuery}
               onChange={(e) => {
@@ -345,15 +351,15 @@ export default function BillForm({ onCreated }: Props) {
               }}
             />
             {project === null && projectQuery && (
-              <ul className="absolute z-10 mt-1 w-full overflow-hidden rounded-xl border border-neutral-200 bg-[hsl(var(--surface))] text-sm shadow-sm dark:border-neutral-800">
+              <ul className="absolute z-10 mt-1 w-full overflow-hidden rounded-xl border border-neutral-200 bg-white text-sm shadow-sm dark:border-neutral-800 dark:bg-neutral-900">
                 {projectOptions.length === 0 ? (
-                  <li className="px-3 py-2 text-neutral-500">No matches</li>
+                  <li className="px-3 py-2 text-neutral-500">{t('common.noMatches')}</li>
                 ) : (
                   projectOptions.map((p) => (
                     <li key={p.id}>
                       <button
                         type="button"
-                        className="w-full px-3 py-2 text-left hover:bg-neutral-100 dark:hover:bg-neutral-800"
+                        className="w-full px-3 py-2 text-left hover:bg-blue-50 dark:hover:bg-blue-900/20"
                         onClick={() => {
                           setProject(p);
                           setProjectQuery('');
@@ -376,7 +382,7 @@ export default function BillForm({ onCreated }: Props) {
                       }
                     }}
                   >
-                    Create “{projectQuery}”
+                    {t('common.create')} &quot;{projectQuery}&quot;
                   </button>
                 </li>
               </ul>
@@ -401,7 +407,7 @@ export default function BillForm({ onCreated }: Props) {
                 type="date"
                 value={dueDate}
                 onChange={(e) => setDueDate(e.target.value)}
-                className="w-full rounded-xl border border-neutral-200 bg-transparent px-3 py-2 text-sm dark:border-neutral-800"
+                className="w-full rounded-xl border border-neutral-200  px-3 py-2 text-sm dark:border-neutral-800"
                 placeholder="Due date"
               />
             </div>
@@ -411,7 +417,7 @@ export default function BillForm({ onCreated }: Props) {
             <div className="space-y-1">
               <label className="block text-xs text-neutral-500">Frequency</label>
               <select
-                className="w-full rounded-xl border border-neutral-200 bg-transparent px-3 py-2 text-sm dark:border-neutral-800"
+                className="w-full rounded-xl border border-neutral-200  px-3 py-2 text-sm dark:border-neutral-800"
                 value={frequency}
                 onChange={(e) => setFrequency(e.target.value as any)}
               >
@@ -428,7 +434,7 @@ export default function BillForm({ onCreated }: Props) {
                 type="date"
                 value={startDate}
                 onChange={(e) => setStartDate(e.target.value)}
-                className="w-full rounded-xl border border-neutral-200 bg-transparent px-3 py-2 text-sm dark:border-neutral-800"
+                className="w-full rounded-xl border border-neutral-200  px-3 py-2 text-sm dark:border-neutral-800"
                 placeholder="Start date"
               />
             </div>
@@ -438,7 +444,7 @@ export default function BillForm({ onCreated }: Props) {
                 type="date"
                 value={endDate}
                 onChange={(e) => setEndDate(e.target.value)}
-                className="w-full rounded-xl border border-neutral-200 bg-transparent px-3 py-2 text-sm dark:border-neutral-800"
+                className="w-full rounded-xl border border-neutral-200  px-3 py-2 text-sm dark:border-neutral-800"
                 placeholder="End date (optional)"
               />
             </div>
@@ -447,7 +453,7 @@ export default function BillForm({ onCreated }: Props) {
       </div>
 
       <textarea
-        className="w-full rounded-xl border border-neutral-200 bg-transparent px-3 py-2 text-sm dark:border-neutral-800"
+        className="w-full rounded-xl border border-neutral-200  px-3 py-2 text-sm dark:border-neutral-800"
         placeholder="Notes (optional)"
         value={notes}
         onChange={(e) => setNotes(e.target.value)}

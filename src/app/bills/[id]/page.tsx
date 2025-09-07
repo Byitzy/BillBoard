@@ -51,7 +51,7 @@ export default function BillDetailPage({ params }: Props) {
 
   useEffect(() => {
     load();
-  }, [params.id]);
+  }, [params.id]); // eslint-disable-line react-hooks/exhaustive-deps
 
   return (
     <div className="space-y-4">
@@ -158,7 +158,7 @@ function EditSchedule({ bill, onSaved }: { bill: Bill; onSaved: () => void }) {
           <label className="block text-xs text-neutral-500 mb-1">Due date</label>
           <input
             type="date"
-            className="w-full rounded-xl border border-neutral-200 bg-transparent px-3 py-2 text-sm dark:border-neutral-800"
+            className="w-full rounded-xl border border-neutral-200  px-3 py-2 text-sm dark:border-neutral-800"
             value={dueDate}
             onChange={(e) => setDueDate(e.target.value)}
           />
@@ -168,7 +168,7 @@ function EditSchedule({ bill, onSaved }: { bill: Bill; onSaved: () => void }) {
           <div>
             <label className="block text-xs text-neutral-500 mb-1">Frequency</label>
             <select
-              className="w-full rounded-xl border border-neutral-200 bg-transparent px-3 py-2 text-sm dark:border-neutral-800"
+              className="w-full rounded-xl border border-neutral-200  px-3 py-2 text-sm dark:border-neutral-800"
               value={frequency}
               onChange={(e) => setFrequency(e.target.value as any)}
             >
@@ -183,7 +183,7 @@ function EditSchedule({ bill, onSaved }: { bill: Bill; onSaved: () => void }) {
             <label className="block text-xs text-neutral-500 mb-1">Start date</label>
             <input
               type="date"
-              className="w-full rounded-xl border border-neutral-200 bg-transparent px-3 py-2 text-sm dark:border-neutral-800"
+              className="w-full rounded-xl border border-neutral-200  px-3 py-2 text-sm dark:border-neutral-800"
               value={startDate}
               onChange={(e) => setStartDate(e.target.value)}
             />
@@ -192,7 +192,7 @@ function EditSchedule({ bill, onSaved }: { bill: Bill; onSaved: () => void }) {
             <label className="block text-xs text-neutral-500 mb-1">End date (optional)</label>
             <input
               type="date"
-              className="w-full rounded-xl border border-neutral-200 bg-transparent px-3 py-2 text-sm dark:border-neutral-800"
+              className="w-full rounded-xl border border-neutral-200  px-3 py-2 text-sm dark:border-neutral-800"
               value={endDate}
               onChange={(e) => setEndDate(e.target.value)}
             />
@@ -306,14 +306,14 @@ function OccurrenceEditor({ occ, onSaved }: { occ: Occ; onSaved: () => void }) {
         >
           <div className="grid grid-cols-2 gap-2">
             <input
-              className="rounded-xl border border-neutral-200 bg-transparent px-2 py-1 text-sm dark:border-neutral-800"
+              className="rounded-xl border border-neutral-200  px-2 py-1 text-sm dark:border-neutral-800"
               value={amt}
               onChange={(e) => setAmt(e.target.value)}
               inputMode="decimal"
             />
             <input
               type="date"
-              className="rounded-xl border border-neutral-200 bg-transparent px-2 py-1 text-sm dark:border-neutral-800"
+              className="rounded-xl border border-neutral-200  px-2 py-1 text-sm dark:border-neutral-800"
               value={due}
               onChange={(e) => setDue(e.target.value)}
             />

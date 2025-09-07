@@ -3,17 +3,23 @@ import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import { getSupabaseClient } from '@/lib/supabase/client';
 import { getDefaultOrgId } from '@/lib/org';
+import PDFExportButton from '@/components/PDFExportButton';
+import CSVExportButton from '@/components/CSVExportButton';
 import BillForm from '@/components/BillForm';
+import { useLocale } from '@/components/i18n/LocaleProvider';
 
 type BillRow = {
   id: string;
   title: string;
   amount_total: number;
   due_date: string | null;
+  vendor_name: string | null;
+  project_name: string | null;
 };
 
 export default function BillsPage() {
   const supabase = getSupabaseClient();
+  const { t } = useLocale();
   const [orgId, setOrgId] = useState<string | null>(null);
   const [bills, setBills] = useState<BillRow[]>([]);
   const [nextDue, setNextDue] = useState<Record<string, string | undefined>>({});
@@ -33,12 +39,26 @@ export default function BillsPage() {
     }
     const { data, error } = await supabase
       .from('bills')
-      .select('id,title,amount_total,due_date')
+      .select(`
+        id,
+        title,
+        amount_total,
+        due_date,
+        vendors(name),
+        projects(name)
+      `)
       .eq('org_id', id)
       .order('created_at', { ascending: false });
     if (error) setError(error.message);
     else {
-      const rows = (data ?? []) as BillRow[];
+      const rows = (data ?? []).map((row: any) => ({
+        id: row.id,
+        title: row.title,
+        amount_total: row.amount_total,
+        due_date: row.due_date,
+        vendor_name: row.vendors?.name || null,
+        project_name: row.projects?.name || null,
+      })) as BillRow[];
       setBills(rows);
       // compute next due for recurring bills
       const ids = rows.filter((b) => !b.due_date).map((b) => b.id);
@@ -66,12 +86,41 @@ export default function BillsPage() {
 
   useEffect(() => {
     load();
-  }, []);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
-        <h1 className="text-xl font-semibold">Bills</h1>
+        <h1 className="text-xl font-semibold">{t('bills.title')}</h1>
+        {bills.length > 0 && (
+          <div className="flex items-center gap-2">
+            <CSVExportButton
+              type="data"
+              data={bills.map(b => ({
+                Vendor: b.vendor_name ?? '—',
+                Project: b.project_name ?? '—',
+                Amount: `$${b.amount_total.toFixed(2)}`,
+                'Due Date': b.due_date ?? '—'
+              }))}
+              columns={['Vendor', 'Project', 'Amount', 'Due Date']}
+              filename={`bills-list-${new Date().toISOString().slice(0, 10)}.csv`}
+              className="flex items-center gap-2 rounded-xl border border-neutral-200 px-3 py-2 text-sm font-medium hover:bg-neutral-50 dark:border-neutral-800 dark:hover:bg-neutral-900"
+            />
+            <PDFExportButton
+              type="data"
+              data={bills.map(b => ({
+                Vendor: b.vendor_name ?? '—',
+                Project: b.project_name ?? '—',
+                Amount: `$${b.amount_total.toFixed(2)}`,
+                'Due Date': b.due_date ?? '—'
+              }))}
+              columns={['Vendor', 'Project', 'Amount', 'Due Date']}
+              title="Bills List"
+              filename={`bills-list-${new Date().toISOString().slice(0, 10)}.pdf`}
+              className="flex items-center gap-2 rounded-xl bg-blue-600 px-3 py-2 text-sm font-medium text-white hover:bg-blue-700"
+            />
+          </div>
+        )}
       </div>
 
       <BillForm onCreated={load} />
@@ -82,7 +131,7 @@ export default function BillsPage() {
         <table className="w-full">
           <thead>
             <tr className="text-left">
-              {['Title', 'Amount', 'Due', ''].map((h) => (
+              {['Vendor', 'Project', 'Amount', 'Due', ''].map((h) => (
                 <th key={h} className="px-3 py-2 text-neutral-500">
                   {h}
                 </th>
@@ -92,22 +141,23 @@ export default function BillsPage() {
           <tbody>
             {loading ? (
               <tr>
-                <td className="px-3 py-2" colSpan={4}>
-                  Loading...
+                <td className="px-3 py-2" colSpan={5}>
+                  {t('common.loading')}
                 </td>
               </tr>
             ) : bills.length === 0 ? (
               <tr>
-                <td className="px-3 py-4 text-neutral-500" colSpan={4}>
+                <td className="px-3 py-4 text-neutral-500" colSpan={5}>
                   No bills yet.
                 </td>
               </tr>
             ) : (
               bills.map((b) => (
                 <tr key={b.id} className="border-t border-neutral-100 dark:border-neutral-800">
-                  <td className="px-3 py-2">{b.title}</td>
+                  <td className="px-3 py-2">{b.vendor_name || '—'}</td>
+                  <td className="px-3 py-2">{b.project_name || '—'}</td>
                   <td className="px-3 py-2">${b.amount_total.toFixed(2)}</td>
-                  <td className="px-3 py-2">{b.due_date ?? nextDue[b.id] ?? '-'}</td>
+                  <td className="px-3 py-2">{b.due_date ?? nextDue[b.id] ?? '—'}</td>
                   <td className="px-3 py-2 text-right">
                     <Link href={`/bills/${b.id}`} className="rounded-lg border px-2 py-1 hover:bg-neutral-50 dark:border-neutral-800 dark:hover:bg-neutral-900">
                       View

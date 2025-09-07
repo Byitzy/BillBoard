@@ -1,12 +1,15 @@
 "use client";
 import { useEffect, useState } from 'react';
+import Link from 'next/link';
 import { getSupabaseClient } from '@/lib/supabase/client';
 import { getDefaultOrgId } from '@/lib/org';
+import { useLocale } from '@/components/i18n/LocaleProvider';
 
-type Project = { id: string; name: string };
+type Project = { id: string; name: string; billCount?: number; totalAmount?: number };
 
 export default function ProjectsPage() {
   const supabase = getSupabaseClient();
+  const { t } = useLocale();
   const [projects, setProjects] = useState<Project[]>([]);
   const [name, setName] = useState('');
   const [loading, setLoading] = useState(false);
@@ -25,8 +28,33 @@ export default function ProjectsPage() {
       .select('id,name')
       .eq('org_id', orgId)
       .order('created_at', { ascending: false });
-    if (error) setError(error.message);
-    else setProjects(data ?? []);
+    if (error) {
+      setError(error.message);
+    } else {
+      const projectsData = data ?? [];
+      
+      // Get bill counts and total amounts for each project
+      const projectsWithStats = await Promise.all(
+        projectsData.map(async (project: any) => {
+          const { data: billsData, count } = await supabase
+            .from('bills')
+            .select('amount_total', { count: 'exact' })
+            .eq('project_id', project.id)
+            .eq('org_id', orgId);
+          
+          const totalAmount = (billsData ?? []).reduce((sum: number, bill: any) => 
+            sum + (Number(bill.amount_total) || 0), 0);
+          
+          return {
+            ...project,
+            billCount: count ?? 0,
+            totalAmount
+          };
+        })
+      );
+      
+      setProjects(projectsWithStats);
+    }
     setLoading(false);
   }
 
@@ -55,20 +83,20 @@ export default function ProjectsPage() {
 
   useEffect(() => {
     load();
-  }, []);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   return (
     <div className="space-y-4">
       <div className="space-y-1">
-        <h1 className="text-xl font-semibold">Projects</h1>
-        <p className="text-sm text-neutral-500">Create and manage projects</p>
+        <h1 className="text-xl font-semibold">{t('projects.title')}</h1>
+        <p className="text-sm text-neutral-500">{t('projects.createAndManage')}</p>
       </div>
       <form onSubmit={createProject} className="flex gap-2">
         <input
-          placeholder="New project name"
+          placeholder={t('projects.newProjectName')}
           value={name}
           onChange={(e) => setName(e.target.value)}
-          className="w-full max-w-sm rounded-xl border border-neutral-200 bg-transparent px-3 py-2 text-sm dark:border-neutral-800"
+          className="w-full max-w-sm rounded-xl border border-neutral-200  px-3 py-2 text-sm dark:border-neutral-800"
         />
         <button type="submit" className="rounded-xl bg-blue-600 px-3 py-2 text-sm font-medium text-white hover:bg-blue-700">
           Add
@@ -79,7 +107,7 @@ export default function ProjectsPage() {
         <table className="w-full">
           <thead>
             <tr className="text-left">
-              {['Name', 'Actions'].map((h) => (
+              {[t('common.name'), t('common.bills'), t('common.totalDollar'), t('common.actions')].map((h) => (
                 <th key={h} className="px-3 py-2 text-neutral-500">
                   {h}
                 </th>
@@ -89,13 +117,13 @@ export default function ProjectsPage() {
           <tbody>
             {loading ? (
               <tr>
-                <td className="px-3 py-2" colSpan={2}>
-                  Loading...
+                <td className="px-3 py-2" colSpan={4}>
+                  {t('common.loading')}
                 </td>
               </tr>
             ) : projects.length === 0 ? (
               <tr>
-                <td className="px-3 py-4 text-neutral-500" colSpan={2}>
+                <td className="px-3 py-4 text-neutral-500" colSpan={4}>
                   No projects yet.
                 </td>
               </tr>
@@ -104,12 +132,28 @@ export default function ProjectsPage() {
                 <tr key={p.id} className="border-t border-neutral-100 dark:border-neutral-800">
                   <td className="px-3 py-2">{p.name}</td>
                   <td className="px-3 py-2">
+                    <Link 
+                      href={`/bills?projectId=${p.id}`}
+                      className="text-blue-600 hover:text-blue-800 hover:underline"
+                    >
+                      {p.billCount ?? 0}
+                    </Link>
+                  </td>
+                  <td className="px-3 py-2">
+                    <Link 
+                      href={`/bills?projectId=${p.id}`}
+                      className="text-blue-600 hover:text-blue-800 hover:underline font-mono"
+                    >
+                      ${(p.totalAmount ?? 0).toFixed(2)}
+                    </Link>
+                  </td>
+                  <td className="px-3 py-2">
                     <div className="flex justify-end">
                       <button
                         className="rounded-lg border px-2 py-1 text-xs text-red-600 hover:bg-red-50 dark:border-neutral-800 dark:hover:bg-neutral-900"
                         onClick={() => removeProject(p.id)}
                       >
-                        Delete
+                        {t('common.delete')}
                       </button>
                     </div>
                   </td>
