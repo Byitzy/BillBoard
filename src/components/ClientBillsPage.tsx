@@ -47,7 +47,8 @@ export default function ClientBillsPage({
     setError(null);
     const orgId = await getDefaultOrgId(supabase);
     if (!orgId) {
-      window.location.href = '/onboarding';
+      setError('No organization found.');
+      setLoading(false);
       return;
     }
     

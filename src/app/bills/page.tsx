@@ -1,11 +1,8 @@
-import Link from 'next/link';
 import { createServerComponentClient } from '@supabase/auth-helpers-nextjs';
 import { cookies } from 'next/headers';
-import { getDefaultOrgId } from '@/lib/org';
-import PDFExportButton from '@/components/PDFExportButton';
-import CSVExportButton from '@/components/CSVExportButton';
-import BillForm from '@/components/BillForm';
+import { redirect } from 'next/navigation';
 import ClientBillsPage from '@/components/ClientBillsPage';
+import RequireOrg from '@/components/RequireOrg';
 
 type BillRow = {
   id: string;
@@ -22,12 +19,14 @@ type BillsPageProps = {
 
 export default async function BillsPage({ searchParams }: BillsPageProps) {
   const supabase = createServerComponentClient({ cookies });
-  const orgId = await getDefaultOrgId(supabase);
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) redirect('/login');
+  const { data: m } = await supabase.from('org_members')
+    .select('org_id').eq('user_id', user.id).eq('status','active')
+    .order('created_at', { ascending: true }).limit(1).maybeSingle();
+  if (!m?.org_id) redirect('/onboarding');
   
-  if (!orgId) {
-    // This would normally be handled by middleware, but for now redirect
-    return <div>Please complete onboarding first.</div>;
-  }
+  const orgId = m.org_id;
 
   // Build the query with optional filters
   let query = supabase
@@ -131,12 +130,16 @@ export default async function BillsPage({ searchParams }: BillsPageProps) {
     filterContext += (filterContext ? ' & ' : '') + `Search: "${searchParams.search}"`;
   }
 
-  return <ClientBillsPage 
-    initialBills={bills} 
-    initialNextDue={nextDue} 
-    initialError={error?.message || null}
-    filterContext={filterContext}
-    vendorOptions={vendorOptions}
-    projectOptions={projectOptions}
-  />;
+  return (
+    <RequireOrg>
+      <ClientBillsPage 
+        initialBills={bills} 
+        initialNextDue={nextDue} 
+        initialError={error?.message || null}
+        filterContext={filterContext}
+        vendorOptions={vendorOptions}
+        projectOptions={projectOptions}
+      />
+    </RequireOrg>
+  );
 }
