@@ -17,7 +17,7 @@ export default function KPI({ label, value, className, index = 0, tooltip, href 
       initial={{ opacity: 0, y: 6 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.25, delay: 0.05 * index }}
-      className={cn('relative group rounded-2xl border border-neutral-200 p-5 shadow-sm dark:border-neutral-800 cursor-pointer transition-transform duration-150 hover:-translate-y-0.5 hover:shadow-md', className)}
+      className={cn('relative group rounded-2xl border border-neutral-200 p-5 shadow-sm dark:border-neutral-800 cursor-pointer transition-all duration-200 hover:-translate-y-1 hover:shadow-lg hover:scale-[1.02]', className)}
       onClick={() => {
         if (href) window.location.href = href;
       }}
@@ -27,7 +27,7 @@ export default function KPI({ label, value, className, index = 0, tooltip, href 
       <div className="text-xs font-medium text-neutral-500 dark:text-neutral-400">{label}</div>
       <div className="mt-2 text-3xl font-semibold tracking-tight">{value}</div>
       {tooltip && (
-        <div className="pointer-events-none absolute right-2 top-2 hidden w-44 rounded-xl border border-neutral-200 bg-[hsl(var(--surface))] p-2 text-xs text-neutral-600 shadow-lg group-hover:block dark:border-neutral-800 dark:text-neutral-300">
+        <div className="pointer-events-none absolute right-2 top-2 z-10 hidden w-48 rounded-xl border border-neutral-200 bg-[hsl(var(--surface))] p-3 text-xs text-neutral-600 shadow-xl group-hover:block dark:border-neutral-800 dark:text-neutral-300 transition-opacity duration-200">
           {tooltip}
         </div>
       )}

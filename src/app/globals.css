@@ -79,15 +79,36 @@ a:hover { text-decoration: underline; }
   @apply outline-none focus-visible:ring-2 ring-blue-500;
 }
 
-/* Ensure selects are readable in dark/brand modes */
-:where(select) {
+/* Consistent form field styling */
+:where(input, select, textarea) {
   background-color: hsl(var(--surface));
   color: hsl(var(--text));
   border-color: hsl(var(--border));
+  transition: background-color 0.15s ease, border-color 0.15s ease;
 }
 
-/* Darken selects a bit more in dark/brand for readability */
-.dark :where(select),
-.billboard :where(select) {
+:where(input:hover, select:hover, textarea:hover) {
+  background-color: hsl(var(--accent) / 0.05);
+}
+
+:where(input:focus, select:focus, textarea:focus) {
+  border-color: hsl(var(--accent));
+  background-color: hsl(var(--surface));
+}
+
+/* Darken fields a bit more in dark/brand for readability */
+.dark :where(input, select, textarea),
+.billboard :where(input, select, textarea) {
   background-color: hsl(var(--bg));
+}
+
+.dark :where(input:hover, select:hover, textarea:hover),
+.billboard :where(input:hover, select:hover, textarea:hover) {
+  background-color: hsl(var(--accent) / 0.1);
+}
+
+.dark :where(input:focus, select:focus, textarea:focus),
+.billboard :where(input:focus, select:focus, textarea:focus) {
+  background-color: hsl(var(--bg));
+  border-color: hsl(var(--accent));
 }

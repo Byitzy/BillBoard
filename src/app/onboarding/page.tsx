@@ -47,14 +47,14 @@ export default function OnboardingPage() {
           placeholder="Organization name"
           value={name}
           onChange={(e) => setName(e.target.value)}
-          className="w-full rounded-xl border border-neutral-200 bg-transparent px-3 py-2 text-sm dark:border-neutral-800"
+          className="w-full rounded-xl border border-neutral-200  px-3 py-2 text-sm dark:border-neutral-800"
           required
         />
         <input
           placeholder="Slug (optional)"
           value={slug}
           onChange={(e) => setSlug(e.target.value)}
-          className="w-full rounded-xl border border-neutral-200 bg-transparent px-3 py-2 text-sm dark:border-neutral-800"
+          className="w-full rounded-xl border border-neutral-200  px-3 py-2 text-sm dark:border-neutral-800"
         />
         <button
           type="submit"

@@ -1,16 +1,17 @@
 "use client";
 import { useState, useEffect, useCallback } from 'react';
 import { getSupabaseClient } from '@/lib/supabase/client';
+import { useTheme } from '@/components/theme/ThemeProvider';
 
 export default function ProfileSettingsPage() {
   const supabase = getSupabaseClient();
+  const { theme, setTheme } = useTheme();
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
 
   // Profile settings state
-  const [theme, setTheme] = useState<'light' | 'dark' | 'system' | 'billboard'>('system');
   const [locale, setLocale] = useState('en-US');
   const [timezone, setTimezone] = useState('America/Toronto');
   const [dateFormat, setDateFormat] = useState<'iso' | 'us' | 'local'>('local');
@@ -24,7 +25,7 @@ export default function ProfileSettingsPage() {
       if (user) {
         // Load user preferences from metadata or default values
         const metadata = user.user_metadata || {};
-        setTheme(metadata.theme || 'system');
+        if (metadata.theme) setTheme(metadata.theme);
         setLocale(metadata.locale || 'en-US');
         setTimezone(metadata.timezone || 'America/Toronto');
         setDateFormat(metadata.dateFormat || 'local');
@@ -163,7 +164,7 @@ export default function ProfileSettingsPage() {
               <select
                 value={locale}
                 onChange={(e) => setLocale(e.target.value)}
-                className="w-full rounded-xl border border-neutral-200 bg-transparent px-3 py-2 text-sm dark:border-neutral-800"
+                className="w-full rounded-xl border border-neutral-200  px-3 py-2 text-sm dark:border-neutral-800"
               >
                 {locales.map(l => (
                   <option key={l.value} value={l.value}>{l.label}</option>
@@ -176,7 +177,7 @@ export default function ProfileSettingsPage() {
               <select
                 value={timezone}
                 onChange={(e) => setTimezone(e.target.value)}
-                className="w-full rounded-xl border border-neutral-200 bg-transparent px-3 py-2 text-sm dark:border-neutral-800"
+                className="w-full rounded-xl border border-neutral-200  px-3 py-2 text-sm dark:border-neutral-800"
               >
                 {timezones.map(tz => (
                   <option key={tz} value={tz}>{tz}</option>
@@ -189,7 +190,7 @@ export default function ProfileSettingsPage() {
               <select
                 value={dateFormat}
                 onChange={(e) => setDateFormat(e.target.value as any)}
-                className="w-full rounded-xl border border-neutral-200 bg-transparent px-3 py-2 text-sm dark:border-neutral-800"
+                className="w-full rounded-xl border border-neutral-200  px-3 py-2 text-sm dark:border-neutral-800"
               >
                 <option value="local">Local (MM/DD/YYYY)</option>
                 <option value="iso">ISO (YYYY-MM-DD)</option>
@@ -202,7 +203,7 @@ export default function ProfileSettingsPage() {
               <select
                 value={currency}
                 onChange={(e) => setCurrency(e.target.value)}
-                className="w-full rounded-xl border border-neutral-200 bg-transparent px-3 py-2 text-sm dark:border-neutral-800"
+                className="w-full rounded-xl border border-neutral-200  px-3 py-2 text-sm dark:border-neutral-800"
               >
                 {currencies.map(curr => (
                   <option key={curr.value} value={curr.value}>{curr.label}</option>

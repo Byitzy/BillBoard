@@ -74,7 +74,7 @@ export default function LoginPage() {
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             placeholder="you@example.com"
-            className="w-full rounded-xl border border-neutral-200 bg-transparent px-3 py-2 text-sm dark:border-neutral-800"
+            className="w-full rounded-xl border border-neutral-200  px-3 py-2 text-sm dark:border-neutral-800"
           />
           <button disabled={loading} type="submit" className="rounded-xl bg-blue-600 px-3 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-50">
             {loading ? 'Sending…' : 'Send magic link'}
@@ -88,7 +88,7 @@ export default function LoginPage() {
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             placeholder="you@example.com"
-            className="w-full rounded-xl border border-neutral-200 bg-transparent px-3 py-2 text-sm dark:border-neutral-800"
+            className="w-full rounded-xl border border-neutral-200  px-3 py-2 text-sm dark:border-neutral-800"
           />
           <input
             type="password"
@@ -96,7 +96,7 @@ export default function LoginPage() {
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             placeholder="Your password"
-            className="w-full rounded-xl border border-neutral-200 bg-transparent px-3 py-2 text-sm dark:border-neutral-800"
+            className="w-full rounded-xl border border-neutral-200  px-3 py-2 text-sm dark:border-neutral-800"
           />
           <div className="flex gap-2">
             <button disabled={loading} type="submit" className="rounded-xl bg-blue-600 px-3 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-50">

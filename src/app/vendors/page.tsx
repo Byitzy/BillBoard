@@ -96,7 +96,7 @@ export default function VendorsPage() {
           placeholder="New vendor name"
           value={name}
           onChange={(e) => setName(e.target.value)}
-          className="w-full max-w-sm rounded-xl border border-neutral-200 bg-transparent px-3 py-2 text-sm dark:border-neutral-800"
+          className="w-full max-w-sm rounded-xl border border-neutral-200  px-3 py-2 text-sm dark:border-neutral-800"
         />
         <button type="submit" className="rounded-xl bg-blue-600 px-3 py-2 text-sm font-medium text-white hover:bg-blue-700">
           Add
@@ -133,7 +133,7 @@ export default function VendorsPage() {
                   <td className="px-3 py-2">
                     {editing === v.id ? (
                       <input
-                        className="w-full rounded-xl border border-neutral-200 bg-transparent px-2 py-1 text-sm dark:border-neutral-800"
+                        className="w-full rounded-xl border border-neutral-200  px-2 py-1 text-sm dark:border-neutral-800"
                         value={editName}
                         onChange={(e) => setEditName(e.target.value)}
                       />

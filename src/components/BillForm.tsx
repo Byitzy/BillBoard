@@ -243,7 +243,7 @@ export default function BillForm({ onCreated }: Props) {
       <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
         <div className="flex gap-2">
           <input
-            className="flex-1 rounded-xl border border-neutral-200 bg-transparent px-3 py-2 text-sm dark:border-neutral-800"
+            className="flex-1 rounded-xl border border-neutral-200 px-3 py-2 text-sm dark:border-neutral-800"
             placeholder="Amount"
             inputMode="decimal"
             value={amount}
@@ -251,7 +251,7 @@ export default function BillForm({ onCreated }: Props) {
             required
           />
           <select
-            className="w-28 rounded-xl border border-neutral-200 bg-transparent px-3 py-2 text-sm dark:border-neutral-800"
+            className="w-28 rounded-xl border border-neutral-200  px-3 py-2 text-sm dark:border-neutral-800"
             value={currency}
             onChange={(e) => setCurrency(e.target.value)}
           >
@@ -263,7 +263,7 @@ export default function BillForm({ onCreated }: Props) {
           </select>
         </div>
         <select
-          className="rounded-xl border border-neutral-200 bg-transparent px-3 py-2 text-sm dark:border-neutral-800"
+          className="rounded-xl border border-neutral-200 px-3 py-2 text-sm dark:border-neutral-800"
           value={status}
           onChange={(e) => setStatus(e.target.value as any)}
           title="Status"
@@ -287,7 +287,7 @@ export default function BillForm({ onCreated }: Props) {
           <div className="text-xs text-neutral-500 mb-1">Vendor</div>
           <div className="relative">
             <input
-              className="w-full rounded-xl border border-neutral-200 bg-transparent px-3 py-2 text-sm dark:border-neutral-800"
+              className="w-full rounded-xl border border-neutral-200  px-3 py-2 text-sm dark:border-neutral-800"
               placeholder="Type to search or create vendor"
               value={vendor ? vendor.name : vendorQuery}
               onChange={(e) => {
@@ -336,7 +336,7 @@ export default function BillForm({ onCreated }: Props) {
           <div className="text-xs text-neutral-500 mb-1">Project</div>
           <div className="relative">
             <input
-              className="w-full rounded-xl border border-neutral-200 bg-transparent px-3 py-2 text-sm dark:border-neutral-800"
+              className="w-full rounded-xl border border-neutral-200  px-3 py-2 text-sm dark:border-neutral-800"
               placeholder="Type to search or create project"
               value={project ? project.name : projectQuery}
               onChange={(e) => {
@@ -401,7 +401,7 @@ export default function BillForm({ onCreated }: Props) {
                 type="date"
                 value={dueDate}
                 onChange={(e) => setDueDate(e.target.value)}
-                className="w-full rounded-xl border border-neutral-200 bg-transparent px-3 py-2 text-sm dark:border-neutral-800"
+                className="w-full rounded-xl border border-neutral-200  px-3 py-2 text-sm dark:border-neutral-800"
                 placeholder="Due date"
               />
             </div>
@@ -411,7 +411,7 @@ export default function BillForm({ onCreated }: Props) {
             <div className="space-y-1">
               <label className="block text-xs text-neutral-500">Frequency</label>
               <select
-                className="w-full rounded-xl border border-neutral-200 bg-transparent px-3 py-2 text-sm dark:border-neutral-800"
+                className="w-full rounded-xl border border-neutral-200  px-3 py-2 text-sm dark:border-neutral-800"
                 value={frequency}
                 onChange={(e) => setFrequency(e.target.value as any)}
               >
@@ -428,7 +428,7 @@ export default function BillForm({ onCreated }: Props) {
                 type="date"
                 value={startDate}
                 onChange={(e) => setStartDate(e.target.value)}
-                className="w-full rounded-xl border border-neutral-200 bg-transparent px-3 py-2 text-sm dark:border-neutral-800"
+                className="w-full rounded-xl border border-neutral-200  px-3 py-2 text-sm dark:border-neutral-800"
                 placeholder="Start date"
               />
             </div>
@@ -438,7 +438,7 @@ export default function BillForm({ onCreated }: Props) {
                 type="date"
                 value={endDate}
                 onChange={(e) => setEndDate(e.target.value)}
-                className="w-full rounded-xl border border-neutral-200 bg-transparent px-3 py-2 text-sm dark:border-neutral-800"
+                className="w-full rounded-xl border border-neutral-200  px-3 py-2 text-sm dark:border-neutral-800"
                 placeholder="End date (optional)"
               />
             </div>
@@ -447,7 +447,7 @@ export default function BillForm({ onCreated }: Props) {
       </div>
 
       <textarea
-        className="w-full rounded-xl border border-neutral-200 bg-transparent px-3 py-2 text-sm dark:border-neutral-800"
+        className="w-full rounded-xl border border-neutral-200  px-3 py-2 text-sm dark:border-neutral-800"
         placeholder="Notes (optional)"
         value={notes}
         onChange={(e) => setNotes(e.target.value)}

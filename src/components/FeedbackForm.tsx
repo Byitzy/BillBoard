@@ -116,7 +116,7 @@ export default function FeedbackForm() {
             placeholder={`${type === 'bug' ? 'Describe the bug...' : type === 'feature' ? 'What feature would you like?' : 'Share your idea...'}`}
             value={title}
             onChange={(e) => setTitle(e.target.value)}
-            className="w-full rounded-xl border border-neutral-200 bg-transparent px-4 py-3 text-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20 dark:border-neutral-800"
+            className="w-full rounded-xl border border-neutral-200  px-4 py-3 text-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20 dark:border-neutral-800"
             required
             maxLength={200}
           />
@@ -125,7 +125,7 @@ export default function FeedbackForm() {
             placeholder={`${type === 'bug' ? 'Steps to reproduce, what you expected, screenshots...' : type === 'feature' ? 'How would this feature work? What problem does it solve?' : 'Tell us more about your idea...'}`}
             value={body}
             onChange={(e) => setBody(e.target.value)}
-            className="w-full rounded-xl border border-neutral-200 bg-transparent px-4 py-3 text-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20 dark:border-neutral-800 resize-none"
+            className="w-full rounded-xl border border-neutral-200  px-4 py-3 text-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20 dark:border-neutral-800 resize-none"
             rows={4}
             maxLength={2000}
           />

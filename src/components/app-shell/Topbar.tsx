@@ -66,16 +66,21 @@ export default function Topbar() {
                   if (e.key === 'Escape') setMenuOpen(false);
                 }}
               >
-                {['Item One', 'Item Two', 'Item Three'].map((label) => (
-                  <li key={label} role="menuitem">
-                    <button
+                {[
+                  { label: 'Add Bill', href: '/bills' },
+                  { label: 'Add Vendor', href: '/vendors' },
+                  { label: 'Add Project', href: '/projects' }
+                ].map((item) => (
+                  <li key={item.label} role="menuitem">
+                    <Link
+                      href={item.href}
                       className={cn(
-                        'w-full rounded-lg px-3 py-2 text-left hover:bg-neutral-100 dark:hover:bg-neutral-800'
+                        'w-full rounded-lg px-3 py-2 text-left hover:bg-neutral-100 dark:hover:bg-neutral-800 block'
                       )}
                       onClick={() => setMenuOpen(false)}
                     >
-                      {label}
-                    </button>
+                      {item.label}
+                    </Link>
                   </li>
                 ))}
               </ul>

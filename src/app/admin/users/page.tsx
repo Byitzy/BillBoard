@@ -83,7 +83,7 @@ export default function AdminUsersPage() {
             placeholder="user@example.com"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
-            className="w-full rounded-xl border border-neutral-200 bg-transparent px-3 py-2 text-sm dark:border-neutral-800"
+            className="w-full rounded-xl border border-neutral-200  px-3 py-2 text-sm dark:border-neutral-800"
           />
         </div>
         <div>
@@ -91,7 +91,7 @@ export default function AdminUsersPage() {
           <select
             value={role}
             onChange={(e) => setRole(e.target.value as typeof ROLES[number])}
-            className="rounded-xl border border-neutral-200 bg-transparent px-3 py-2 text-sm dark:border-neutral-800"
+            className="rounded-xl border border-neutral-200  px-3 py-2 text-sm dark:border-neutral-800"
           >
             {ROLES.map((r) => (
               <option key={r} value={r}>

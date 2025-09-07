@@ -140,7 +140,7 @@ export default function AdminFeedbackPage() {
           <select
             value={selectedStatus}
             onChange={(e) => setSelectedStatus(e.target.value)}
-            className="rounded-lg border border-neutral-200 bg-transparent px-2 py-1 text-sm dark:border-neutral-800"
+            className="rounded-lg border border-neutral-200  px-2 py-1 text-sm dark:border-neutral-800"
           >
             <option value="all">All</option>
             <option value="open">Open</option>
@@ -155,7 +155,7 @@ export default function AdminFeedbackPage() {
           <select
             value={selectedType}
             onChange={(e) => setSelectedType(e.target.value)}
-            className="rounded-lg border border-neutral-200 bg-transparent px-2 py-1 text-sm dark:border-neutral-800"
+            className="rounded-lg border border-neutral-200  px-2 py-1 text-sm dark:border-neutral-800"
           >
             <option value="all">All</option>
             <option value="bug">Bugs</option>
