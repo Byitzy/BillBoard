@@ -1,7 +1,7 @@
-"use client";
+'use client';
 import { useEffect, useMemo, useState } from 'react';
-import { getSupabaseClient } from '@/lib/supabase/client';
 import { getDefaultOrgId } from '@/lib/org';
+import { getSupabaseClient } from '@/lib/supabase/client';
 
 type Props = { onCreated?: () => void };
 
@@ -25,10 +25,14 @@ export default function BillForm({ onCreated }: Props) {
   const [isRecurring, setIsRecurring] = useState(false);
   const [dueDate, setDueDate] = useState(''); // for one-off
   const [startDate, setStartDate] = useState(''); // for recurring
-  const [frequency, setFrequency] = useState<'weekly' | 'biweekly' | 'monthly' | 'quarterly' | 'annually'>('monthly');
+  const [frequency, setFrequency] = useState<
+    'weekly' | 'biweekly' | 'monthly' | 'quarterly' | 'annually'
+  >('monthly');
   const [endDate, setEndDate] = useState('');
   const [notes, setNotes] = useState('');
-  const [status, setStatus] = useState<'pending_approval' | 'approved' | 'on_hold' | 'active'>('active');
+  const [status, setStatus] = useState<
+    'pending_approval' | 'approved' | 'on_hold' | 'active'
+  >('active');
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -96,7 +100,9 @@ export default function BillForm({ onCreated }: Props) {
     if (!orgId) return null;
     const norm = name.trim();
     if (!norm) return null;
-    const existing = vendorOptions.find((v) => v.name.toLowerCase() === norm.toLowerCase());
+    const existing = vendorOptions.find(
+      (v) => v.name.toLowerCase() === norm.toLowerCase()
+    );
     if (existing) return existing;
     const { data: exists } = await supabase
       .from('vendors')
@@ -121,7 +127,9 @@ export default function BillForm({ onCreated }: Props) {
     if (!orgId) return null;
     const norm = name.trim();
     if (!norm) return null;
-    const existing = projectOptions.find((p) => p.name.toLowerCase() === norm.toLowerCase());
+    const existing = projectOptions.find(
+      (p) => p.name.toLowerCase() === norm.toLowerCase()
+    );
     if (existing) return existing;
     const { data: exists } = await supabase
       .from('projects')
@@ -172,7 +180,7 @@ export default function BillForm({ onCreated }: Props) {
         vendor_id: vendorId,
         project_id: projectId,
         description: notes || null,
-        status
+        status,
       };
 
       if (!isRecurring) {
@@ -210,7 +218,7 @@ export default function BillForm({ onCreated }: Props) {
         const access = sessionRes.session?.access_token;
         await fetch(`/api/bills/${inserted.id}/generate`, {
           method: 'POST',
-          headers: access ? { Authorization: `Bearer ${access}` } : undefined
+          headers: access ? { Authorization: `Bearer ${access}` } : undefined,
         });
       }
 
@@ -272,7 +280,7 @@ export default function BillForm({ onCreated }: Props) {
             { v: 'active', l: 'Active' },
             { v: 'pending_approval', l: 'Pending' },
             { v: 'approved', l: 'Approved' },
-            { v: 'on_hold', l: 'On Hold' }
+            { v: 'on_hold', l: 'On Hold' },
           ].map((o) => (
             <option key={o.v} value={o.v}>
               {o.l}
@@ -388,7 +396,12 @@ export default function BillForm({ onCreated }: Props) {
       {/* Recurrence */}
       <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
         <div className="flex items-center gap-2">
-          <input id="recurring" type="checkbox" checked={isRecurring} onChange={(e) => setIsRecurring(e.target.checked)} />
+          <input
+            id="recurring"
+            type="checkbox"
+            checked={isRecurring}
+            onChange={(e) => setIsRecurring(e.target.checked)}
+          />
           <label htmlFor="recurring" className="text-sm">
             Recurring
           </label>
@@ -409,7 +422,9 @@ export default function BillForm({ onCreated }: Props) {
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-3 gap-2 items-end">
             <div className="space-y-1">
-              <label className="block text-xs text-neutral-500">Frequency</label>
+              <label className="block text-xs text-neutral-500">
+                Frequency
+              </label>
               <select
                 className="w-full rounded-xl border border-neutral-200  px-3 py-2 text-sm dark:border-neutral-800"
                 value={frequency}
@@ -423,7 +438,9 @@ export default function BillForm({ onCreated }: Props) {
               </select>
             </div>
             <div className="space-y-1">
-              <label className="block text-xs text-neutral-500">Start date</label>
+              <label className="block text-xs text-neutral-500">
+                Start date
+              </label>
               <input
                 type="date"
                 value={startDate}
@@ -433,7 +450,9 @@ export default function BillForm({ onCreated }: Props) {
               />
             </div>
             <div className="space-y-1">
-              <label className="block text-xs text-neutral-500">End date (optional)</label>
+              <label className="block text-xs text-neutral-500">
+                End date (optional)
+              </label>
               <input
                 type="date"
                 value={endDate}
@@ -466,4 +485,3 @@ export default function BillForm({ onCreated }: Props) {
     </form>
   );
 }
-

@@ -1,25 +1,25 @@
-"use client";
+'use client';
 import { Download, Loader2 } from 'lucide-react';
 import { usePDFExport } from '@/hooks/usePDFExport';
-import { PDFOptions } from '@/lib/pdf';
+import type { PDFOptions } from '@/lib/pdf';
 
 interface PDFExportButtonProps {
   type: 'element' | 'data' | 'report';
   filename?: string;
   className?: string;
   children?: React.ReactNode;
-  
+
   // For element export
   elementSelector?: string;
-  
+
   // For data export
   data?: any[];
   columns?: string[];
   title?: string;
-  
+
   // For report export
   summary?: Record<string, string | number>;
-  
+
   // PDF options
   options?: PDFOptions;
 }
@@ -34,29 +34,40 @@ export default function PDFExportButton({
   columns = [],
   title = 'Report',
   summary = {},
-  options = {}
+  options = {},
 }: PDFExportButtonProps) {
-  const { isExporting, error, exportElement, exportData, exportReport, clearError } = usePDFExport();
+  const {
+    isExporting,
+    error,
+    exportElement,
+    exportData,
+    exportReport,
+    clearError,
+  } = usePDFExport();
 
   const handleExport = async () => {
     clearError();
-    
+
     const pdfOptions = { filename, ...options };
 
     try {
       switch (type) {
         case 'element':
           if (elementSelector) {
-            const element = document.querySelector(elementSelector) as HTMLElement;
+            const element = document.querySelector(
+              elementSelector
+            ) as HTMLElement;
             if (element) {
               const { exportElementToPDF } = await import('@/lib/pdf');
               await exportElementToPDF(element, pdfOptions);
             } else {
-              throw new Error(`Element with selector "${elementSelector}" not found`);
+              throw new Error(
+                `Element with selector "${elementSelector}" not found`
+              );
             }
           }
           break;
-          
+
         case 'data':
           if (data.length > 0 && columns.length > 0) {
             await exportData(data, columns, title, pdfOptions);
@@ -64,11 +75,11 @@ export default function PDFExportButton({
             throw new Error('Data and columns are required for data export');
           }
           break;
-          
+
         case 'report':
           await exportReport(title, summary, data, pdfOptions);
           break;
-          
+
         default:
           throw new Error('Invalid export type');
       }
@@ -97,11 +108,7 @@ export default function PDFExportButton({
       >
         {children || defaultContent}
       </button>
-      {error && (
-        <div className="mt-2 text-sm text-red-600">
-          {error}
-        </div>
-      )}
+      {error && <div className="mt-2 text-sm text-red-600">{error}</div>}
     </div>
   );
 }

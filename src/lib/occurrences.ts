@@ -37,13 +37,21 @@ function parseISODateLocal(iso: string): Date {
 }
 
 function clampHorizon(start: Date, end?: Date | null, months = 18): Date {
-  const cap = new Date(start.getFullYear(), start.getMonth() + months, start.getDate());
+  const cap = new Date(
+    start.getFullYear(),
+    start.getMonth() + months,
+    start.getDate()
+  );
   if (!end) return cap;
   return end < cap ? end : cap;
 }
 
 function datesEqualISO(a: Date, b: Date): boolean {
-  return a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth() && a.getDate() === b.getDate();
+  return (
+    a.getFullYear() === b.getFullYear() &&
+    a.getMonth() === b.getMonth() &&
+    a.getDate() === b.getDate()
+  );
 }
 
 function addMonthsClamp(d: Date, months: number, byMonthDay?: number): Date {
@@ -51,7 +59,11 @@ function addMonthsClamp(d: Date, months: number, byMonthDay?: number): Date {
   const month = d.getMonth();
   const targetMonth = month + months;
   const day = byMonthDay ?? d.getDate();
-  return new Date(new Date(year, targetMonth, 1).getFullYear(), new Date(year, targetMonth, 1).getMonth(), Math.min(day, daysInMonth(new Date(year, targetMonth, 1))));
+  return new Date(
+    new Date(year, targetMonth, 1).getFullYear(),
+    new Date(year, targetMonth, 1).getMonth(),
+    Math.min(day, daysInMonth(new Date(year, targetMonth, 1)))
+  );
 }
 
 function daysInMonth(d: Date): number {
@@ -67,9 +79,13 @@ export function generateOccurrences(bill: Bill): Occurrence[] {
     out.push({
       bill_id: bill.id,
       sequence: seq,
-      amount_due: computeInstallmentAmount(bill.amount_total, installments, seq),
+      amount_due: computeInstallmentAmount(
+        bill.amount_total,
+        installments,
+        seq
+      ),
       due_date: formatISODate(due),
-      suggested_submission_date: formatISODate(suggestion)
+      suggested_submission_date: formatISODate(suggestion),
     });
   };
 
@@ -94,7 +110,11 @@ export function generateOccurrences(bill: Bill): Occurrence[] {
   if (rule.frequency === 'monthly') {
     const byDay = rule.byMonthDay ?? start.getDate();
     // Normalize cursor to the first target day
-    cursor = new Date(start.getFullYear(), start.getMonth(), Math.min(byDay, daysInMonth(start)));
+    cursor = new Date(
+      start.getFullYear(),
+      start.getMonth(),
+      Math.min(byDay, daysInMonth(start))
+    );
     while (cursor <= horizon) {
       addOccurrence(cursor, seq++);
       cursor = addMonthsClamp(cursor, interval, byDay);
@@ -108,19 +128,29 @@ export function generateOccurrences(bill: Bill): Occurrence[] {
   } else if (rule.frequency === 'yearly') {
     while (cursor <= horizon) {
       addOccurrence(cursor, seq++);
-      cursor = new Date(cursor.getFullYear() + interval, cursor.getMonth(), cursor.getDate());
+      cursor = new Date(
+        cursor.getFullYear() + interval,
+        cursor.getMonth(),
+        cursor.getDate()
+      );
     }
   }
 
   // Trim if installments limit present
   if (installments && out.length > installments) {
-    return out.slice(0, installments).map((occ, i) => ({ ...occ, sequence: i + 1 }));
+    return out
+      .slice(0, installments)
+      .map((occ, i) => ({ ...occ, sequence: i + 1 }));
   }
 
   return out;
 }
 
-function computeInstallmentAmount(total: number, installments: number | undefined, seq: number): number {
+function computeInstallmentAmount(
+  total: number,
+  installments: number | undefined,
+  seq: number
+): number {
   if (!installments || installments < 2) return round2(total);
   const base = Math.floor((total * 100) / installments);
   const remainder = Math.round(total * 100) - base * installments;

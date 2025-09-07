@@ -9,7 +9,7 @@ const DEFAULT_OPTIONS: Required<CSVOptions> = {
   filename: 'export.csv',
   delimiter: ',',
   includeHeaders: true,
-  dateFormat: 'local'
+  dateFormat: 'local',
 };
 
 function formatValue(value: any, dateFormat: CSVOptions['dateFormat']): string {
@@ -32,7 +32,11 @@ function formatValue(value: any, dateFormat: CSVOptions['dateFormat']): string {
 
   // Handle strings that might contain the delimiter
   const stringValue = String(value);
-  if (stringValue.includes(',') || stringValue.includes('"') || stringValue.includes('\n')) {
+  if (
+    stringValue.includes(',') ||
+    stringValue.includes('"') ||
+    stringValue.includes('\n')
+  ) {
     // Escape quotes by doubling them and wrap in quotes
     return `"${stringValue.replace(/"/g, '""')}"`;
   }
@@ -57,12 +61,18 @@ export function arrayToCSV(
 
   // Add headers if requested
   if (opts.includeHeaders) {
-    rows.push(headers.map(header => formatValue(header, opts.dateFormat)).join(opts.delimiter));
+    rows.push(
+      headers
+        .map((header) => formatValue(header, opts.dateFormat))
+        .join(opts.delimiter)
+    );
   }
 
   // Add data rows
-  data.forEach(row => {
-    const values = headers.map(header => formatValue(row[header], opts.dateFormat));
+  data.forEach((row) => {
+    const values = headers.map((header) =>
+      formatValue(row[header], opts.dateFormat)
+    );
     rows.push(values.join(opts.delimiter));
   });
 
@@ -72,7 +82,7 @@ export function arrayToCSV(
 export function downloadCSV(csvContent: string, filename: string): void {
   const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
   const link = document.createElement('a');
-  
+
   if (link.download !== undefined) {
     const url = URL.createObjectURL(blob);
     link.setAttribute('href', url);
@@ -111,7 +121,7 @@ export function exportTableToCSV(
     const headerRow = tableElement.querySelector('thead tr');
     if (headerRow) {
       const headers: string[] = [];
-      headerRow.querySelectorAll('th, td').forEach(cell => {
+      headerRow.querySelectorAll('th, td').forEach((cell) => {
         headers.push((cell.textContent || '').trim());
       });
       if (headers.length > 0) {
@@ -122,9 +132,9 @@ export function exportTableToCSV(
 
   // Extract data rows
   const bodyRows = tableElement.querySelectorAll('tbody tr');
-  bodyRows.forEach(row => {
+  bodyRows.forEach((row) => {
     const cells: string[] = [];
-    row.querySelectorAll('td, th').forEach(cell => {
+    row.querySelectorAll('td, th').forEach((cell) => {
       cells.push((cell.textContent || '').trim());
     });
     if (cells.length > 0) {
@@ -134,7 +144,9 @@ export function exportTableToCSV(
 
   // Convert to CSV format
   const csvContent = rows
-    .map(row => row.map(cell => formatValue(cell, opts.dateFormat)).join(opts.delimiter))
+    .map((row) =>
+      row.map((cell) => formatValue(cell, opts.dateFormat)).join(opts.delimiter)
+    )
     .join('\n');
 
   downloadCSV(csvContent, opts.filename);
@@ -165,9 +177,12 @@ export function exportSummaryToCSV(
   if (data.length > 0) {
     rows.push(''); // Empty line
     rows.push('"DETAILS"');
-    
+
     // Add data as CSV
-    const dataCSV = arrayToCSV(data, undefined, { ...opts, includeHeaders: true });
+    const dataCSV = arrayToCSV(data, undefined, {
+      ...opts,
+      includeHeaders: true,
+    });
     rows.push(dataCSV);
   }
 

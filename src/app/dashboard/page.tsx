@@ -1,10 +1,10 @@
-"use client";
+'use client';
 import DashboardClient from '@/components/DashboardClient';
 import { useLocale } from '@/components/i18n/LocaleProvider';
 
 export default function DashboardPage() {
   const { t } = useLocale();
-  
+
   return (
     <div className="space-y-6">
       <div className="space-y-1">

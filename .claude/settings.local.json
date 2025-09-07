@@ -5,7 +5,13 @@
       "Bash(git commit:*)",
       "Bash(pnpm lint:*)",
       "Bash(git add:*)",
-      "Bash(pnpm typecheck:*)"
+      "Bash(pnpm typecheck:*)",
+      "Bash(npm run lint)",
+      "Bash(pnpm test:*)",
+      "Bash(pnpm build:*)",
+      "Bash(pnpm add:*)",
+      "Bash(pnpm format:*)",
+      "Bash(pnpm reinstall:*)"
     ],
     "deny": [],
     "ask": []

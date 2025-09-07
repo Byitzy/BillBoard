@@ -2,8 +2,9 @@ import type { Metadata } from 'next';
 import './globals.css';
 import Sidebar from '@/components/app-shell/Sidebar';
 import Topbar from '@/components/app-shell/Topbar';
-import { ThemeProvider, ThemeScript } from '@/components/theme/ThemeProvider';
+import { ErrorBoundary } from '@/components/ErrorBoundary';
 import { LocaleProvider } from '@/components/i18n/LocaleProvider';
+import { ThemeProvider, ThemeScript } from '@/components/theme/ThemeProvider';
 
 // Disable static pre-render; rely on runtime (auth-driven app)
 export const dynamic = 'force-dynamic';
@@ -16,19 +17,23 @@ export const metadata: Metadata = {
       {
         url: 'https://aytzgpwkjmdgznxxtrdd.supabase.co/storage/v1/object/public/brand/BillBoard_icon.jpg',
         rel: 'icon',
-        type: 'image/jpeg'
-      }
+        type: 'image/jpeg',
+      },
     ],
     apple: [
       {
         url: 'https://aytzgpwkjmdgznxxtrdd.supabase.co/storage/v1/object/public/brand/BillBoard_icon.jpg',
-        sizes: '180x180'
-      }
-    ]
-  }
+        sizes: '180x180',
+      },
+    ],
+  },
 };
 
-export default function RootLayout({ children }: { children: React.ReactNode }) {
+export default function RootLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
   return (
     <html lang="en" className="min-h-full">
       <head>
@@ -38,10 +43,16 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <ThemeProvider>
           <LocaleProvider>
             <div className="flex min-h-screen">
-              <Sidebar />
+              <ErrorBoundary>
+                <Sidebar />
+              </ErrorBoundary>
               <main className="flex-1">
-                <Topbar />
-                <div className="container-page">{children}</div>
+                <ErrorBoundary>
+                  <Topbar />
+                </ErrorBoundary>
+                <div className="container-page">
+                  <ErrorBoundary>{children}</ErrorBoundary>
+                </div>
               </main>
             </div>
           </LocaleProvider>
