@@ -77,7 +77,10 @@ export const translations = {
     'common.next': 'Next',
     'common.noMatches': 'No matches',
     'common.create': 'Create',
-    'common.bills': 'Bills'
+    'common.bills': 'Bills',
+    'common.totalDollar': 'Total $',
+    'common.byProject': 'By Project:',
+    'common.noItems': 'No items'
   },
   
   'fr-FR': {
@@ -157,7 +160,10 @@ export const translations = {
     'common.next': 'Suivant',
     'common.noMatches': 'Aucun résultat',
     'common.create': 'Créer',
-    'common.bills': 'Factures'
+    'common.bills': 'Factures',
+    'common.totalDollar': 'Total $',
+    'common.byProject': 'Par projet :',
+    'common.noItems': 'Aucun élément'
   },
   
   'es-ES': {
@@ -237,7 +243,10 @@ export const translations = {
     'common.next': 'Siguiente',
     'common.noMatches': 'Sin resultados',
     'common.create': 'Crear',
-    'common.bills': 'Facturas'
+    'common.bills': 'Facturas',
+    'common.totalDollar': 'Total $',
+    'common.byProject': 'Por proyecto:',
+    'common.noItems': 'Sin elementos'
   }
 };
 

@@ -1,10 +1,11 @@
 "use client";
 import { useEffect, useState } from 'react';
+import Link from 'next/link';
 import { getSupabaseClient } from '@/lib/supabase/client';
 import { getDefaultOrgId } from '@/lib/org';
 import { useLocale } from '@/components/i18n/LocaleProvider';
 
-type Vendor = { id: string; name: string; bills?: { count: number }[] };
+type Vendor = { id: string; name: string; bills?: { count: number }[]; totalAmount?: number };
 
 export default function VendorsPage() {
   const supabase = getSupabaseClient();
@@ -29,8 +30,32 @@ export default function VendorsPage() {
       .select('id,name,bills(count)')
       .eq('org_id', orgId)
       .order('name');
-    if (error) setError(error.message);
-    else setVendors(data ?? []);
+    if (error) {
+      setError(error.message);
+    } else {
+      const vendorsData = data ?? [];
+      
+      // Get total amounts for each vendor
+      const vendorsWithTotals = await Promise.all(
+        vendorsData.map(async (vendor: any) => {
+          const { data: billsData } = await supabase
+            .from('bills')
+            .select('amount_total')
+            .eq('vendor_id', vendor.id)
+            .eq('org_id', orgId);
+          
+          const totalAmount = (billsData ?? []).reduce((sum: number, bill: any) => 
+            sum + (Number(bill.amount_total) || 0), 0);
+          
+          return {
+            ...vendor,
+            totalAmount
+          };
+        })
+      );
+      
+      setVendors(vendorsWithTotals);
+    }
     setLoading(false);
   }
 
@@ -109,7 +134,7 @@ export default function VendorsPage() {
         <table className="w-full">
           <thead>
             <tr className="text-left">
-              {[t('common.name'), t('common.bills'), t('common.actions')].map((h) => (
+              {[t('common.name'), t('common.bills'), t('common.totalDollar'), t('common.actions')].map((h) => (
                 <th key={h} className="px-3 py-2 text-neutral-500">
                   {h}
                 </th>
@@ -119,13 +144,13 @@ export default function VendorsPage() {
           <tbody>
             {loading ? (
               <tr>
-                <td className="px-3 py-2" colSpan={3}>
+                <td className="px-3 py-2" colSpan={4}>
                   {t('common.loading')}
                 </td>
               </tr>
             ) : vendors.length === 0 ? (
               <tr>
-                <td className="px-3 py-4 text-neutral-500" colSpan={3}>
+                <td className="px-3 py-4 text-neutral-500" colSpan={4}>
                   No vendors yet.
                 </td>
               </tr>
@@ -143,7 +168,22 @@ export default function VendorsPage() {
                       v.name
                     )}
                   </td>
-                  <td className="px-3 py-2">{v.bills?.[0]?.count ?? 0}</td>
+                  <td className="px-3 py-2">
+                    <Link 
+                      href={`/bills?vendorId=${v.id}`}
+                      className="text-blue-600 hover:text-blue-800 hover:underline"
+                    >
+                      {v.bills?.[0]?.count ?? 0}
+                    </Link>
+                  </td>
+                  <td className="px-3 py-2">
+                    <Link 
+                      href={`/bills?vendorId=${v.id}`}
+                      className="text-blue-600 hover:text-blue-800 hover:underline font-mono"
+                    >
+                      ${(v.totalAmount ?? 0).toFixed(2)}
+                    </Link>
+                  </td>
                   <td className="px-3 py-2">
                     <div className="flex justify-end gap-2">
                       {editing === v.id ? (

@@ -4,6 +4,7 @@ import { getSupabaseClient } from '@/lib/supabase/client';
 import { getDefaultOrgId } from '@/lib/org';
 import KPI from '@/components/kpi/KPI';
 import RentLine from '@/components/charts/RentLine';
+import { getTotalsByProject, ProjectTotal } from '@/lib/metrics';
 
 type ChartPoint = { m: string; v: number };
 type Row = { id: string; vendor?: string | null; project?: string | null; due_date: string; amount_due: number; state: string };
@@ -20,6 +21,9 @@ export default function DashboardClient() {
   const [onHoldCount, setOnHoldCount] = useState(0);
   const [chart, setChart] = useState<ChartPoint[]>([]);
   const [rows, setRows] = useState<Row[]>([]);
+  const [todayProjects, setTodayProjects] = useState<ProjectTotal[]>([]);
+  const [weekProjects, setWeekProjects] = useState<ProjectTotal[]>([]);
+  const [twoWeeksProjects, setTwoWeeksProjects] = useState<ProjectTotal[]>([]);
 
   useEffect(() => {
     (async () => {
@@ -74,6 +78,16 @@ export default function DashboardClient() {
         setTodayTotal(sumAmounts(tRows));
         setWeekTotal(sumAmounts(wRows));
         setTwoWeeksTotal(sumAmounts(twRows));
+
+        // Project breakdowns
+        const [todayProjects, weekProjects, twoWeeksProjects] = await Promise.all([
+          getTotalsByProject(supabase, id, { start: tISO, end: tISO }),
+          getTotalsByProject(supabase, id, { start: wStartISO, end: wEndISO }),
+          getTotalsByProject(supabase, id, { start: tISO, end: twEndISO })
+        ]);
+        setTodayProjects(todayProjects);
+        setWeekProjects(weekProjects);
+        setTwoWeeksProjects(twoWeeksProjects);
 
         // On hold count (upcoming two weeks)
         const { count: hold } = await supabase
@@ -134,19 +148,19 @@ export default function DashboardClient() {
       {
         label: 'Today',
         value: `$${todayTotal.toFixed(2)}`,
-        tooltip: 'Total scheduled/approved for today',
+        projectBreakdown: todayProjects,
         href: '/reports/today'
       },
       {
         label: 'This Week',
         value: `$${weekTotal.toFixed(2)}`,
-        tooltip: 'Total scheduled/approved this calendar week',
+        projectBreakdown: weekProjects,
         href: '/reports/week'
       },
       {
         label: 'Next 2 Weeks',
         value: `$${twoWeeksTotal.toFixed(2)}`,
-        tooltip: 'Total scheduled/approved in next 14 days',
+        projectBreakdown: twoWeeksProjects,
         href: '/reports/two-weeks'
       },
       {
@@ -156,7 +170,7 @@ export default function DashboardClient() {
         href: '/reports/on-hold'
       }
     ],
-    [todayTotal, weekTotal, twoWeeksTotal, onHoldCount]
+    [todayTotal, weekTotal, twoWeeksTotal, onHoldCount, todayProjects, weekProjects, twoWeeksProjects]
   );
 
   return (
@@ -164,7 +178,15 @@ export default function DashboardClient() {
       {error && <div className="text-sm text-red-600">{error}</div>}
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
         {kpis.map((k, i) => (
-          <KPI key={k.label} label={k.label} value={k.value} index={i} tooltip={k.tooltip as any} href={k.href as any} />
+          <KPI 
+            key={k.label} 
+            label={k.label} 
+            value={k.value} 
+            index={i} 
+            tooltip={k.tooltip as any} 
+            projectBreakdown={(k as any).projectBreakdown}
+            href={k.href as any} 
+          />
         ))}
       </div>
 
