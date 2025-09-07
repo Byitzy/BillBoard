@@ -8,6 +8,7 @@ import Link from 'next/link';
 import type { Session } from '@supabase/supabase-js';
 import MobileSidebar from '@/components/app-shell/MobileSidebar';
 import { useLocale } from '@/components/i18n/LocaleProvider';
+import NotificationCenter from '@/components/NotificationCenter';
 
 export default function Topbar() {
   const [menuOpen, setMenuOpen] = useState(false);
@@ -117,9 +118,7 @@ export default function Topbar() {
               </ul>
             )}
           </div>
-          <button aria-label="Notifications" className="rounded-xl p-2 hover:bg-neutral-100 focus-visible:outline-none focus-visible:ring-2 ring-blue-500 dark:hover:bg-neutral-900">
-            <Bell className="h-5 w-5" />
-          </button>
+          <NotificationCenter />
           {signedIn ? (
             <button
               aria-label="Sign out"
