@@ -296,7 +296,7 @@ export default function BillForm({ onCreated }: Props) {
               }}
             />
             {vendor === null && vendorQuery && vendorOptions.length > 0 && (
-              <ul className="absolute z-10 mt-1 w-full overflow-hidden rounded-xl border border-neutral-200 bg-[hsl(var(--surface))] text-sm shadow-sm dark:border-neutral-800 dark:bg-neutral-900">
+              <ul className="absolute z-10 mt-1 w-full overflow-hidden rounded-xl border border-neutral-200 bg-white text-sm shadow-sm dark:border-neutral-800 dark:bg-neutral-900">
                 {vendorOptions.map((v) => (
                   <li key={v.id}>
                     <button
@@ -345,7 +345,7 @@ export default function BillForm({ onCreated }: Props) {
               }}
             />
             {project === null && projectQuery && (
-              <ul className="absolute z-10 mt-1 w-full overflow-hidden rounded-xl border border-neutral-200 bg-[hsl(var(--surface))] text-sm shadow-sm dark:border-neutral-800">
+              <ul className="absolute z-10 mt-1 w-full overflow-hidden rounded-xl border border-neutral-200 bg-white text-sm shadow-sm dark:border-neutral-800 dark:bg-neutral-900">
                 {projectOptions.length === 0 ? (
                   <li className="px-3 py-2 text-neutral-500">No matches</li>
                 ) : (

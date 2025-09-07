@@ -34,12 +34,16 @@ export const translations = {
     'vendors.manageDirectory': 'Manage vendor directory',
     'vendors.newVendorName': 'New vendor name',
     'vendors.noVendorsYet': 'No vendors yet.',
+    'vendors.bills': 'Bills',
+    'vendors.deleteVendor': 'Delete this vendor? This cannot be undone.',
+    'vendors.vendorExists': 'Vendor already exists',
     
     // Projects
     'projects.title': 'Projects',
     'projects.createAndManage': 'Create and manage projects',
     'projects.newProjectName': 'New project name',
     'projects.noProjectsYet': 'No projects yet.',
+    'projects.deleteProject': 'Delete this project?',
     
     // Updates
     'updates.title': 'Updates & Feedback',
@@ -104,12 +108,16 @@ export const translations = {
     'vendors.manageDirectory': 'Gérer l\'annuaire des fournisseurs',
     'vendors.newVendorName': 'Nom du nouveau fournisseur',
     'vendors.noVendorsYet': 'Aucun fournisseur pour le moment.',
+    'vendors.bills': 'Factures',
+    'vendors.deleteVendor': 'Supprimer ce fournisseur ? Cette action ne peut pas être annulée.',
+    'vendors.vendorExists': 'Le fournisseur existe déjà',
     
     // Projects
     'projects.title': 'Projets',
     'projects.createAndManage': 'Créer et gérer les projets',
     'projects.newProjectName': 'Nom du nouveau projet',
     'projects.noProjectsYet': 'Aucun projet pour le moment.',
+    'projects.deleteProject': 'Supprimer ce projet ?',
     
     // Updates
     'updates.title': 'Mises à jour et commentaires',
@@ -174,12 +182,16 @@ export const translations = {
     'vendors.manageDirectory': 'Gestionar directorio de proveedores',
     'vendors.newVendorName': 'Nombre del nuevo proveedor',
     'vendors.noVendorsYet': 'Sin proveedores aún.',
+    'vendors.bills': 'Facturas',
+    'vendors.deleteVendor': '¿Eliminar este proveedor? Esto no se puede deshacer.',
+    'vendors.vendorExists': 'El proveedor ya existe',
     
     // Projects
     'projects.title': 'Proyectos',
     'projects.createAndManage': 'Crear y gestionar proyectos',
     'projects.newProjectName': 'Nombre del nuevo proyecto',
     'projects.noProjectsYet': 'Sin proyectos aún.',
+    'projects.deleteProject': '¿Eliminar este proyecto?',
     
     // Updates
     'updates.title': 'Actualizaciones y comentarios',

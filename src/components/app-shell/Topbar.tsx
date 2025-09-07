@@ -63,7 +63,7 @@ export default function Topbar() {
             {menuOpen && (
               <ul
                 role="menu"
-                className="absolute right-0 mt-2 w-40 overflow-hidden rounded-xl border border-neutral-200 bg-[hsl(var(--surface))] p-1 text-sm shadow-sm dark:border-neutral-800"
+                className="absolute right-0 mt-2 w-40 overflow-hidden rounded-xl border border-neutral-200 bg-white p-1 text-sm shadow-sm dark:border-neutral-800 dark:bg-neutral-900"
                 onKeyDown={(e) => {
                   if (e.key === 'Escape') setMenuOpen(false);
                 }}
@@ -76,9 +76,7 @@ export default function Topbar() {
                   <li key={item.label} role="menuitem">
                     <Link
                       href={item.href}
-                      className={cn(
-                        'w-full rounded-lg px-3 py-2 text-left hover:bg-neutral-100 dark:hover:bg-neutral-800 block'
-                      )}
+                      className="w-full rounded-lg px-3 py-2 text-left hover:bg-neutral-100 dark:hover:bg-neutral-800 block"
                       onClick={() => setMenuOpen(false)}
                     >
                       {item.label}

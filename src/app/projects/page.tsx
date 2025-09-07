@@ -2,11 +2,13 @@
 import { useEffect, useState } from 'react';
 import { getSupabaseClient } from '@/lib/supabase/client';
 import { getDefaultOrgId } from '@/lib/org';
+import { useLocale } from '@/components/i18n/LocaleProvider';
 
 type Project = { id: string; name: string };
 
 export default function ProjectsPage() {
   const supabase = getSupabaseClient();
+  const { t } = useLocale();
   const [projects, setProjects] = useState<Project[]>([]);
   const [name, setName] = useState('');
   const [loading, setLoading] = useState(false);
@@ -60,12 +62,12 @@ export default function ProjectsPage() {
   return (
     <div className="space-y-4">
       <div className="space-y-1">
-        <h1 className="text-xl font-semibold">Projects</h1>
-        <p className="text-sm text-neutral-500">Create and manage projects</p>
+        <h1 className="text-xl font-semibold">{t('projects.title')}</h1>
+        <p className="text-sm text-neutral-500">{t('projects.createAndManage')}</p>
       </div>
       <form onSubmit={createProject} className="flex gap-2">
         <input
-          placeholder="New project name"
+          placeholder={t('projects.newProjectName')}
           value={name}
           onChange={(e) => setName(e.target.value)}
           className="w-full max-w-sm rounded-xl border border-neutral-200  px-3 py-2 text-sm dark:border-neutral-800"

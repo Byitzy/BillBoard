@@ -2,11 +2,13 @@
 import { useEffect, useState } from 'react';
 import { getSupabaseClient } from '@/lib/supabase/client';
 import { getDefaultOrgId } from '@/lib/org';
+import { useLocale } from '@/components/i18n/LocaleProvider';
 
 type Vendor = { id: string; name: string; bills?: { count: number }[] };
 
 export default function VendorsPage() {
   const supabase = getSupabaseClient();
+  const { t } = useLocale();
   const [vendors, setVendors] = useState<Vendor[]>([]);
   const [name, setName] = useState('');
   const [editing, setEditing] = useState<string | null>(null);
@@ -48,7 +50,7 @@ export default function VendorsPage() {
       .eq('org_id', orgId)
       .ilike('name', name.trim());
     if (existing && existing.length > 0) {
-      setError('Vendor already exists');
+      setError(t('vendors.vendorExists'));
       setLoading(false);
       return;
     }
@@ -74,7 +76,7 @@ export default function VendorsPage() {
   }
 
   async function removeVendor(id: string) {
-    if (!confirm('Delete this vendor? This cannot be undone.')) return;
+    if (!confirm(t('vendors.deleteVendor'))) return;
     setLoading(true);
     const { error } = await supabase.from('vendors').delete().eq('id', id);
     if (error) setError(error.message);
@@ -88,18 +90,18 @@ export default function VendorsPage() {
   return (
     <div className="space-y-4">
       <div className="space-y-1">
-        <h1 className="text-xl font-semibold">Vendors</h1>
-        <p className="text-sm text-neutral-500">Manage vendor directory</p>
+        <h1 className="text-xl font-semibold">{t('vendors.title')}</h1>
+        <p className="text-sm text-neutral-500">{t('vendors.manageDirectory')}</p>
       </div>
       <form onSubmit={createVendor} className="flex gap-2">
         <input
-          placeholder="New vendor name"
+          placeholder={t('vendors.newVendorName')}
           value={name}
           onChange={(e) => setName(e.target.value)}
           className="w-full max-w-sm rounded-xl border border-neutral-200  px-3 py-2 text-sm dark:border-neutral-800"
         />
         <button type="submit" className="rounded-xl bg-blue-600 px-3 py-2 text-sm font-medium text-white hover:bg-blue-700">
-          Add
+          {t('bills.add')}
         </button>
       </form>
       {error && <div className="text-sm text-red-600">{error}</div>}
