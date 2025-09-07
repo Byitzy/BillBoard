@@ -20,7 +20,22 @@ type BillsPageProps = {
 export default async function BillsPage({ searchParams }: BillsPageProps) {
   const supabase = createServerComponentClient({ cookies });
   const { data: { user } } = await supabase.auth.getUser();
-  if (!user) redirect('/login');
+  if (!user) {
+    // Let client guard handle auth - avoid SSR redirect loop
+    return (
+      <RequireOrg>
+        <ClientBillsPage 
+          initialBills={[]} 
+          initialNextDue={{}} 
+          initialError={null}
+          filterContext=""
+          vendorOptions={[]}
+          projectOptions={[]}
+        />
+      </RequireOrg>
+    );
+  }
+  
   const { data: m } = await supabase.from('org_members')
     .select('org_id').eq('user_id', user.id).eq('status','active')
     .order('created_at', { ascending: true }).limit(1).maybeSingle();
