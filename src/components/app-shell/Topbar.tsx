@@ -21,7 +21,7 @@ export default function Topbar() {
       setSignedIn(!!session)
     );
     return () => sub.subscription.unsubscribe();
-  }, []);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     // Close menus on route change to avoid overlay trapping clicks

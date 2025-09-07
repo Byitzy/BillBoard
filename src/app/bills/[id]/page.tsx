@@ -51,7 +51,7 @@ export default function BillDetailPage({ params }: Props) {
 
   useEffect(() => {
     load();
-  }, [params.id]);
+  }, [params.id]); // eslint-disable-line react-hooks/exhaustive-deps
 
   return (
     <div className="space-y-4">

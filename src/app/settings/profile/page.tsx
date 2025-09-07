@@ -1,5 +1,5 @@
 "use client";
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { getSupabaseClient } from '@/lib/supabase/client';
 
 export default function ProfileSettingsPage() {
@@ -16,11 +16,7 @@ export default function ProfileSettingsPage() {
   const [dateFormat, setDateFormat] = useState<'iso' | 'us' | 'local'>('local');
   const [currency, setCurrency] = useState('CAD');
 
-  useEffect(() => {
-    loadSettings();
-  }, []);
-
-  async function loadSettings() {
+  const loadSettings = useCallback(async () => {
     try {
       setLoading(true);
       const { data: { user } } = await supabase.auth.getUser();
@@ -39,7 +35,11 @@ export default function ProfileSettingsPage() {
     } finally {
       setLoading(false);
     }
-  }
+  }, [supabase]);
+
+  useEffect(() => {
+    loadSettings();
+  }, [loadSettings]);
 
   async function saveSettings() {
     try {

@@ -62,7 +62,7 @@ export default function FeedbackForm() {
         </div>
         <h2 className="text-lg font-semibold mb-2">Thank you for your feedback!</h2>
         <p className="text-sm text-neutral-500 mb-4">
-          We'll review it and get back to you if needed. Your input helps make BillBoard better.
+          We&apos;ll review it and get back to you if needed. Your input helps make BillBoard better.
         </p>
         <button
           className="inline-flex items-center gap-2 text-sm text-blue-600 hover:underline"

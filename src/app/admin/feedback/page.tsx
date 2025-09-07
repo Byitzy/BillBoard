@@ -1,5 +1,5 @@
 "use client";
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { getSupabaseClient } from '@/lib/supabase/client';
 import { Bug, Lightbulb, Plus, MessageCircle, Check, X, Clock, MoreHorizontal } from 'lucide-react';
 
@@ -22,11 +22,7 @@ export default function AdminFeedbackPage() {
   const [selectedStatus, setSelectedStatus] = useState<string>('all');
   const [selectedType, setSelectedType] = useState<string>('all');
 
-  useEffect(() => {
-    loadFeedback();
-  }, []);
-
-  async function loadFeedback() {
+  const loadFeedback = useCallback(async () => {
     try {
       setLoading(true);
       setError(null);
@@ -43,7 +39,11 @@ export default function AdminFeedbackPage() {
     } finally {
       setLoading(false);
     }
-  }
+  }, [supabase]);
+
+  useEffect(() => {
+    loadFeedback();
+  }, [loadFeedback]);
 
   async function updateStatus(id: string, newStatus: string) {
     try {
