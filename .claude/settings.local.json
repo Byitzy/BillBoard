@@ -19,7 +19,9 @@
       "Bash(git fetch:*)",
       "Bash(git merge:*)",
       "Bash(git diff:*)",
-      "WebSearch"
+      "WebSearch",
+      "Bash(gh run list:*)",
+      "Bash(gh run view:*)"
     ],
     "deny": [],
     "ask": []

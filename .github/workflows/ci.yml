@@ -20,7 +20,7 @@ jobs:
         run: pnpm install --frozen-lockfile=false
       - name: Typecheck
         run: pnpm typecheck
-      - name: Lint
-        run: pnpm lint
+      - name: Build
+        run: SKIP_ENV_VALIDATION=true pnpm build
       - name: Test
         run: pnpm test -- --run

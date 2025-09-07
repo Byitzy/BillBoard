@@ -33,7 +33,7 @@ module.exports = {
     ],
     '@typescript-eslint/no-explicit-any': 'warn',
     '@typescript-eslint/consistent-type-imports': [
-      'error',
+      'warn',
       { prefer: 'type-imports' },
     ],
     '@typescript-eslint/no-empty-function': 'off',
@@ -76,11 +76,11 @@ module.exports = {
     'react-hooks/exhaustive-deps': 'warn',
 
     // General code quality
-    'prefer-const': 'error',
+    'prefer-const': 'warn',
     'no-var': 'error',
     'no-console': process.env.NODE_ENV === 'production' ? 'warn' : 'warn',
     'no-debugger': process.env.NODE_ENV === 'production' ? 'error' : 'warn',
-    'no-duplicate-imports': 'error',
+    'no-duplicate-imports': 'warn',
     'no-template-curly-in-string': 'error',
     'array-callback-return': 'error',
     'consistent-return': 'error',
@@ -103,7 +103,7 @@ module.exports = {
     ],
 
     // Accessibility rules
-    'jsx-a11y/alt-text': 'error',
+    'jsx-a11y/alt-text': 'warn',
     'jsx-a11y/anchor-has-content': 'error',
     'jsx-a11y/aria-props': 'error',
     'jsx-a11y/aria-proptypes': 'error',

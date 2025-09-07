@@ -4,7 +4,8 @@ import { getSupabaseClient } from '@/lib/supabase/client';
 import { getDefaultOrgId } from '@/lib/org';
 import KPI from '@/components/kpi/KPI';
 import RentLine from '@/components/charts/RentLine';
-import { getTotalsByProject, ProjectTotal } from '@/lib/metrics';
+import { getTotalsByProject } from '@/lib/metrics';
+import type { ProjectTotal } from '@/lib/metrics';
 
 type ChartPoint = { m: string; v: number };
 type Row = { id: string; vendor?: string | null; project?: string | null; due_date: string; amount_due: number; state: string };
