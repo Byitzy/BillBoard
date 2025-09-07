@@ -3,6 +3,8 @@ import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import { getSupabaseClient } from '@/lib/supabase/client';
 import { getDefaultOrgId } from '@/lib/org';
+import PDFExportButton from '@/components/PDFExportButton';
+import CSVExportButton from '@/components/CSVExportButton';
 
 type BillRow = {
   id: string;
@@ -71,6 +73,33 @@ export default function BillsPage() {
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <h1 className="text-xl font-semibold">Bills</h1>
+        {bills.length > 0 && (
+          <div className="flex items-center gap-2">
+            <CSVExportButton
+              type="data"
+              data={bills.map(b => ({
+                Title: b.title,
+                Amount: `$${b.amount_total.toFixed(2)}`,
+                'Due Date': b.due_date ?? '—'
+              }))}
+              columns={['Title', 'Amount', 'Due Date']}
+              filename={`bills-list-${new Date().toISOString().slice(0, 10)}.csv`}
+              className="flex items-center gap-2 rounded-xl border border-neutral-200 px-3 py-2 text-sm font-medium hover:bg-neutral-50 dark:border-neutral-800 dark:hover:bg-neutral-900"
+            />
+            <PDFExportButton
+              type="data"
+              data={bills.map(b => ({
+                Title: b.title,
+                Amount: `$${b.amount_total.toFixed(2)}`,
+                'Due Date': b.due_date ?? '—'
+              }))}
+              columns={['Title', 'Amount', 'Due Date']}
+              title="Bills List"
+              filename={`bills-list-${new Date().toISOString().slice(0, 10)}.pdf`}
+              className="flex items-center gap-2 rounded-xl bg-blue-600 px-3 py-2 text-sm font-medium text-white hover:bg-blue-700"
+            />
+          </div>
+        )}
       </div>
 
       <form onSubmit={createBill} className="grid grid-cols-1 gap-2 sm:grid-cols-3">
