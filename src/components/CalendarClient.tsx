@@ -3,12 +3,14 @@ import { useEffect, useMemo, useState } from 'react';
 import { getSupabaseClient } from '@/lib/supabase/client';
 import { getDefaultOrgId } from '@/lib/org';
 import CalendarMonth from './CalendarMonth';
-import { isQuebecBankHoliday } from '@/lib/businessDays';
+import { isQuebecBankHoliday, getQuebecBankHolidayName } from '@/lib/businessDays';
+import { useLocale } from '@/components/i18n/LocaleProvider';
 
 type Occ = { id: string; due_date: string; state: string; amount_due: number };
 
 export default function CalendarClient() {
   const supabase = getSupabaseClient();
+  const { t } = useLocale();
   const [date, setDate] = useState(new Date());
   const [occ, setOcc] = useState<Occ[]>([]);
   const [loading, setLoading] = useState(false);
@@ -62,7 +64,16 @@ export default function CalendarClient() {
           className="rounded-xl border px-3 py-2 text-sm hover:bg-neutral-100 dark:hover:bg-neutral-900"
           onClick={() => setDate(new Date(date.getFullYear(), date.getMonth() - 1, 1))}
         >
-          Prev
+          {t('common.prev')}
+        </button>
+        <button
+          className="rounded-xl border px-3 py-2 text-sm hover:bg-blue-50 dark:hover:bg-blue-900/20 bg-blue-600 text-white dark:bg-blue-600"
+          onClick={() => {
+            const today = new Date();
+            setDate(new Date(today.getFullYear(), today.getMonth(), 1));
+          }}
+        >
+          {t('common.today')}
         </button>
         <div className="text-sm text-neutral-500">
           {date.toLocaleString(undefined, { month: 'long', year: 'numeric' })}
@@ -71,13 +82,13 @@ export default function CalendarClient() {
           className="rounded-xl border px-3 py-2 text-sm hover:bg-neutral-100 dark:hover:bg-neutral-900"
           onClick={() => setDate(new Date(date.getFullYear(), date.getMonth() + 1, 1))}
         >
-          Next
+          {t('common.next')}
         </button>
       </div>
       <CalendarMonth
         date={date}
         getDayClass={(d) => {
-          const holiday = isQuebecBankHoliday(d);
+          const holiday = getQuebecBankHolidayName(d);
           const day = d.getDay();
           const weekend = day === 0 || day === 6;
           return holiday ? 'border-amber-500' : weekend ? 'border-blue-400' : '';
@@ -85,7 +96,7 @@ export default function CalendarClient() {
         renderDay={(d) => {
           const iso = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
           const items = byDay.get(iso) ?? [];
-          const holiday = isQuebecBankHoliday(d);
+          const holiday = getQuebecBankHolidayName(d);
           
           return (
             <div className="group relative">

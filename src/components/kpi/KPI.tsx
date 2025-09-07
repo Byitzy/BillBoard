@@ -27,7 +27,7 @@ export default function KPI({ label, value, className, index = 0, tooltip, href 
       <div className="text-xs font-medium text-neutral-500 dark:text-neutral-400">{label}</div>
       <div className="mt-2 text-3xl font-semibold tracking-tight">{value}</div>
       {tooltip && (
-        <div className="pointer-events-none absolute right-2 top-2 z-10 hidden w-48 rounded-xl border border-neutral-200 bg-[hsl(var(--surface))] p-3 text-xs text-neutral-600 shadow-xl group-hover:block dark:border-neutral-800 dark:text-neutral-300 transition-opacity duration-200">
+        <div className="pointer-events-none absolute -top-16 left-1/2 transform -translate-x-1/2 z-10 hidden w-48 rounded-xl border border-neutral-200 bg-white p-3 text-xs text-neutral-600 shadow-xl group-hover:block dark:border-neutral-800 dark:bg-neutral-900 dark:text-neutral-300 transition-opacity duration-200">
           {tooltip}
         </div>
       )}

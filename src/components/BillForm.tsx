@@ -295,26 +295,30 @@ export default function BillForm({ onCreated }: Props) {
                 setVendorQuery(e.target.value);
               }}
             />
-            {vendor === null && vendorQuery && vendorOptions.length > 0 && (
+            {vendor === null && vendorQuery && (
               <ul className="absolute z-10 mt-1 w-full overflow-hidden rounded-xl border border-neutral-200 bg-white text-sm shadow-sm dark:border-neutral-800 dark:bg-neutral-900">
-                {vendorOptions.map((v) => (
-                  <li key={v.id}>
-                    <button
-                      type="button"
-                      className="w-full px-3 py-2 text-left hover:bg-neutral-100 dark:hover:bg-neutral-800"
-                      onClick={() => {
-                        setVendor(v);
-                        setVendorQuery('');
-                      }}
-                    >
-                      {v.name}
-                    </button>
-                  </li>
-                ))}
+                {vendorOptions.length === 0 ? (
+                  <li className="px-3 py-2 text-neutral-500">{t('common.noMatches')}</li>
+                ) : (
+                  vendorOptions.map((v) => (
+                    <li key={v.id}>
+                      <button
+                        type="button"
+                        className="w-full px-3 py-2 text-left hover:bg-blue-50 dark:hover:bg-blue-900/20"
+                        onClick={() => {
+                          setVendor(v);
+                          setVendorQuery('');
+                        }}
+                      >
+                        {v.name}
+                      </button>
+                    </li>
+                  ))
+                )}
                 <li>
                   <button
                     type="button"
-                    className="w-full px-3 py-2 text-left hover:bg-neutral-100 dark:hover:bg-neutral-800"
+                    className="w-full px-3 py-2 text-left hover:bg-blue-50 dark:hover:bg-blue-900/20"
                     onClick={async () => {
                       const v = await ensureVendor(vendorQuery);
                       if (v) {
@@ -323,7 +327,7 @@ export default function BillForm({ onCreated }: Props) {
                       }
                     }}
                   >
-                    Create “{vendorQuery}”
+{t('common.create')} "{vendorQuery}"
                   </button>
                 </li>
               </ul>
@@ -347,13 +351,13 @@ export default function BillForm({ onCreated }: Props) {
             {project === null && projectQuery && (
               <ul className="absolute z-10 mt-1 w-full overflow-hidden rounded-xl border border-neutral-200 bg-white text-sm shadow-sm dark:border-neutral-800 dark:bg-neutral-900">
                 {projectOptions.length === 0 ? (
-                  <li className="px-3 py-2 text-neutral-500">No matches</li>
+                  <li className="px-3 py-2 text-neutral-500">{t('common.noMatches')}</li>
                 ) : (
                   projectOptions.map((p) => (
                     <li key={p.id}>
                       <button
                         type="button"
-                        className="w-full px-3 py-2 text-left hover:bg-neutral-100 dark:hover:bg-neutral-800"
+                        className="w-full px-3 py-2 text-left hover:bg-blue-50 dark:hover:bg-blue-900/20"
                         onClick={() => {
                           setProject(p);
                           setProjectQuery('');
@@ -376,7 +380,7 @@ export default function BillForm({ onCreated }: Props) {
                       }
                     }}
                   >
-                    Create “{projectQuery}”
+                    {t('common.create')} "{projectQuery}"
                   </button>
                 </li>
               </ul>

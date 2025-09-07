@@ -109,7 +109,7 @@ export default function VendorsPage() {
         <table className="w-full">
           <thead>
             <tr className="text-left">
-              {['Name', 'Bills', 'Actions'].map((h) => (
+              {[t('common.name'), t('common.bills'), t('common.actions')].map((h) => (
                 <th key={h} className="px-3 py-2 text-neutral-500">
                   {h}
                 </th>
@@ -120,7 +120,7 @@ export default function VendorsPage() {
             {loading ? (
               <tr>
                 <td className="px-3 py-2" colSpan={3}>
-                  Loading...
+                  {t('common.loading')}
                 </td>
               </tr>
             ) : vendors.length === 0 ? (
@@ -152,7 +152,7 @@ export default function VendorsPage() {
                             className="rounded-lg border px-2 py-1 text-xs hover:bg-neutral-100 dark:border-neutral-800 dark:hover:bg-neutral-900"
                             onClick={() => saveEdit(v.id)}
                           >
-                            Save
+                            {t('common.save')}
                           </button>
                           <button
                             className="rounded-lg border px-2 py-1 text-xs hover:bg-neutral-100 dark:border-neutral-800 dark:hover:bg-neutral-900"
@@ -161,7 +161,7 @@ export default function VendorsPage() {
                               setEditName('');
                             }}
                           >
-                            Cancel
+                            {t('common.cancel')}
                           </button>
                         </>
                       ) : (
@@ -170,13 +170,13 @@ export default function VendorsPage() {
                             className="rounded-lg border px-2 py-1 text-xs hover:bg-neutral-100 dark:border-neutral-800 dark:hover:bg-neutral-900"
                             onClick={() => startEdit(v)}
                           >
-                            Edit
+                            {t('common.edit')}
                           </button>
                           <button
                             className="rounded-lg border px-2 py-1 text-xs text-red-600 hover:bg-red-50 dark:border-neutral-800 dark:hover:bg-neutral-900"
                             onClick={() => removeVendor(v.id)}
                           >
-                            Delete
+                            {t('common.delete')}
                           </button>
                         </>
                       )}

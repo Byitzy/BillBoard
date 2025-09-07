@@ -76,7 +76,7 @@ export default function Topbar() {
                   <li key={item.label} role="menuitem">
                     <Link
                       href={item.href}
-                      className="w-full rounded-lg px-3 py-2 text-left hover:bg-neutral-100 dark:hover:bg-neutral-800 block"
+                      className="w-full rounded-lg px-3 py-2 text-left hover:bg-blue-50 dark:hover:bg-blue-900/20 block"
                       onClick={() => setMenuOpen(false)}
                     >
                       {item.label}

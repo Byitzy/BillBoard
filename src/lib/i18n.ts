@@ -71,7 +71,13 @@ export const translations = {
     'common.status': 'Status',
     'common.state': 'State',
     'common.due': 'Due',
-    'common.new': 'New'
+    'common.new': 'New',
+    'common.today': 'Today',
+    'common.prev': 'Prev',
+    'common.next': 'Next',
+    'common.noMatches': 'No matches',
+    'common.create': 'Create',
+    'common.bills': 'Bills'
   },
   
   'fr-FR': {
@@ -145,7 +151,13 @@ export const translations = {
     'common.status': 'Statut',
     'common.state': 'État',
     'common.due': 'Échéance',
-    'common.new': 'Nouveau'
+    'common.new': 'Nouveau',
+    'common.today': 'Aujourd\'hui',
+    'common.prev': 'Précédent',
+    'common.next': 'Suivant',
+    'common.noMatches': 'Aucun résultat',
+    'common.create': 'Créer',
+    'common.bills': 'Factures'
   },
   
   'es-ES': {
@@ -219,7 +231,13 @@ export const translations = {
     'common.status': 'Estado',
     'common.state': 'Estado',
     'common.due': 'Vencimiento',
-    'common.new': 'Nuevo'
+    'common.new': 'Nuevo',
+    'common.today': 'Hoy',
+    'common.prev': 'Anterior',
+    'common.next': 'Siguiente',
+    'common.noMatches': 'Sin resultados',
+    'common.create': 'Crear',
+    'common.bills': 'Facturas'
   }
 };
 
