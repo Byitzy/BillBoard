@@ -2,6 +2,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { getSupabaseClient } from '@/lib/supabase/client';
 import { getDefaultOrgId } from '@/lib/org';
+import { useLocale } from '@/components/i18n/LocaleProvider';
 
 type Props = { onCreated?: () => void };
 
@@ -9,6 +10,7 @@ type Option = { id: string; name: string };
 
 export default function BillForm({ onCreated }: Props) {
   const supabase = getSupabaseClient();
+  const { t } = useLocale();
 
   const [orgId, setOrgId] = useState<string | null>(null);
   const [amount, setAmount] = useState('');
@@ -327,7 +329,7 @@ export default function BillForm({ onCreated }: Props) {
                       }
                     }}
                   >
-{t('common.create')} "{vendorQuery}"
+{t('common.create')} &quot;{vendorQuery}&quot;
                   </button>
                 </li>
               </ul>
@@ -380,7 +382,7 @@ export default function BillForm({ onCreated }: Props) {
                       }
                     }}
                   >
-                    {t('common.create')} "{projectQuery}"
+                    {t('common.create')} &quot;{projectQuery}&quot;
                   </button>
                 </li>
               </ul>
