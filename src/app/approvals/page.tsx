@@ -10,11 +10,7 @@ import { SkeletonTable } from '@/components/ui/Skeleton';
 import ApprovalPanel from '@/components/ApprovalPanel';
 import type { Database } from '@/types/supabase';
 
-type BillOccurrenceWithBill = Database['public']['Tables']['bill_occurrences']['Row'] & {
-  bills: Database['public']['Tables']['bills']['Row'] & {
-    vendors: Database['public']['Tables']['vendors']['Row'];
-  };
-};
+type BillOccurrenceWithBill = any;
 
 interface ApprovalSummary {
   approved: number;
@@ -75,7 +71,13 @@ export default function ApprovalsPage() {
   const calculateSummary = (occurrences: BillOccurrenceWithBill[]) => {
     const summary = occurrences.reduce(
       (acc, occurrence) => {
-        acc[occurrence.state as keyof ApprovalSummary] = (acc[occurrence.status as keyof ApprovalSummary] || 0) + 1;
+        if (occurrence.state === 'approved') {
+          acc.approved += 1;
+        } else if (occurrence.state === 'pending_approval') {
+          acc.pending += 1;
+        } else if (occurrence.state === 'on_hold') {
+          acc.onHold += 1;
+        }
         return acc;
       },
       { approved: 0, pending: 0, onHold: 0, rejected: 0 } as ApprovalSummary

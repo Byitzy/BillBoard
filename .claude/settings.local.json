@@ -11,7 +11,11 @@
       "Bash(pnpm build:*)",
       "Bash(pnpm add:*)",
       "Bash(pnpm format:*)",
-      "Bash(pnpm reinstall:*)"
+      "Bash(pnpm reinstall:*)",
+      "Bash(git checkout:*)",
+      "Bash(git reset:*)",
+      "Bash(git push:*)",
+      "Bash(SKIP_ENV_VALIDATION=true pnpm build)"
     ],
     "deny": [],
     "ask": []

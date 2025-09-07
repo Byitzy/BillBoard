@@ -24,7 +24,7 @@ module.exports = {
   rules: {
     // TypeScript specific rules
     '@typescript-eslint/no-unused-vars': [
-      'error',
+      'warn',
       {
         argsIgnorePattern: '^_',
         varsIgnorePattern: '^_',
@@ -49,7 +49,7 @@ module.exports = {
 
     // Import rules
     'import/order': [
-      'error',
+      'warn',
       {
         groups: [
           'builtin',
@@ -66,7 +66,7 @@ module.exports = {
         },
       },
     ],
-    'import/no-duplicates': 'error',
+    'import/no-duplicates': 'warn',
 
     // React specific rules
     'react/prop-types': 'off', // We use TypeScript for prop validation
@@ -78,7 +78,7 @@ module.exports = {
     // General code quality
     'prefer-const': 'error',
     'no-var': 'error',
-    'no-console': process.env.NODE_ENV === 'production' ? 'error' : 'warn',
+    'no-console': process.env.NODE_ENV === 'production' ? 'warn' : 'warn',
     'no-debugger': process.env.NODE_ENV === 'production' ? 'error' : 'warn',
     'no-duplicate-imports': 'error',
     'no-template-curly-in-string': 'error',

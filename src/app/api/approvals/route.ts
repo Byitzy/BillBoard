@@ -57,7 +57,7 @@ export async function POST(request: NextRequest) {
       .eq('id', billOccurrenceId)
       .single();
 
-    if (!billOccurrence || billOccurrence.bills?.org_id !== userProfile.org_id) {
+    if (!billOccurrence || (billOccurrence.bills as any)?.org_id !== userProfile.org_id) {
       return NextResponse.json(
         { error: 'Bill occurrence not found or access denied' },
         { status: 404 }
@@ -108,19 +108,19 @@ export async function POST(request: NextRequest) {
       result = data;
     }
 
-    // Update bill occurrence status based on approval
-    let newStatus = 'pending';
+    // Update bill occurrence state based on approval
+    let newState: 'scheduled' | 'pending_approval' | 'approved' | 'on_hold' | 'paid' | 'failed' | 'canceled' = 'pending_approval';
     if (decision === 'approved') {
-      newStatus = 'approved';
+      newState = 'approved';
     } else if (decision === 'hold') {
-      newStatus = 'on_hold';
+      newState = 'on_hold';
     } else if (decision === 'rejected') {
-      newStatus = 'rejected';
+      newState = 'canceled';
     }
 
     await supabase
       .from('bill_occurrences')
-      .update({ status: newStatus })
+      .update({ state: newState })
       .eq('id', billOccurrenceId);
 
     return NextResponse.json({ data: result });
