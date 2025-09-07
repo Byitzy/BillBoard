@@ -78,3 +78,16 @@ a:hover { text-decoration: underline; }
 :where(button, a, input, summary, details) {
   @apply outline-none focus-visible:ring-2 ring-blue-500;
 }
+
+/* Ensure selects are readable in dark/brand modes */
+:where(select) {
+  background-color: hsl(var(--surface));
+  color: hsl(var(--text));
+  border-color: hsl(var(--border));
+}
+
+/* Darken selects a bit more in dark/brand for readability */
+.dark :where(select),
+.billboard :where(select) {
+  background-color: hsl(var(--bg));
+}

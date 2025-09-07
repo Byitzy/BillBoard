@@ -3,6 +3,7 @@ import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import { getSupabaseClient } from '@/lib/supabase/client';
 import { getDefaultOrgId } from '@/lib/org';
+import BillForm from '@/components/BillForm';
 
 type BillRow = {
   id: string;
@@ -15,12 +16,10 @@ export default function BillsPage() {
   const supabase = getSupabaseClient();
   const [orgId, setOrgId] = useState<string | null>(null);
   const [bills, setBills] = useState<BillRow[]>([]);
+  const [nextDue, setNextDue] = useState<Record<string, string | undefined>>({});
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  const [title, setTitle] = useState('');
-  const [amount, setAmount] = useState('');
-  const [due, setDue] = useState('');
 
   async function load() {
     setLoading(true);
@@ -38,29 +37,32 @@ export default function BillsPage() {
       .eq('org_id', id)
       .order('created_at', { ascending: false });
     if (error) setError(error.message);
-    else setBills((data ?? []) as BillRow[]);
+    else {
+      const rows = (data ?? []) as BillRow[];
+      setBills(rows);
+      // compute next due for recurring bills
+      const ids = rows.filter((b) => !b.due_date).map((b) => b.id);
+      if (ids.length > 0) {
+        const today = new Date();
+        const iso = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
+        const { data: occ } = await supabase
+          .from('bill_occurrences')
+          .select('bill_id,due_date')
+          .in('bill_id', ids)
+          .gte('due_date', iso)
+          .order('due_date', { ascending: true });
+        const map: Record<string, string> = {};
+        occ?.forEach((o: any) => {
+          if (!map[o.bill_id]) map[o.bill_id] = o.due_date;
+        });
+        setNextDue(map);
+      } else {
+        setNextDue({});
+      }
+    }
     setLoading(false);
   }
 
-  async function createBill(e: React.FormEvent) {
-    e.preventDefault();
-    if (!orgId) return;
-    const amt = parseFloat(amount);
-    if (!title.trim() || Number.isNaN(amt)) return;
-    setLoading(true);
-    setError(null);
-    const { error } = await supabase.from('bills').insert({
-      org_id: orgId,
-      title: title.trim(),
-      amount_total: amt,
-      due_date: due ? due : null
-    });
-    if (error) setError(error.message);
-    setTitle('');
-    setAmount('');
-    setDue('');
-    await load();
-  }
 
   useEffect(() => {
     load();
@@ -72,33 +74,7 @@ export default function BillsPage() {
         <h1 className="text-xl font-semibold">Bills</h1>
       </div>
 
-      <form onSubmit={createBill} className="grid grid-cols-1 gap-2 sm:grid-cols-3">
-        <input
-          placeholder="Title"
-          value={title}
-          onChange={(e) => setTitle(e.target.value)}
-          className="rounded-xl border border-neutral-200 bg-transparent px-3 py-2 text-sm dark:border-neutral-800"
-        />
-        <input
-          placeholder="Amount (CAD)"
-          inputMode="decimal"
-          value={amount}
-          onChange={(e) => setAmount(e.target.value)}
-          className="rounded-xl border border-neutral-200 bg-transparent px-3 py-2 text-sm dark:border-neutral-800"
-        />
-        <input
-          type="date"
-          placeholder="Due date"
-          value={due}
-          onChange={(e) => setDue(e.target.value)}
-          className="rounded-xl border border-neutral-200 bg-transparent px-3 py-2 text-sm dark:border-neutral-800"
-        />
-        <div>
-          <button type="submit" className="rounded-xl bg-blue-600 px-3 py-2 text-sm font-medium text-white hover:bg-blue-700">
-            Create Bill
-          </button>
-        </div>
-      </form>
+      <BillForm onCreated={load} />
 
       {error && <div className="text-sm text-red-600">{error}</div>}
 
@@ -131,7 +107,7 @@ export default function BillsPage() {
                 <tr key={b.id} className="border-t border-neutral-100 dark:border-neutral-800">
                   <td className="px-3 py-2">{b.title}</td>
                   <td className="px-3 py-2">${b.amount_total.toFixed(2)}</td>
-                  <td className="px-3 py-2">{b.due_date ?? '—'}</td>
+                  <td className="px-3 py-2">{b.due_date ?? nextDue[b.id] ?? '-'}</td>
                   <td className="px-3 py-2 text-right">
                     <Link href={`/bills/${b.id}`} className="rounded-lg border px-2 py-1 hover:bg-neutral-50 dark:border-neutral-800 dark:hover:bg-neutral-900">
                       View

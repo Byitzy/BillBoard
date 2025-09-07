@@ -1,6 +1,7 @@
 "use client";
 import { Bell, ChevronDown, Plus, Search, LogIn, LogOut, Menu } from 'lucide-react';
 import { useEffect, useState } from 'react';
+import { usePathname } from 'next/navigation';
 import { cn } from '@/lib/utils';
 import { getSupabaseClient } from '@/lib/supabase/client';
 import Link from 'next/link';
@@ -12,6 +13,7 @@ export default function Topbar() {
   const [mobileOpen, setMobileOpen] = useState(false);
   const [signedIn, setSignedIn] = useState(false);
   const supabase = getSupabaseClient();
+  const pathname = usePathname();
 
   useEffect(() => {
     supabase.auth.getSession().then((res) => setSignedIn(!!res.data.session));
@@ -20,6 +22,12 @@ export default function Topbar() {
     );
     return () => sub.subscription.unsubscribe();
   }, []);
+
+  useEffect(() => {
+    // Close menus on route change to avoid overlay trapping clicks
+    setMobileOpen(false);
+    setMenuOpen(false);
+  }, [pathname]);
   return (
     <header className="sticky top-0 z-10 bg-[hsl(var(--surface))]/80 backdrop-blur" style={{ borderBottom: '1px solid hsl(var(--border))' }}>
       <div className="container-page flex items-center justify-between gap-4">
@@ -53,7 +61,7 @@ export default function Topbar() {
             {menuOpen && (
               <ul
                 role="menu"
-                className="absolute right-0 mt-2 w-40 overflow-hidden rounded-xl border border-neutral-200 bg-white p-1 text-sm shadow-sm dark:border-neutral-800 dark:bg-neutral-900"
+                className="absolute right-0 mt-2 w-40 overflow-hidden rounded-xl border border-neutral-200 bg-[hsl(var(--surface))] p-1 text-sm shadow-sm dark:border-neutral-800"
                 onKeyDown={(e) => {
                   if (e.key === 'Escape') setMenuOpen(false);
                 }}
