@@ -36,7 +36,7 @@ export default function ProfileSettingsPage() {
     } finally {
       setLoading(false);
     }
-  }, [supabase]);
+  }, [supabase, setTheme]);
 
   useEffect(() => {
     loadSettings();

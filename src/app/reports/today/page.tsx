@@ -9,10 +9,10 @@ type Occurrence = {
   due_date: string;
   amount_due: number;
   state: string;
-  bill: {
+  bills: {
     title: string;
-    vendor?: { name: string };
-  };
+    vendors: { name: string }[];
+  }[];
 };
 
 export default function TodayReport() {
@@ -98,9 +98,9 @@ export default function TodayReport() {
               <tbody>
                 {occurrences.map((o) => (
                   <tr key={o.id} className="border-b border-neutral-100 dark:border-neutral-800">
-                    <td className="py-3">{o.bill.title}</td>
+                    <td className="py-3">{o.bills[0]?.title || '—'}</td>
                     <td className="py-3 text-neutral-600 dark:text-neutral-300">
-                      {o.bill.vendor?.name || '—'}
+                      {o.bills[0]?.vendors[0]?.name || '—'}
                     </td>
                     <td className="py-3 font-medium">${o.amount_due.toFixed(2)}</td>
                     <td className="py-3">

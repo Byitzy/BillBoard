@@ -67,9 +67,9 @@ export default function Topbar() {
                 }}
               >
                 {[
-                  { label: 'Add Bill', href: '/bills' },
-                  { label: 'Add Vendor', href: '/vendors' },
-                  { label: 'Add Project', href: '/projects' }
+                  { label: 'Add Bill', href: '/bills' as const },
+                  { label: 'Add Vendor', href: '/vendors' as const },
+                  { label: 'Add Project', href: '/projects' as const }
                 ].map((item) => (
                   <li key={item.label} role="menuitem">
                     <Link
