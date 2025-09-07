@@ -85,23 +85,61 @@ export default function CalendarClient() {
         renderDay={(d) => {
           const iso = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
           const items = byDay.get(iso) ?? [];
-          if (items.length === 0) return null;
+          const holiday = isQuebecBankHoliday(d);
+          
           return (
-            <div className="mt-1 space-y-1 relative">
-              {items.slice(0, 3).map((o) => (
-                <div
-                  key={o.id}
-                  className="rounded-md px-2 py-1 text-xs"
-                  style={{
-                    backgroundColor: o.state === 'approved' ? 'rgba(34,197,94,0.15)' : o.state === 'on_hold' ? 'rgba(245,158,11,0.15)' : 'rgba(59,130,246,0.15)',
-                    color: 'hsl(var(--text))'
-                  }}
-                  title={`${o.state} · $${o.amount_due.toFixed(2)}`}
-                >
-                  ${o.amount_due.toFixed(0)} · {o.state}
+            <div className="group relative">
+              {items.length > 0 && (
+                <div className="mt-1 space-y-1">
+                  {items.slice(0, 3).map((o) => (
+                    <div
+                      key={o.id}
+                      className="rounded-md px-2 py-1 text-xs"
+                      style={{
+                        backgroundColor: o.state === 'approved' ? 'rgba(34,197,94,0.15)' : o.state === 'on_hold' ? 'rgba(245,158,11,0.15)' : 'rgba(59,130,246,0.15)',
+                        color: 'hsl(var(--text))'
+                      }}
+                    >
+                      ${o.amount_due.toFixed(0)} · {o.state}
+                    </div>
+                  ))}
+                  {items.length > 3 && <div className="text-[10px] text-neutral-500">+{items.length - 3} more…</div>}
                 </div>
-              ))}
-              {items.length > 3 && <div className="text-[10px] text-neutral-500">+{items.length - 3} more…</div>}
+              )}
+              
+              {/* Info bubble on hover */}
+              {(items.length > 0 || holiday) && (
+                <div className="pointer-events-none absolute left-0 top-8 z-20 hidden w-56 rounded-xl border border-neutral-200 bg-[hsl(var(--surface))] p-3 text-xs shadow-xl group-hover:block dark:border-neutral-800">
+                  {holiday && (
+                    <div className="mb-2 rounded-lg bg-amber-100 px-2 py-1 text-amber-800 dark:bg-amber-900/30 dark:text-amber-300">
+                      <strong>Holiday:</strong> {holiday}
+                    </div>
+                  )}
+                  {items.length > 0 && (
+                    <>
+                      <div className="mb-1 font-medium text-neutral-700 dark:text-neutral-200">
+                        Bills Due ({items.length})
+                      </div>
+                      <div className="space-y-1">
+                        {items.map((o) => (
+                          <div key={o.id} className="flex justify-between">
+                            <span className={`inline-block w-2 h-2 rounded-full mr-2 mt-0.5 ${
+                              o.state === 'approved' ? 'bg-green-500' : 
+                              o.state === 'on_hold' ? 'bg-amber-500' : 
+                              'bg-blue-500'
+                            }`}></span>
+                            <span className="flex-1">{o.state}</span>
+                            <span className="font-medium">${o.amount_due.toFixed(2)}</span>
+                          </div>
+                        ))}
+                        <div className="mt-2 pt-1 border-t border-neutral-200 dark:border-neutral-700 font-medium">
+                          Total: ${items.reduce((sum, o) => sum + o.amount_due, 0).toFixed(2)}
+                        </div>
+                      </div>
+                    </>
+                  )}
+                </div>
+              )}
             </div>
           );
         }}
