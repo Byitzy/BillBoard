@@ -25,10 +25,12 @@ export default function SuperAdminDashboard() {
   const [stats, setStats] = useState<SuperAdminStats | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [isSuperAdmin, setIsSuperAdmin] = useState(false);
+  const [isSuperAdmin, setIsSuperAdmin] = useState<boolean | null>(null);
+  const [mounted, setMounted] = useState(false);
   const supabase = getSupabaseClient();
 
   useEffect(() => {
+    setMounted(true);
     loadSuperAdminData();
   }, []);
 
@@ -121,7 +123,16 @@ export default function SuperAdminDashboard() {
     }
   }
 
-  if (!isSuperAdmin && !loading) {
+  // Prevent hydration mismatch by not rendering until mounted
+  if (!mounted) {
+    return (
+      <div className="flex min-h-[50vh] items-center justify-center">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+      </div>
+    );
+  }
+
+  if (isSuperAdmin === false && !loading) {
     return (
       <div className="flex min-h-[50vh] items-center justify-center">
         <div className="text-center">
@@ -142,7 +153,7 @@ export default function SuperAdminDashboard() {
     );
   }
 
-  if (loading) {
+  if (loading || isSuperAdmin === null) {
     return (
       <div className="flex min-h-[50vh] items-center justify-center">
         <div className="text-center">

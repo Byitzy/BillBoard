@@ -38,15 +38,23 @@ export default function Sidebar() {
   const supabase = getSupabaseClient();
 
   useEffect(() => {
+    let mounted = true;
     async function checkSuperAdmin() {
-      const {
-        data: { session },
-      } = await supabase.auth.getSession();
-      if (session?.user?.user_metadata?.is_super_admin) {
-        setIsSuperAdmin(true);
+      try {
+        const {
+          data: { session },
+        } = await supabase.auth.getSession();
+        if (mounted && session?.user?.user_metadata?.is_super_admin) {
+          setIsSuperAdmin(true);
+        }
+      } catch (error) {
+        // Handle auth error silently
       }
     }
     checkSuperAdmin();
+    return () => {
+      mounted = false;
+    };
   }, [supabase]);
 
   const nav = getNav(t);

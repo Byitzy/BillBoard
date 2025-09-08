@@ -27,7 +27,8 @@ export default function SuperAdminUsersPage() {
   const [organizations, setOrganizations] = useState<Organization[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [isSuperAdmin, setIsSuperAdmin] = useState(false);
+  const [isSuperAdmin, setIsSuperAdmin] = useState<boolean | null>(null);
+  const [mounted, setMounted] = useState(false);
 
   // Form states
   const [showCreateForm, setShowCreateForm] = useState(false);
@@ -43,6 +44,7 @@ export default function SuperAdminUsersPage() {
   const supabase = getSupabaseClient();
 
   useEffect(() => {
+    setMounted(true);
     loadData();
   }, []);
 
@@ -156,7 +158,16 @@ export default function SuperAdminUsersPage() {
     }
   }
 
-  if (!isSuperAdmin && !loading) {
+  // Prevent hydration mismatch by not rendering until mounted
+  if (!mounted) {
+    return (
+      <div className="flex min-h-[50vh] items-center justify-center">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+      </div>
+    );
+  }
+
+  if (isSuperAdmin === false && !loading) {
     return (
       <div className="flex min-h-[50vh] items-center justify-center">
         <div className="text-center">
@@ -175,7 +186,7 @@ export default function SuperAdminUsersPage() {
     );
   }
 
-  if (loading) {
+  if (loading || isSuperAdmin === null) {
     return (
       <div className="flex min-h-[50vh] items-center justify-center">
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
