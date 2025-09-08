@@ -1,8 +1,5 @@
 import type { Metadata } from 'next';
 import './globals.css';
-import Sidebar from '@/components/app-shell/Sidebar';
-import Topbar from '@/components/app-shell/Topbar';
-import { ErrorBoundary } from '@/components/ErrorBoundary';
 import { LocaleProvider } from '@/components/i18n/LocaleProvider';
 import { ThemeProvider, ThemeScript } from '@/components/theme/ThemeProvider';
 
@@ -41,21 +38,7 @@ export default function RootLayout({
       </head>
       <body className="min-h-screen">
         <ThemeProvider>
-          <LocaleProvider>
-            <div className="flex min-h-screen">
-              <ErrorBoundary>
-                <Sidebar />
-              </ErrorBoundary>
-              <main className="flex-1">
-                <ErrorBoundary>
-                  <Topbar />
-                </ErrorBoundary>
-                <div className="container-page">
-                  <ErrorBoundary>{children}</ErrorBoundary>
-                </div>
-              </main>
-            </div>
-          </LocaleProvider>
+          <LocaleProvider>{children}</LocaleProvider>
         </ThemeProvider>
       </body>
     </html>
