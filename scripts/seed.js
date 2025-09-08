@@ -107,53 +107,71 @@ async function createOrganizations() {
 async function createTestUsers() {
   console.log('👥 Creating test user accounts...');
 
-  // Create super admin first
-  const superAdmin = {
-    email: 'yidy@pm.me',
-    password: 'password123',
-    user_metadata: {
-      full_name: 'Super Administrator',
-      role: 'super_admin',
-      is_super_admin: true,
+  // Create super admins
+  const superAdmins = [
+    {
+      email: 'yidy@pm.me',
+      password: 'password123',
+      user_metadata: {
+        full_name: 'Super Administrator',
+        role: 'super_admin',
+        is_super_admin: true,
+      },
     },
-  };
+    {
+      email: 'Byitzy@ymail.com',
+      password: 'password123',
+      user_metadata: {
+        full_name: 'Super Administrator',
+        role: 'super_admin',
+        is_super_admin: true,
+      },
+    },
+  ];
 
-  const { data: superAdminData, error: superAdminError } =
-    await supabase.auth.admin.createUser({
-      email: superAdmin.email,
-      password: superAdmin.password,
-      user_metadata: superAdmin.user_metadata,
-      email_confirm: true,
-    });
-
-  if (superAdminError) {
-    console.warn(
-      `  ⚠️ Could not create super admin ${superAdmin.email}:`,
-      superAdminError.message
-    );
-  } else {
-    console.log(`  ✅ Created super admin ${superAdmin.email}`);
-
-    // Add super admin to both organizations
-    const orgIds = [
-      '11111111-1111-1111-1111-111111111111',
-      '22222222-2222-2222-2222-222222222222',
-    ];
-    for (const orgId of orgIds) {
-      const { error: memberError } = await supabase.from('org_members').upsert({
-        org_id: orgId,
-        user_id: superAdminData.user.id,
-        role: 'admin',
-        status: 'active',
+  // Create each super admin
+  for (const superAdmin of superAdmins) {
+    const { data: superAdminData, error: superAdminError } =
+      await supabase.auth.admin.createUser({
+        email: superAdmin.email,
+        password: superAdmin.password,
+        user_metadata: superAdmin.user_metadata,
+        email_confirm: true,
       });
 
-      if (memberError) {
-        console.warn(
-          `    ⚠️ Could not add super admin to org ${orgId}:`,
-          memberError.message
-        );
-      } else {
-        console.log(`    ✅ Added super admin to organization as admin`);
+    if (superAdminError) {
+      console.warn(
+        `  ⚠️ Could not create super admin ${superAdmin.email}:`,
+        superAdminError.message
+      );
+    } else {
+      console.log(`  ✅ Created super admin ${superAdmin.email}`);
+
+      // Add super admin to both organizations
+      const orgIds = [
+        '11111111-1111-1111-1111-111111111111',
+        '22222222-2222-2222-2222-222222222222',
+      ];
+      for (const orgId of orgIds) {
+        const { error: memberError } = await supabase
+          .from('org_members')
+          .upsert({
+            org_id: orgId,
+            user_id: superAdminData.user.id,
+            role: 'admin',
+            status: 'active',
+          });
+
+        if (memberError) {
+          console.warn(
+            `    ⚠️ Could not add super admin ${superAdmin.email} to org ${orgId}:`,
+            memberError.message
+          );
+        } else {
+          console.log(
+            `    ✅ Added ${superAdmin.email} to organization as admin`
+          );
+        }
       }
     }
   }
@@ -575,12 +593,15 @@ Please check your .env.local file.`);
       await createSampleData();
     }
 
-    console.log('🎉 Database seeding completed successfully!');
-    console.log('\n👑 Super Administrator:');
+    console.log('Database seeding completed successfully!');
+    console.log('\nSuper Administrators:');
     console.log(
       '  - yidy@pm.me (password: password123) - Super Admin (access to all orgs)'
     );
-    console.log('\n📋 Test Accounts Created:');
+    console.log(
+      '  - Byitzy@ymail.com (password: password123) - Super Admin (access to all orgs)'
+    );
+    console.log('\nTest Accounts Created:');
     console.log('  - admin@acme.com (password: password123) - Admin role');
     console.log(
       '  - approver@acme.com (password: password123) - Approver role'
@@ -588,11 +609,11 @@ Please check your .env.local file.`);
     console.log(
       '  - accountant@acme.com (password: password123) - Accountant role'
     );
-    console.log('\n🏢 Organizations:');
+    console.log('\nOrganizations:');
     console.log('  - Acme Corporation (slug: acme)');
     console.log('  - TechCorp Solutions (slug: techcorp)');
   } catch (error) {
-    console.error('💥 Seeding failed:', error);
+    console.error('Seeding failed:', error);
     process.exit(1);
   }
 }
