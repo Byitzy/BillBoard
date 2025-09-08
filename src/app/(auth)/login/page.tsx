@@ -122,15 +122,10 @@ export default function LoginPage() {
             >
               {loading ? 'Signing in…' : 'Sign in'}
             </button>
-            <button
-              disabled={loading}
-              type="button"
-              onClick={signUpPassword}
-              className="rounded-xl border px-3 py-2 text-sm hover:bg-neutral-100 dark:hover:bg-neutral-900"
-            >
-              Create account
-            </button>
           </div>
+          <p className="text-xs text-neutral-500 mt-2">
+            New users must be invited by an administrator.
+          </p>
         </form>
       )}
       {status && (
