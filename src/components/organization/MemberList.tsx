@@ -1,6 +1,6 @@
 'use client';
 
-import { SharedSelect } from '@/components/ui/SharedSelect';
+import SharedSelect from '@/components/ui/SharedSelect';
 
 interface Member {
   id: string;
@@ -98,7 +98,7 @@ export default function MemberList({
                   <SharedSelect
                     simple
                     simpleValue={member.role}
-                    onSimpleChange={(newRole) =>
+                    onSimpleChange={(newRole: string) =>
                       onRoleChange(member.id, newRole)
                     }
                     simpleOptions={Object.entries(ROLE_LABELS).map(
@@ -114,7 +114,7 @@ export default function MemberList({
                   <SharedSelect
                     simple
                     simpleValue={member.status}
-                    onSimpleChange={(newStatus) =>
+                    onSimpleChange={(newStatus: string) =>
                       onStatusChange(member.id, newStatus)
                     }
                     simpleOptions={Object.entries(STATUS_LABELS).map(

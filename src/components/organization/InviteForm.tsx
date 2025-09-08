@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { SharedSelect } from '@/components/ui/SharedSelect';
+import SharedSelect from '@/components/ui/SharedSelect';
 
 interface InviteFormProps {
   orgId: string;
@@ -84,7 +84,7 @@ export default function InviteForm({ orgId, onInviteSent }: InviteFormProps) {
             <SharedSelect
               simple
               simpleValue={inviteForm.role}
-              onSimpleChange={(value) =>
+              onSimpleChange={(value: string) =>
                 setInviteForm((prev) => ({ ...prev, role: value as any }))
               }
               simpleOptions={ROLE_OPTIONS}
@@ -98,7 +98,7 @@ export default function InviteForm({ orgId, onInviteSent }: InviteFormProps) {
             <SharedSelect
               simple
               simpleValue={inviteForm.status}
-              onSimpleChange={(value) =>
+              onSimpleChange={(value: string) =>
                 setInviteForm((prev) => ({ ...prev, status: value as any }))
               }
               simpleOptions={STATUS_OPTIONS}

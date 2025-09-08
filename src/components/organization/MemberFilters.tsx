@@ -1,6 +1,6 @@
 'use client';
 
-import { SharedSelect } from '@/components/ui/SharedSelect';
+import SharedSelect from '@/components/ui/SharedSelect';
 
 interface MemberFiltersProps {
   roleFilter: string;

@@ -206,13 +206,10 @@ export default function OrganizationSettingsPage() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold text-gray-900">
-            {t('settings.organization.title', 'Organization Settings')}
+            Organization Settings
           </h1>
           <p className="text-gray-600">
-            {t(
-              'settings.organization.description',
-              'Manage your organization members and invitations'
-            )}
+            Manage your organization members and invitations
           </p>
         </div>
       </div>
