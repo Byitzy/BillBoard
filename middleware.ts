@@ -11,7 +11,7 @@ export async function middleware(req: NextRequest) {
   const url = new URL(req.url);
   const pathname = url.pathname;
   const isAuthRoute =
-    pathname.startsWith('/login') || pathname.startsWith('/auth/callback');
+    pathname.startsWith('/login') || pathname.startsWith('/auth/');
   const isApi = pathname.startsWith('/api');
   const isPublicAsset =
     pathname.startsWith('/_next') ||
