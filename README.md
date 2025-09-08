@@ -140,4 +140,4 @@ See `todo.md` for planned sprints and features (auth, RBAC/RLS coverage, tables,
 
 ## License
 
-Not specified. If open-sourcing, add a LICENSE file; otherwise keep private.
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.

@@ -25,15 +25,15 @@ export async function GET(
   if (!me || me.role !== 'admin')
     return NextResponse.json({ error: 'forbidden' }, { status: 403 });
 
-  const { data: members, error: mErr } = await admin
+  const { data: members, error: mErr } = await (admin as any)
     .from('org_members')
-    .select('id, user_id, role, created_at')
+    .select('id, user_id, role, status, created_at')
     .eq('org_id', orgId)
     .order('created_at', { ascending: true });
   if (mErr) return NextResponse.json({ error: mErr.message }, { status: 400 });
 
   const enriched = await Promise.all(
-    (members ?? []).map(async (m) => {
+    (members ?? []).map(async (m: any) => {
       try {
         const res = await admin.auth.admin.getUserById(m.user_id);
         const email = res.data.user?.email ?? null;
