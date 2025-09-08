@@ -27,7 +27,11 @@
       "Bash(npm run lint:*)",
       "Bash(ls:*)",
       "Bash(pkill:*)",
-      "Bash(find:*)"
+      "Bash(find:*)",
+      "Bash(curl:*)",
+      "Bash(npx supabase db reset:*)",
+      "Bash(pnpm list:*)",
+      "Bash(pnpm update:*)"
     ],
     "deny": [],
     "ask": []
