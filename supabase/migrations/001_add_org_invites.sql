@@ -4,6 +4,7 @@ create table org_invites (
   org_id uuid not null references organizations(id) on delete cascade,
   email text not null,
   role role not null default 'viewer',
+  status text not null default 'active',
   invited_by uuid not null references auth.users(id) on delete cascade,
   token text unique not null default encode(gen_random_bytes(32), 'hex'),
   expires_at timestamptz not null default now() + interval '7 days',
@@ -84,8 +85,8 @@ begin
     where id = invite_record.id;
 
     -- Add user to org
-    insert into org_members (org_id, user_id, role)
-    values (invite_record.org_id, user_id, invite_record.role);
+    insert into org_members (org_id, user_id, role, status)
+    values (invite_record.org_id, user_id, invite_record.role, invite_record.status);
 
     return json_build_object(
       'success', true,
