@@ -60,9 +60,9 @@ export default async function BillsPage({ searchParams }: BillsPageProps) {
   if (searchParams.projectId) {
     query = query.eq('project_id', searchParams.projectId);
   }
-  if (searchParams.status) {
-    query = query.eq('status', searchParams.status);
-  }
+  // Apply status filter - default to 'active' if no status specified
+  const status = searchParams.status || 'active';
+  query = query.eq('status', status);
 
   const { data, error } = await query.order('created_at', { ascending: false });
 
