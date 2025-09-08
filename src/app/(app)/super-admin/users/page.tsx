@@ -224,7 +224,7 @@ export default function SuperAdminUsersPage() {
       )}
 
       {/* Create User Form */}
-      {showCreateForm && (
+      {mounted && showCreateForm && (
         <div className="bg-white dark:bg-neutral-900 rounded-xl border border-neutral-200 dark:border-neutral-800 p-6">
           <h2 className="text-lg font-semibold mb-4">Create New User</h2>
           <form onSubmit={createUser} className="space-y-4">
