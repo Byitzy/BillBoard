@@ -1,8 +1,8 @@
 'use client';
-import { useEffect, useState } from 'react';
 import { Bell, X, CheckCircle, AlertCircle, Info } from 'lucide-react';
-import { getSupabaseClient } from '@/lib/supabase/client';
+import { useEffect, useState } from 'react';
 import { getDefaultOrgId } from '@/lib/org';
+import { getSupabaseClient } from '@/lib/supabase/client';
 
 type Notification = {
   id: string;
@@ -19,16 +19,17 @@ export default function NotificationCenter() {
   const [unreadCount, setUnreadCount] = useState(0);
   const [isOpen, setIsOpen] = useState(false);
   const [loading, setLoading] = useState(false);
-  
+
   const supabase = getSupabaseClient();
 
   useEffect(() => {
     loadNotifications();
-    
+
     // Subscribe to new notifications
     const channel = supabase
       .channel('notifications')
-      .on('postgres_changes', 
+      .on(
+        'postgres_changes',
         { event: 'INSERT', schema: 'public', table: 'notifications' },
         handleNewNotification
       )
@@ -45,7 +46,9 @@ export default function NotificationCenter() {
       const orgId = await getDefaultOrgId(supabase);
       if (!orgId) return;
 
-      const { data: { user } } = await supabase.auth.getUser();
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
       if (!user) return;
 
       const { data, error } = await (supabase as any)
@@ -69,8 +72,8 @@ export default function NotificationCenter() {
 
   const handleNewNotification = (payload: any) => {
     const notification = payload.new as Notification;
-    setNotifications(prev => [notification, ...prev]);
-    setUnreadCount(prev => prev + 1);
+    setNotifications((prev) => [notification, ...prev]);
+    setUnreadCount((prev) => prev + 1);
   };
 
   const markAsRead = async (notificationId: string) => {
@@ -82,14 +85,14 @@ export default function NotificationCenter() {
 
       if (error) throw error;
 
-      setNotifications(prev => 
-        prev.map(n => 
-          n.id === notificationId 
+      setNotifications((prev) =>
+        prev.map((n) =>
+          n.id === notificationId
             ? { ...n, read_at: new Date().toISOString() }
             : n
         )
       );
-      setUnreadCount(prev => Math.max(0, prev - 1));
+      setUnreadCount((prev) => Math.max(0, prev - 1));
     } catch (error) {
       console.error('Error marking notification as read:', error);
     }
@@ -100,7 +103,9 @@ export default function NotificationCenter() {
       const orgId = await getDefaultOrgId(supabase);
       if (!orgId) return;
 
-      const { data: { user } } = await supabase.auth.getUser();
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
       if (!user) return;
 
       const { error } = await (supabase as any)
@@ -112,8 +117,11 @@ export default function NotificationCenter() {
 
       if (error) throw error;
 
-      setNotifications(prev => 
-        prev.map(n => ({ ...n, read_at: n.read_at || new Date().toISOString() }))
+      setNotifications((prev) =>
+        prev.map((n) => ({
+          ...n,
+          read_at: n.read_at || new Date().toISOString(),
+        }))
       );
       setUnreadCount(0);
     } catch (error) {
@@ -123,10 +131,14 @@ export default function NotificationCenter() {
 
   const getIcon = (type: string) => {
     switch (type) {
-      case 'success': return <CheckCircle className="h-4 w-4 text-green-500" />;
-      case 'warning': return <AlertCircle className="h-4 w-4 text-amber-500" />;
-      case 'error': return <AlertCircle className="h-4 w-4 text-red-500" />;
-      default: return <Info className="h-4 w-4 text-blue-500" />;
+      case 'success':
+        return <CheckCircle className="h-4 w-4 text-green-500" />;
+      case 'warning':
+        return <AlertCircle className="h-4 w-4 text-amber-500" />;
+      case 'error':
+        return <AlertCircle className="h-4 w-4 text-red-500" />;
+      default:
+        return <Info className="h-4 w-4 text-blue-500" />;
     }
   };
 
@@ -161,8 +173,8 @@ export default function NotificationCenter() {
 
       {isOpen && (
         <>
-          <div 
-            className="fixed inset-0 z-10" 
+          <div
+            className="fixed inset-0 z-10"
             onClick={() => setIsOpen(false)}
           />
           <div className="absolute right-0 mt-2 w-80 bg-white dark:bg-neutral-900 rounded-xl border border-neutral-200 dark:border-neutral-800 shadow-lg z-20">
@@ -195,9 +207,13 @@ export default function NotificationCenter() {
                     <div
                       key={notification.id}
                       className={`p-4 hover:bg-neutral-50 dark:hover:bg-neutral-800 ${
-                        !notification.read_at ? 'bg-blue-50 dark:bg-blue-900/20' : ''
+                        !notification.read_at
+                          ? 'bg-blue-50 dark:bg-blue-900/20'
+                          : ''
                       }`}
-                      onClick={() => !notification.read_at && markAsRead(notification.id)}
+                      onClick={() =>
+                        !notification.read_at && markAsRead(notification.id)
+                      }
                     >
                       <div className="flex items-start gap-3">
                         {getIcon(notification.type)}

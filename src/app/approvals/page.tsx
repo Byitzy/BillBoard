@@ -1,13 +1,20 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import {
+  CheckCircle,
+  Clock,
+  XCircle,
+  Eye,
+  Calendar,
+  DollarSign,
+} from 'lucide-react';
 import { useRouter } from 'next/navigation';
-import { CheckCircle, Clock, XCircle, Eye, Calendar, DollarSign } from 'lucide-react';
-import { useAsyncOperation } from '@/hooks/useAsyncOperation';
-import { getSupabaseClient } from '@/lib/supabase/client';
+import { useState, useEffect } from 'react';
+import ApprovalPanel from '@/components/ApprovalPanel';
 import { ErrorDisplay } from '@/components/ui/ErrorDisplay';
 import { SkeletonTable } from '@/components/ui/Skeleton';
-import ApprovalPanel from '@/components/ApprovalPanel';
+import { useAsyncOperation } from '@/hooks/useAsyncOperation';
+import { getSupabaseClient } from '@/lib/supabase/client';
 import type { Database } from '@/types/supabase';
 
 type BillOccurrenceWithBill = any;
@@ -20,15 +27,28 @@ interface ApprovalSummary {
 }
 
 export default function ApprovalsPage() {
-  const [billOccurrences, setBillOccurrences] = useState<BillOccurrenceWithBill[]>([]);
-  const [filteredOccurrences, setFilteredOccurrences] = useState<BillOccurrenceWithBill[]>([]);
+  const [billOccurrences, setBillOccurrences] = useState<
+    BillOccurrenceWithBill[]
+  >([]);
+  const [filteredOccurrences, setFilteredOccurrences] = useState<
+    BillOccurrenceWithBill[]
+  >([]);
   const [statusFilter, setStatusFilter] = useState<string>('all');
-  const [summary, setSummary] = useState<ApprovalSummary>({ approved: 0, pending: 0, onHold: 0, rejected: 0 });
+  const [summary, setSummary] = useState<ApprovalSummary>({
+    approved: 0,
+    pending: 0,
+    onHold: 0,
+    rejected: 0,
+  });
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
   const router = useRouter();
   const supabase = getSupabaseClient();
-  
-  const { execute: fetchData, loading, error } = useAsyncOperation<BillOccurrenceWithBill[]>();
+
+  const {
+    execute: fetchData,
+    loading,
+    error,
+  } = useAsyncOperation<BillOccurrenceWithBill[]>();
 
   useEffect(() => {
     loadData();
@@ -40,7 +60,9 @@ export default function ApprovalsPage() {
   }, [billOccurrences, statusFilter]);
 
   const getCurrentUser = async () => {
-    const { data: { user } } = await supabase.auth.getUser();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
     setCurrentUserId(user?.id || null);
   };
 
@@ -48,13 +70,15 @@ export default function ApprovalsPage() {
     const result = await fetchData(async () => {
       const { data, error } = await supabase
         .from('bill_occurrences')
-        .select(`
+        .select(
+          `
           *,
           bills (
             *,
             vendors (*)
           )
-        `)
+        `
+        )
         .in('state', ['pending_approval', 'approved', 'on_hold'])
         .order('due_date', { ascending: true });
 
@@ -82,7 +106,7 @@ export default function ApprovalsPage() {
       },
       { approved: 0, pending: 0, onHold: 0, rejected: 0 } as ApprovalSummary
     );
-    
+
     setSummary({
       approved: summary.approved,
       pending: summary.pending,
@@ -95,9 +119,10 @@ export default function ApprovalsPage() {
     if (statusFilter === 'all') {
       setFilteredOccurrences(billOccurrences);
     } else {
-      const filtered = billOccurrences.filter(occurrence => {
+      const filtered = billOccurrences.filter((occurrence) => {
         if (statusFilter === 'on_hold') return occurrence.state === 'on_hold';
-        if (statusFilter === 'pending') return occurrence.state === 'pending_approval';
+        if (statusFilter === 'pending')
+          return occurrence.state === 'pending_approval';
         return occurrence.state === statusFilter;
       });
       setFilteredOccurrences(filtered);
@@ -155,7 +180,9 @@ export default function ApprovalsPage() {
     return (
       <div className="space-y-6">
         <div className="flex items-center justify-between">
-          <h1 className="text-2xl font-semibold text-neutral-900">Bill Approvals</h1>
+          <h1 className="text-2xl font-semibold text-neutral-900">
+            Bill Approvals
+          </h1>
         </div>
         <SkeletonTable rows={8} cols={6} />
       </div>
@@ -166,7 +193,9 @@ export default function ApprovalsPage() {
     return (
       <div className="space-y-6">
         <div className="flex items-center justify-between">
-          <h1 className="text-2xl font-semibold text-neutral-900">Bill Approvals</h1>
+          <h1 className="text-2xl font-semibold text-neutral-900">
+            Bill Approvals
+          </h1>
         </div>
         <ErrorDisplay error={error} onRetry={loadData} />
       </div>
@@ -176,7 +205,9 @@ export default function ApprovalsPage() {
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-semibold text-neutral-900">Bill Approvals</h1>
+        <h1 className="text-2xl font-semibold text-neutral-900">
+          Bill Approvals
+        </h1>
         <button
           onClick={loadData}
           disabled={loading}
@@ -192,31 +223,39 @@ export default function ApprovalsPage() {
             <CheckCircle className="h-5 w-5 text-emerald-600" />
             <h3 className="text-sm font-medium text-emerald-900">Approved</h3>
           </div>
-          <p className="mt-2 text-2xl font-semibold text-emerald-900">{summary.approved}</p>
+          <p className="mt-2 text-2xl font-semibold text-emerald-900">
+            {summary.approved}
+          </p>
         </div>
-        
+
         <div className="rounded-lg border border-amber-200 bg-amber-50 p-4">
           <div className="flex items-center gap-2">
             <Clock className="h-5 w-5 text-amber-600" />
             <h3 className="text-sm font-medium text-amber-900">Pending</h3>
           </div>
-          <p className="mt-2 text-2xl font-semibold text-amber-900">{summary.pending}</p>
+          <p className="mt-2 text-2xl font-semibold text-amber-900">
+            {summary.pending}
+          </p>
         </div>
-        
+
         <div className="rounded-lg border border-amber-200 bg-amber-50 p-4">
           <div className="flex items-center gap-2">
             <Clock className="h-5 w-5 text-amber-600" />
             <h3 className="text-sm font-medium text-amber-900">On Hold</h3>
           </div>
-          <p className="mt-2 text-2xl font-semibold text-amber-900">{summary.onHold}</p>
+          <p className="mt-2 text-2xl font-semibold text-amber-900">
+            {summary.onHold}
+          </p>
         </div>
-        
+
         <div className="rounded-lg border border-red-200 bg-red-50 p-4">
           <div className="flex items-center gap-2">
             <XCircle className="h-5 w-5 text-red-600" />
             <h3 className="text-sm font-medium text-red-900">Rejected</h3>
           </div>
-          <p className="mt-2 text-2xl font-semibold text-red-900">{summary.rejected}</p>
+          <p className="mt-2 text-2xl font-semibold text-red-900">
+            {summary.rejected}
+          </p>
         </div>
       </div>
 
@@ -259,7 +298,10 @@ export default function ApprovalsPage() {
             <tbody className="divide-y divide-neutral-200 bg-white">
               {filteredOccurrences.length === 0 ? (
                 <tr>
-                  <td colSpan={5} className="px-6 py-12 text-center text-neutral-500">
+                  <td
+                    colSpan={5}
+                    className="px-6 py-12 text-center text-neutral-500"
+                  >
                     <div className="space-y-2">
                       <Clock className="mx-auto h-8 w-8 text-neutral-400" />
                       <p>No bills found for the selected filter</p>
@@ -311,18 +353,24 @@ export default function ApprovalsPage() {
                     </td>
                     <td className="px-6 py-4">
                       <span
-                        className={`inline-flex items-center gap-1 rounded-full border px-2.5 py-0.5 text-xs font-medium ${
-                          getStatusBadgeColor(occurrence.state)
-                        }`}
+                        className={`inline-flex items-center gap-1 rounded-full border px-2.5 py-0.5 text-xs font-medium ${getStatusBadgeColor(
+                          occurrence.state
+                        )}`}
                       >
                         {getStatusIcon(occurrence.state)}
-                        {occurrence.state === 'on_hold' ? 'On Hold' : occurrence.state === 'pending_approval' ? 'Pending' : occurrence.state}
+                        {occurrence.state === 'on_hold'
+                          ? 'On Hold'
+                          : occurrence.state === 'pending_approval'
+                            ? 'Pending'
+                            : occurrence.state}
                       </span>
                     </td>
                     <td className="px-6 py-4">
                       <div className="flex items-center gap-2">
                         <button
-                          onClick={() => router.push(`/bills/${occurrence.bills.id}`)}
+                          onClick={() =>
+                            router.push(`/bills/${occurrence.bills.id}`)
+                          }
                           className="inline-flex items-center gap-1 rounded-lg border border-neutral-300 bg-white px-3 py-1.5 text-xs font-medium text-neutral-700 hover:bg-neutral-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
                         >
                           <Eye className="h-3 w-3" />
@@ -340,10 +388,12 @@ export default function ApprovalsPage() {
 
       {filteredOccurrences.length > 0 && currentUserId && (
         <div className="space-y-4">
-          <h3 className="text-lg font-medium text-neutral-900">Quick Approvals</h3>
+          <h3 className="text-lg font-medium text-neutral-900">
+            Quick Approvals
+          </h3>
           <div className="space-y-6">
             {filteredOccurrences
-              .filter(occurrence => occurrence.state === 'pending_approval')
+              .filter((occurrence) => occurrence.state === 'pending_approval')
               .slice(0, 3)
               .map((occurrence) => (
                 <div
@@ -357,14 +407,15 @@ export default function ApprovalsPage() {
                           {occurrence.bills.title}
                         </h4>
                         <p className="text-sm text-neutral-600">
-                          {occurrence.bills.vendors.name} • Due {formatDate(occurrence.due_date)}
+                          {occurrence.bills.vendors.name} • Due{' '}
+                          {formatDate(occurrence.due_date)}
                         </p>
                       </div>
                       <p className="text-lg font-semibold text-neutral-900">
                         {formatCurrency(occurrence.amount_due)}
                       </p>
                     </div>
-                    
+
                     <ApprovalPanel
                       billOccurrenceId={occurrence.id}
                       currentUserId={currentUserId}

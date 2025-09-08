@@ -1,8 +1,4 @@
 'use client';
-import { useEffect, useState } from 'react';
-import { useParams, useRouter } from 'next/navigation';
-import { getSupabaseClient } from '@/lib/supabase/client';
-import Link from 'next/link';
 import {
   ArrowLeft,
   Users,
@@ -11,6 +7,10 @@ import {
   Settings,
   Crown,
 } from 'lucide-react';
+import Link from 'next/link';
+import { useParams, useRouter } from 'next/navigation';
+import { useEffect, useState } from 'react';
+import { getSupabaseClient } from '@/lib/supabase/client';
 
 type Organization = {
   id: string;

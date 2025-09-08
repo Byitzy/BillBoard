@@ -1,8 +1,8 @@
 'use client';
+import { ArrowLeft, Plus, Users, Mail, Shield } from 'lucide-react';
+import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import { getSupabaseClient } from '@/lib/supabase/client';
-import Link from 'next/link';
-import { ArrowLeft, Plus, Users, Mail, Shield } from 'lucide-react';
 
 type User = {
   id: string;

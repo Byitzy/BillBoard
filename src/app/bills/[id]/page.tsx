@@ -1,9 +1,9 @@
 'use client';
 import { useEffect, useState } from 'react';
-import { getSupabaseClient } from '@/lib/supabase/client';
+import BillActions from '@/components/bills/BillActions';
 import BillHeader from '@/components/bills/BillHeader';
 import OccurrenceList from '@/components/bills/OccurrenceList';
-import BillActions from '@/components/bills/BillActions';
+import { getSupabaseClient } from '@/lib/supabase/client';
 
 type Props = { params: { id: string } };
 

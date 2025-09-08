@@ -1,8 +1,8 @@
 'use client';
+import { Building2, Users, Settings, Plus, Eye } from 'lucide-react';
+import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import { getSupabaseClient } from '@/lib/supabase/client';
-import Link from 'next/link';
-import { Building2, Users, Settings, Plus, Eye } from 'lucide-react';
 
 type Organization = {
   id: string;
