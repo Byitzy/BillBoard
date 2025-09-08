@@ -76,10 +76,9 @@ export default function ClientBillsPage({
     if (projectId) {
       query = query.eq('project_id', projectId);
     }
-    const status = urlParams.get('status');
-    if (status) {
-      query = query.eq('status', status);
-    }
+    // Apply status filter - default to 'active' if no status specified
+    const status = urlParams.get('status') || 'active';
+    query = query.eq('status', status);
 
     const { data, error } = await query.order('created_at', { ascending: false });
     
