@@ -15,7 +15,7 @@ type BillRow = {
 };
 
 type BillsPageProps = {
-  resolvedSearchParams: Promise<{
+  searchParams: Promise<{
     vendorId?: string;
     projectId?: string;
     search?: string;
