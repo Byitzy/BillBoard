@@ -5,7 +5,8 @@
   "type": "module",
   "packageManager": "pnpm@9.0.0",
   "scripts": {
-    "dev": "next dev",
+    "dev": "lsof -ti:3000 | xargs kill -9 2>/dev/null || true && next dev",
+    "dev:safe": "next dev",
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
@@ -16,6 +17,7 @@
     "test": "vitest",
     "test:run": "vitest run",
     "playwright": "playwright test",
+    "playwright:setup": "tsx scripts/setup-test-data.ts && playwright test",
     "playwright:ui": "playwright test --ui",
     "playwright:headed": "playwright test --headed",
     "playwright:debug": "playwright test --debug",
