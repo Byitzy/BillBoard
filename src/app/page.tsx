@@ -1,6 +1,6 @@
 'use client';
-import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import { useEffect } from 'react';
 import { getSupabaseClient } from '@/lib/supabase/client';
 import { getUserRoleAndRedirectPath } from '@/lib/supabase/utils';
 

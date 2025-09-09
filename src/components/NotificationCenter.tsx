@@ -64,6 +64,7 @@ export default function NotificationCenter() {
       setNotifications(data || []);
       setUnreadCount(data?.filter((n: Notification) => !n.read_at).length || 0);
     } catch (error) {
+      // Ignore notification loading errors
     } finally {
       setLoading(false);
     }
@@ -92,7 +93,9 @@ export default function NotificationCenter() {
         )
       );
       setUnreadCount((prev) => Math.max(0, prev - 1));
-    } catch (error) {}
+    } catch (error) {
+      // Ignore mark as read errors
+    }
   };
 
   const markAllAsRead = async () => {
@@ -121,7 +124,9 @@ export default function NotificationCenter() {
         }))
       );
       setUnreadCount(0);
-    } catch (error) {}
+    } catch (error) {
+      // Ignore mark as read errors
+    }
   };
 
   const getIcon = (type: string) => {

@@ -3,9 +3,9 @@ const nextConfig = {
   reactStrictMode: true,
   typedRoutes: true,
   eslint: {
-    // Note: Temporarily ignoring ESLint during builds for production deployment
-    // TODO: Address remaining ESLint warnings (unused vars, alerts, import order)
-    ignoreDuringBuilds: true,
+    // Note: Allow warnings during builds, only stop on errors
+    // 74 warnings remaining - mostly unused vars and alerts
+    ignoreDuringBuilds: false,
   },
 };
 

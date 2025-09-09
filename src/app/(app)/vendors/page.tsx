@@ -127,7 +127,7 @@ export default function VendorsPage() {
   }
 
   async function removeVendor(id: string) {
-    if (!confirm(t('vendors.deleteVendor'))) return;
+    if (!window.confirm(t('vendors.deleteVendor'))) return;
     setLoading(true);
     const { error } = await supabase.from('vendors').delete().eq('id', id);
     if (error) setError(error.message);

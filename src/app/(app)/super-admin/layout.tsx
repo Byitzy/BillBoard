@@ -1,9 +1,9 @@
 'use client';
-import { useEffect, useState } from 'react';
-import { useRouter, usePathname } from 'next/navigation';
-import { getSupabaseClient } from '@/lib/supabase/client';
 import { LogOut, Settings, Users, Building2, Crown } from 'lucide-react';
 import Link from 'next/link';
+import { useRouter, usePathname } from 'next/navigation';
+import { useEffect, useState } from 'react';
+import { getSupabaseClient } from '@/lib/supabase/client';
 import { cn } from '@/lib/utils';
 
 export default function SuperAdminLayout({

@@ -1,7 +1,7 @@
-import { getServerClient } from '@/lib/supabase/server';
 import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
+import { getServerClient } from '@/lib/supabase/server';
 
 const inviteSchema = z.object({
   email: z.string().email(),

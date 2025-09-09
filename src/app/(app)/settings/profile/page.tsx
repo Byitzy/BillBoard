@@ -33,7 +33,7 @@ export default function ProfileSettingsPage() {
         setDateFormat(metadata.dateFormat || 'local');
         setCurrency(metadata.currency || 'CAD');
       }
-    } catch (err) {
+    } catch (_err) {
       setError('Failed to load settings');
     } finally {
       setLoading(false);

@@ -97,7 +97,7 @@ export default function ProjectsPage() {
   }
 
   async function removeProject(id: string) {
-    if (!confirm('Delete this project?')) return;
+    if (!window.confirm('Delete this project?')) return;
     setLoading(true);
     const { error } = await supabase.from('projects').delete().eq('id', id);
     if (error) setError(error.message);

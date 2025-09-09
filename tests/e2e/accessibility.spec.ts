@@ -4,15 +4,17 @@ test.describe('Accessibility', () => {
   test('should have accessible login form', async ({ page }) => {
     await page.goto('/login');
 
+    // Wait for page to load - be more specific about which h1
+    await expect(page.locator('h1:has-text("Sign in")')).toBeVisible();
+
     // Check for proper form labels and ARIA attributes
     const emailInput = page.locator('input[type="email"]');
     await expect(emailInput).toBeVisible();
 
     // Check if email input has associated label
-    const emailLabel = page.locator(
-      'label[for*="email"], label:has(input[type="email"])'
-    );
+    const emailLabel = page.locator('label[for*="email"]');
     await expect(emailLabel).toBeVisible();
+    await expect(emailLabel).toContainText('Email Address');
 
     // Submit button should be accessible
     const submitButton = page.locator('button[type="submit"]');
@@ -23,11 +25,19 @@ test.describe('Accessibility', () => {
   test('should support keyboard navigation', async ({ page }) => {
     await page.goto('/login');
 
-    // Tab through form elements
+    // Wait for page to load - be more specific about which h1
+    await expect(page.locator('h1:has-text("Sign in")')).toBeVisible();
+
+    // Focus first focusable element (mode toggle button)
     await page.keyboard.press('Tab');
+
+    // Tab to email input
+    await page.keyboard.press('Tab');
+    await page.keyboard.press('Tab'); // Skip second mode button
     const emailInput = page.locator('input[type="email"]');
     await expect(emailInput).toBeFocused();
 
+    // Tab to submit button
     await page.keyboard.press('Tab');
     const submitButton = page.locator('button[type="submit"]');
     await expect(submitButton).toBeFocused();

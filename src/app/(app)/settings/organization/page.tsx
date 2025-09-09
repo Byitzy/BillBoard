@@ -1,5 +1,5 @@
 'use client';
-import { Mail, Users, Plus } from 'lucide-react';
+import { Mail, Users } from 'lucide-react';
 import { useEffect, useState, useMemo } from 'react';
 import { useLocale } from '@/components/i18n/LocaleProvider';
 import InviteForm from '@/components/organization/InviteForm';

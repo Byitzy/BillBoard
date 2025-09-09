@@ -68,49 +68,90 @@ export default function LoginPage() {
 
       {mode === 'magic' ? (
         <form onSubmit={signInMagic} className="space-y-3">
-          <input
-            type="email"
-            required
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            placeholder="you@example.com"
-            className="w-full rounded-xl border border-neutral-200  px-3 py-2 text-sm dark:border-neutral-800"
-          />
+          <div>
+            <label
+              htmlFor="magic-email"
+              className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
+            >
+              Email Address
+            </label>
+            <input
+              id="magic-email"
+              type="email"
+              required
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              placeholder="you@example.com"
+              className="w-full rounded-xl border border-neutral-200  px-3 py-2 text-sm dark:border-neutral-800"
+              aria-describedby="magic-email-help"
+            />
+            <div id="magic-email-help" className="sr-only">
+              Enter your email address to receive a magic link for signing in
+            </div>
+          </div>
           <button
             disabled={loading}
             type="submit"
-            className="rounded-xl bg-blue-600 px-3 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-50"
+            className="w-full rounded-xl bg-blue-600 px-3 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-50"
+            aria-describedby={loading ? 'loading-status' : undefined}
           >
             {loading ? 'Sending…' : 'Send magic link'}
           </button>
+          {loading && (
+            <div id="loading-status" className="sr-only" aria-live="polite">
+              Sending magic link to your email address
+            </div>
+          )}
         </form>
       ) : (
         <form className="space-y-3" onSubmit={signInPassword}>
-          <input
-            type="email"
-            required
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            placeholder="you@example.com"
-            className="w-full rounded-xl border border-neutral-200  px-3 py-2 text-sm dark:border-neutral-800"
-          />
-          <input
-            type="password"
-            required
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            placeholder="Your password"
-            className="w-full rounded-xl border border-neutral-200  px-3 py-2 text-sm dark:border-neutral-800"
-          />
-          <div className="flex gap-2">
-            <button
-              disabled={loading}
-              type="submit"
-              className="rounded-xl bg-blue-600 px-3 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-50"
+          <div>
+            <label
+              htmlFor="password-email"
+              className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
             >
-              {loading ? 'Signing in…' : 'Sign in'}
-            </button>
+              Email Address
+            </label>
+            <input
+              id="password-email"
+              type="email"
+              required
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              placeholder="you@example.com"
+              className="w-full rounded-xl border border-neutral-200  px-3 py-2 text-sm dark:border-neutral-800"
+            />
           </div>
+          <div>
+            <label
+              htmlFor="password"
+              className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
+            >
+              Password
+            </label>
+            <input
+              id="password"
+              type="password"
+              required
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              placeholder="Your password"
+              className="w-full rounded-xl border border-neutral-200  px-3 py-2 text-sm dark:border-neutral-800"
+            />
+          </div>
+          <button
+            disabled={loading}
+            type="submit"
+            className="w-full rounded-xl bg-blue-600 px-3 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-50"
+            aria-describedby={loading ? 'loading-status' : undefined}
+          >
+            {loading ? 'Signing in…' : 'Sign in'}
+          </button>
+          {loading && (
+            <div id="loading-status" className="sr-only" aria-live="polite">
+              Signing in with email and password
+            </div>
+          )}
           <p className="text-xs text-neutral-500 mt-2">
             New users must be invited by an administrator.
           </p>
