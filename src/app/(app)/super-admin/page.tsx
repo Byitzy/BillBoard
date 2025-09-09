@@ -10,14 +10,12 @@ type Organization = {
   slug: string | null;
   created_at: string;
   member_count?: number;
-  bill_count?: number;
 };
 
 type SuperAdminStats = {
   total_organizations: number;
   total_users: number;
   active_members: number;
-  total_bills: number;
 };
 
 export default function SuperAdminDashboard() {
@@ -32,7 +30,7 @@ export default function SuperAdminDashboard() {
   useEffect(() => {
     setMounted(true);
     loadSuperAdminData();
-  }, []);
+  }, [supabase]);
 
   async function loadSuperAdminData() {
     setLoading(true);
@@ -48,8 +46,17 @@ export default function SuperAdminDashboard() {
         return;
       }
 
+      console.log('Super Admin Check:', {
+        userId: session.user.id,
+        email: session.user.email,
+        metadata: session.user.user_metadata,
+        is_super_admin: session.user.user_metadata?.is_super_admin,
+        type: typeof session.user.user_metadata?.is_super_admin,
+      });
+
       const isSuperAdminUser =
-        session.user.user_metadata?.is_super_admin === true;
+        session.user.user_metadata?.is_super_admin === true ||
+        session.user.user_metadata?.is_super_admin === 'true';
       setIsSuperAdmin(isSuperAdminUser);
 
       if (!isSuperAdminUser) {
@@ -59,6 +66,7 @@ export default function SuperAdminDashboard() {
       }
 
       // Load organizations with member and bill counts
+      console.log('Loading organizations...');
       const { data: orgsData, error: orgsError } = await supabase
         .from('organizations')
         .select(
@@ -71,27 +79,21 @@ export default function SuperAdminDashboard() {
         )
         .order('created_at', { ascending: false });
 
+      console.log('Organizations query result:', { orgsData, orgsError });
       if (orgsError) throw orgsError;
 
       // Get member counts for each org
       const orgsWithCounts = await Promise.all(
         orgsData.map(async (org) => {
-          const [memberResult, billResult] = await Promise.all([
-            supabase
-              .from('org_members')
-              .select('id', { count: 'exact' })
-              .eq('org_id', org.id)
-              .eq('status', 'active'),
-            supabase
-              .from('bills')
-              .select('id', { count: 'exact' })
-              .eq('org_id', org.id),
-          ]);
+          const memberResult = await supabase
+            .from('org_members')
+            .select('id', { count: 'exact' })
+            .eq('org_id', org.id)
+            .eq('status', 'active');
 
           return {
             ...org,
             member_count: memberResult.count || 0,
-            bill_count: billResult.count || 0,
           };
         })
       );
@@ -99,25 +101,24 @@ export default function SuperAdminDashboard() {
       setOrganizations(orgsWithCounts);
 
       // Load overall stats
-      const [totalOrgs, totalUsers, activeMembers, totalBills] =
-        await Promise.all([
-          supabase.from('organizations').select('id', { count: 'exact' }),
-          supabase.auth.admin.listUsers(),
-          supabase
-            .from('org_members')
-            .select('id', { count: 'exact' })
-            .eq('status', 'active'),
-          supabase.from('bills').select('id', { count: 'exact' }),
-        ]);
+      const [totalOrgs, totalUsers, activeMembers] = await Promise.all([
+        supabase.from('organizations').select('id', { count: 'exact' }),
+        supabase.auth.admin.listUsers(),
+        supabase
+          .from('org_members')
+          .select('id', { count: 'exact' })
+          .eq('status', 'active'),
+      ]);
 
       setStats({
         total_organizations: totalOrgs.count || 0,
         total_users: totalUsers.data.users.length,
         active_members: activeMembers.count || 0,
-        total_bills: totalBills.count || 0,
       });
-    } catch (err: any) {
-      setError(err.message || 'Failed to load super admin data');
+    } catch (err: unknown) {
+      setError(
+        err instanceof Error ? err.message : 'Failed to load super admin data'
+      );
     } finally {
       setLoading(false);
     }
@@ -191,89 +192,93 @@ export default function SuperAdminDashboard() {
             Manage all organizations and system-wide settings
           </p>
         </div>
-        <div className="flex gap-2">
-          <Link
-            href="/super-admin/users"
-            className="inline-flex items-center gap-2 bg-purple-600 text-white px-4 py-2 rounded-xl hover:bg-purple-700"
-          >
-            <Users className="h-4 w-4" />
-            Manage Users
-          </Link>
-          <Link
-            href="/super-admin/organizations/new"
-            className="inline-flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-xl hover:bg-blue-700"
-          >
-            <Plus className="h-4 w-4" />
-            New Organization
-          </Link>
-        </div>
+        <Link
+          href="/super-admin/users"
+          className="inline-flex items-center gap-2 bg-purple-600 text-white px-4 py-2 rounded-xl hover:bg-purple-700"
+        >
+          <Users className="h-4 w-4" />
+          Manage Users
+        </Link>
       </div>
 
       {/* Stats Cards */}
       {stats && (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-          <div className="bg-white dark:bg-neutral-900 rounded-xl border border-neutral-200 dark:border-neutral-800 p-4">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          {/* Organizations Card - Scrolls to organizations table */}
+          <button
+            onClick={() =>
+              document
+                .getElementById('organizations-table')
+                ?.scrollIntoView({ behavior: 'smooth' })
+            }
+            className="bg-white dark:bg-neutral-900 rounded-xl border border-neutral-200 dark:border-neutral-800 p-4 hover:bg-neutral-50 dark:hover:bg-neutral-800/50 transition-colors cursor-pointer text-left group"
+          >
             <div className="flex items-center gap-3">
-              <div className="p-2 bg-blue-100 dark:bg-blue-900/20 rounded-lg">
+              <div className="p-2 bg-blue-100 dark:bg-blue-900/20 rounded-lg group-hover:bg-blue-200 dark:group-hover:bg-blue-900/40 transition-colors">
                 <Building2 className="h-5 w-5 text-blue-600" />
               </div>
               <div>
                 <p className="text-sm text-neutral-600 dark:text-neutral-400">
                   Organizations
                 </p>
-                <p className="text-xl font-semibold">
+                <p className="text-xl font-semibold group-hover:text-blue-600 transition-colors">
                   {stats.total_organizations}
                 </p>
               </div>
             </div>
-          </div>
+          </button>
 
-          <div className="bg-white dark:bg-neutral-900 rounded-xl border border-neutral-200 dark:border-neutral-800 p-4">
+          {/* Users Card - Links to user management */}
+          <Link
+            href="/super-admin/users"
+            className="bg-white dark:bg-neutral-900 rounded-xl border border-neutral-200 dark:border-neutral-800 p-4 hover:bg-neutral-50 dark:hover:bg-neutral-800/50 transition-colors cursor-pointer text-left group block"
+          >
             <div className="flex items-center gap-3">
-              <div className="p-2 bg-green-100 dark:bg-green-900/20 rounded-lg">
+              <div className="p-2 bg-green-100 dark:bg-green-900/20 rounded-lg group-hover:bg-green-200 dark:group-hover:bg-green-900/40 transition-colors">
                 <Users className="h-5 w-5 text-green-600" />
               </div>
               <div>
                 <p className="text-sm text-neutral-600 dark:text-neutral-400">
                   Total Users
                 </p>
-                <p className="text-xl font-semibold">{stats.total_users}</p>
+                <p className="text-xl font-semibold group-hover:text-green-600 transition-colors">
+                  {stats.total_users}
+                </p>
               </div>
             </div>
-          </div>
+          </Link>
 
-          <div className="bg-white dark:bg-neutral-900 rounded-xl border border-neutral-200 dark:border-neutral-800 p-4">
+          {/* Active Members Card - Scrolls to organizations table */}
+          <button
+            onClick={() =>
+              document
+                .getElementById('organizations-table')
+                ?.scrollIntoView({ behavior: 'smooth' })
+            }
+            className="bg-white dark:bg-neutral-900 rounded-xl border border-neutral-200 dark:border-neutral-800 p-4 hover:bg-neutral-50 dark:hover:bg-neutral-800/50 transition-colors cursor-pointer text-left group"
+          >
             <div className="flex items-center gap-3">
-              <div className="p-2 bg-purple-100 dark:bg-purple-900/20 rounded-lg">
+              <div className="p-2 bg-purple-100 dark:bg-purple-900/20 rounded-lg group-hover:bg-purple-200 dark:group-hover:bg-purple-900/40 transition-colors">
                 <Users className="h-5 w-5 text-purple-600" />
               </div>
               <div>
                 <p className="text-sm text-neutral-600 dark:text-neutral-400">
                   Active Members
                 </p>
-                <p className="text-xl font-semibold">{stats.active_members}</p>
-              </div>
-            </div>
-          </div>
-
-          <div className="bg-white dark:bg-neutral-900 rounded-xl border border-neutral-200 dark:border-neutral-800 p-4">
-            <div className="flex items-center gap-3">
-              <div className="p-2 bg-orange-100 dark:bg-orange-900/20 rounded-lg">
-                <Settings className="h-5 w-5 text-orange-600" />
-              </div>
-              <div>
-                <p className="text-sm text-neutral-600 dark:text-neutral-400">
-                  Total Bills
+                <p className="text-xl font-semibold group-hover:text-purple-600 transition-colors">
+                  {stats.active_members}
                 </p>
-                <p className="text-xl font-semibold">{stats.total_bills}</p>
               </div>
             </div>
-          </div>
+          </button>
         </div>
       )}
 
       {/* Organizations Table */}
-      <div className="bg-white dark:bg-neutral-900 rounded-xl border border-neutral-200 dark:border-neutral-800 overflow-hidden">
+      <div
+        id="organizations-table"
+        className="bg-white dark:bg-neutral-900 rounded-xl border border-neutral-200 dark:border-neutral-800 overflow-hidden"
+      >
         <div className="p-4 border-b border-neutral-200 dark:border-neutral-800">
           <h2 className="text-lg font-semibold">All Organizations</h2>
           <p className="text-sm text-neutral-600 dark:text-neutral-400">
@@ -295,9 +300,6 @@ export default function SuperAdminDashboard() {
                   Members
                 </th>
                 <th className="px-4 py-3 text-left font-medium text-neutral-900 dark:text-neutral-100">
-                  Bills
-                </th>
-                <th className="px-4 py-3 text-left font-medium text-neutral-900 dark:text-neutral-100">
                   Created
                 </th>
                 <th className="px-4 py-3 text-left font-medium text-neutral-900 dark:text-neutral-100">
@@ -309,7 +311,7 @@ export default function SuperAdminDashboard() {
               {organizations.length === 0 ? (
                 <tr>
                   <td
-                    colSpan={6}
+                    colSpan={5}
                     className="px-4 py-8 text-center text-neutral-500"
                   >
                     No organizations found
@@ -342,11 +344,6 @@ export default function SuperAdminDashboard() {
                       </span>
                     </td>
                     <td className="px-4 py-3">
-                      <span className="text-neutral-700 dark:text-neutral-300">
-                        {org.bill_count}
-                      </span>
-                    </td>
-                    <td className="px-4 py-3">
                       <span className="text-neutral-600 dark:text-neutral-400">
                         {new Date(org.created_at).toLocaleDateString()}
                       </span>
@@ -361,10 +358,8 @@ export default function SuperAdminDashboard() {
                           View
                         </Link>
                         <Link
-                          href={
-                            `/super-admin/organizations/${org.id}/settings` as any
-                          }
-                          className="inline-flex items-center gap-1 px-2 py-1 text-xs bg-neutral-100 dark:bg-neutral-800 text-neutral-700 dark:text-neutral-300 rounded-md hover:bg-neutral-200 dark:hover:bg-neutral-700"
+                          href={`/super-admin/organizations/${org.id}/settings`}
+                          className="inline-flex items-center gap-1 px-2 py-1 text-xs bg-blue-100 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300 rounded-md hover:bg-blue-200 dark:hover:bg-blue-900/40"
                         >
                           <Settings className="h-3 w-3" />
                           Settings

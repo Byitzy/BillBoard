@@ -2,6 +2,7 @@
 import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { getSupabaseClient } from '@/lib/supabase/client';
+import { getUserRoleAndRedirectPath } from '@/lib/supabase/utils';
 
 export default function RootPage() {
   const router = useRouter();
@@ -15,8 +16,12 @@ export default function RootPage() {
         } = await supabase.auth.getSession();
 
         if (session?.user) {
-          // User is logged in, redirect to dashboard
-          router.replace('/dashboard');
+          // User is logged in, get their role and redirect accordingly
+          const { redirectPath } = await getUserRoleAndRedirectPath(
+            supabase,
+            session.user.id
+          );
+          router.replace(redirectPath as any);
         } else {
           // User is not logged in, redirect to login
           router.replace('/login');

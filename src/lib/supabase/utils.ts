@@ -101,3 +101,54 @@ export function hasRoleLevel(userRole: string, minLevel: string): boolean {
   const minLevelValue = ROLE_HIERARCHY[minLevel] || 999;
   return userLevel >= minLevelValue;
 }
+
+// Utility to get user's role and determine redirect path
+export async function getUserRoleAndRedirectPath(
+  supabase: TypedSupabaseClient,
+  userId: string
+): Promise<{ role: 'super_admin' | string; redirectPath: string }> {
+  // Check if user is super admin first
+  const { data: user } = await supabase.auth.getUser();
+  const isSuperAdmin =
+    user?.user?.user_metadata?.is_super_admin === true ||
+    user?.user?.user_metadata?.is_super_admin === 'true';
+
+  if (isSuperAdmin) {
+    return { role: 'super_admin', redirectPath: '/super-admin' };
+  }
+
+  // Get user's organization membership and role
+  const { data: membership } = await supabase
+    .from('org_members')
+    .select('role, org_id')
+    .eq('user_id', userId)
+    .eq('status', 'active')
+    .order('created_at', { ascending: false })
+    .limit(1)
+    .single();
+
+  if (!membership) {
+    // User has no org membership, redirect to onboarding
+    return { role: 'no_org', redirectPath: '/onboarding' };
+  }
+
+  const { role } = membership;
+
+  // Determine redirect path based on role - now using role-specific dashboards
+  switch (role) {
+    case 'admin':
+      return { role, redirectPath: '/dashboard/admin' };
+    case 'approver':
+      return { role, redirectPath: '/dashboard/approver' };
+    case 'accountant':
+      return { role, redirectPath: '/dashboard/accountant' };
+    case 'data_entry':
+      return { role, redirectPath: '/dashboard/accountant' }; // Data entry uses accountant dashboard
+    case 'analyst':
+      return { role, redirectPath: '/dashboard/analyst' };
+    case 'viewer':
+      return { role, redirectPath: '/dashboard/viewer' };
+    default:
+      return { role, redirectPath: '/dashboard/admin' }; // Default to admin dashboard
+  }
+}
