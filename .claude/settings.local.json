@@ -31,7 +31,9 @@
       "Bash(curl:*)",
       "Bash(npx supabase db reset:*)",
       "Bash(pnpm list:*)",
-      "Bash(pnpm update:*)"
+      "Bash(pnpm update:*)",
+      "Bash(npx eslint:*)",
+      "Bash(pnpm install:*)"
     ],
     "deny": [],
     "ask": []

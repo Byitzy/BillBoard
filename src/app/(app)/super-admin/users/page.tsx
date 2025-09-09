@@ -1,5 +1,5 @@
 'use client';
-import { ArrowLeft, Plus, Users, Mail, Shield } from 'lucide-react';
+import { ArrowLeft, Plus, Users, Shield } from 'lucide-react';
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import { getSupabaseClient } from '@/lib/supabase/client';
@@ -46,7 +46,7 @@ export default function SuperAdminUsersPage() {
   useEffect(() => {
     setMounted(true);
     loadData();
-  }, []);
+  }, [supabase]);
 
   async function loadData() {
     setLoading(true);
@@ -63,7 +63,8 @@ export default function SuperAdminUsersPage() {
       }
 
       const isSuperAdminUser =
-        session.user.user_metadata?.is_super_admin === true;
+        session.user.user_metadata?.is_super_admin === true ||
+        session.user.user_metadata?.is_super_admin === 'true';
       setIsSuperAdmin(isSuperAdminUser);
 
       if (!isSuperAdminUser) {
@@ -72,12 +73,19 @@ export default function SuperAdminUsersPage() {
         return;
       }
 
-      // Load all users
-      const {
-        data: { users },
-        error: usersError,
-      } = await supabase.auth.admin.listUsers();
-      if (usersError) throw usersError;
+      // Load all users via API
+      const response = await fetch('/api/admin/users', {
+        headers: {
+          Authorization: `Bearer ${session.access_token}`,
+        },
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to load users');
+      }
+
+      const { users } = await response.json();
       setUsers(users);
 
       // Load organizations for the form
@@ -87,8 +95,8 @@ export default function SuperAdminUsersPage() {
         .order('name');
       if (orgsError) throw orgsError;
       setOrganizations(orgsData);
-    } catch (err: any) {
-      setError(err.message || 'Failed to load data');
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : 'Failed to load data');
     } finally {
       setLoading(false);
     }
@@ -100,46 +108,42 @@ export default function SuperAdminUsersPage() {
     setError(null);
 
     try {
-      // Create user
-      const { data: newUser, error: createError } =
-        await supabase.auth.admin.createUser({
+      console.log('Creating user with data:', {
+        email: formData.email,
+        role: formData.role,
+        is_super_admin: formData.role === 'super_admin',
+      });
+
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
+      if (!session?.user) {
+        throw new Error('Not authenticated');
+      }
+
+      // Create user via API
+      const response = await fetch('/api/admin/users', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${session.access_token}`,
+        },
+        body: JSON.stringify({
           email: formData.email,
           password: formData.password,
-          email_confirm: true,
-          user_metadata: {
-            full_name: formData.fullName,
-            role: formData.role,
-            is_super_admin: formData.role === 'super_admin',
-          },
-        });
+          fullName: formData.fullName,
+          role: formData.role,
+          organizationId: formData.organizationId,
+        }),
+      });
 
-      if (createError) throw createError;
-
-      // If creating an org admin, add them to the organization
-      if (formData.role === 'admin' && formData.organizationId) {
-        const { error: memberError } = await supabase
-          .from('org_members')
-          .insert({
-            org_id: formData.organizationId,
-            user_id: newUser.user.id,
-            role: 'admin',
-            status: 'active',
-          });
-
-        if (memberError) throw memberError;
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to create user');
       }
 
-      // If creating a super admin, add them to all organizations
-      if (formData.role === 'super_admin') {
-        for (const org of organizations) {
-          await supabase.from('org_members').insert({
-            org_id: org.id,
-            user_id: newUser.user.id,
-            role: 'admin',
-            status: 'active',
-          });
-        }
-      }
+      const { user: newUser } = await response.json();
+      console.log('User creation result:', { newUser });
 
       // Reset form and reload data
       setFormData({
@@ -151,8 +155,8 @@ export default function SuperAdminUsersPage() {
       });
       setShowCreateForm(false);
       await loadData();
-    } catch (err: any) {
-      setError(err.message || 'Failed to create user');
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : 'Failed to create user');
     } finally {
       setFormLoading(false);
     }

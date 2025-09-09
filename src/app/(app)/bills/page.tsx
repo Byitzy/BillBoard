@@ -15,15 +15,16 @@ type BillRow = {
 };
 
 type BillsPageProps = {
-  searchParams: {
+  resolvedSearchParams: Promise<{
     vendorId?: string;
     projectId?: string;
     search?: string;
     status?: string;
-  };
+  }>;
 };
 
 export default async function BillsPage({ searchParams }: BillsPageProps) {
+  const resolvedSearchParams = await searchParams;
   const supabase = createServerComponentClient({ cookies });
   const {
     data: { user },
@@ -64,14 +65,14 @@ export default async function BillsPage({ searchParams }: BillsPageProps) {
     .eq('org_id', orgId);
 
   // Apply filters based on search params
-  if (searchParams.vendorId) {
-    query = query.eq('vendor_id', searchParams.vendorId);
+  if (resolvedSearchParams.vendorId) {
+    query = query.eq('vendor_id', resolvedSearchParams.vendorId);
   }
-  if (searchParams.projectId) {
-    query = query.eq('project_id', searchParams.projectId);
+  if (resolvedSearchParams.projectId) {
+    query = query.eq('project_id', resolvedSearchParams.projectId);
   }
   // Apply status filter - default to 'active' if no status specified
-  const status = searchParams.status || 'active';
+  const status = resolvedSearchParams.status || 'active';
   query = query.eq('status', status);
 
   const { data, error } = await query.order('created_at', { ascending: false });
@@ -86,8 +87,8 @@ export default async function BillsPage({ searchParams }: BillsPageProps) {
   })) as BillRow[];
 
   // Apply client-side search filter (since we need to search across multiple fields)
-  if (searchParams.search) {
-    const searchLower = searchParams.search.toLowerCase();
+  if (resolvedSearchParams.search) {
+    const searchLower = resolvedSearchParams.search.toLowerCase();
     bills = bills.filter(
       (bill) =>
         bill.title.toLowerCase().includes(searchLower) ||
@@ -143,21 +144,25 @@ export default async function BillsPage({ searchParams }: BillsPageProps) {
 
   // Get filter context for display
   let filterContext = '';
-  if (searchParams.vendorId) {
-    const vendor = vendorOptions.find((v) => v.id === searchParams.vendorId);
+  if (resolvedSearchParams.vendorId) {
+    const vendor = vendorOptions.find(
+      (v) => v.id === resolvedSearchParams.vendorId
+    );
     if (vendor) filterContext = `Filtered by vendor: ${vendor.name}`;
   }
-  if (searchParams.projectId) {
-    const project = projectOptions.find((p) => p.id === searchParams.projectId);
+  if (resolvedSearchParams.projectId) {
+    const project = projectOptions.find(
+      (p) => p.id === resolvedSearchParams.projectId
+    );
     if (project) filterContext = `Filtered by project: ${project.name}`;
   }
-  if (searchParams.status) {
+  if (resolvedSearchParams.status) {
     filterContext +=
-      (filterContext ? ' & ' : '') + `Status: ${searchParams.status}`;
+      (filterContext ? ' & ' : '') + `Status: ${resolvedSearchParams.status}`;
   }
-  if (searchParams.search) {
+  if (resolvedSearchParams.search) {
     filterContext +=
-      (filterContext ? ' & ' : '') + `Search: "${searchParams.search}"`;
+      (filterContext ? ' & ' : '') + `Search: "${resolvedSearchParams.search}"`;
   }
 
   return (
