@@ -1,10 +1,13 @@
 'use client';
 import { useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { getSupabaseClient } from '@/lib/supabase/client';
+import { getUserRoleAndRedirectPath } from '@/lib/supabase/utils';
 
 export default function LoginPage() {
   const supabase = getSupabaseClient();
-  const [mode, setMode] = useState<'magic' | 'password'>('magic');
+  const router = useRouter();
+  const [mode, setMode] = useState<'magic' | 'password'>('password');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [status, setStatus] = useState<string | null>(null);
@@ -32,13 +35,31 @@ export default function LoginPage() {
     e.preventDefault();
     setStatus(null);
     setLoading(true);
-    const { error } = await supabase.auth.signInWithPassword({
+    const { data, error } = await supabase.auth.signInWithPassword({
       email,
       password,
     });
     setLoading(false);
-    if (error) setStatus(error.message);
-    else window.location.href = '/';
+    if (error) {
+      console.error('Login error:', error);
+      setStatus(error.message);
+    } else if (data.user) {
+      console.log('Login successful for user:', data.user.email);
+      try {
+        // Get user role and redirect to appropriate dashboard
+        const { redirectPath } = await getUserRoleAndRedirectPath(
+          supabase,
+          data.user.id
+        );
+        console.log('Redirecting to:', redirectPath);
+        router.push(redirectPath);
+      } catch (roleError) {
+        console.error('Error getting user role:', roleError);
+        // Temporary: redirect to dashboard for debugging
+        console.log('Redirecting to /dashboard as fallback');
+        router.push('/dashboard');
+      }
+    }
   }
 
   // Removed signUpPassword - public registration is disabled

@@ -32,13 +32,15 @@ test.describe('Real Authentication & UX Flow', () => {
   test('Admin user - complete login flow and dashboard access', async ({
     page,
   }) => {
+    // Listen for console logs
+    page.on('console', (msg) => console.log('Browser console:', msg.text()));
+
     await page.goto('/login');
 
     // Wait for page load
     await expect(page.locator('h1:has-text("Sign in")')).toBeVisible();
 
-    // Switch to password mode
-    await page.click('button:has-text("Email & Password")');
+    // Password mode is now default, no need to click button
 
     // Fill credentials
     await page.fill('input[type="email"]', testUsers.admin.email);
