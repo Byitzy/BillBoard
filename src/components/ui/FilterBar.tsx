@@ -1,8 +1,8 @@
-"use client";
-import { useState, useEffect } from 'react';
+'use client';
 import { useRouter, useSearchParams } from 'next/navigation';
-import SharedSelect from '@/components/ui/SharedSelect';
+import { useState, useEffect } from 'react';
 import { useLocale } from '@/components/i18n/LocaleProvider';
+import SharedSelect from '@/components/ui/SharedSelect';
 
 type FilterBarProps = {
   searchPlaceholder?: string;
@@ -16,65 +16,80 @@ type FilterBarProps = {
 };
 
 export default function FilterBar({
-  searchPlaceholder = "Search...",
+  searchPlaceholder = 'Search...',
   vendorOptions = [],
   projectOptions = [],
   statusOptions = [],
   showVendorFilter = true,
   showProjectFilter = true,
   showStatusFilter = true,
-  className = ""
+  className = '',
 }: FilterBarProps) {
   const { t } = useLocale();
   const router = useRouter();
   const searchParams = useSearchParams();
-  
+
   const [search, setSearch] = useState(searchParams.get('search') || '');
-  const [selectedVendor, setSelectedVendor] = useState<{ id: string; name: string } | null>(
-    vendorOptions.find(v => v.id === searchParams.get('vendorId')) || null
+  const [selectedVendor, setSelectedVendor] = useState<{
+    id: string;
+    name: string;
+  } | null>(
+    vendorOptions.find((v) => v.id === searchParams.get('vendorId')) || null
   );
-  const [selectedProject, setSelectedProject] = useState<{ id: string; name: string } | null>(
-    projectOptions.find(p => p.id === searchParams.get('projectId')) || null
+  const [selectedProject, setSelectedProject] = useState<{
+    id: string;
+    name: string;
+  } | null>(
+    projectOptions.find((p) => p.id === searchParams.get('projectId')) || null
   );
-  const [selectedStatus, setSelectedStatus] = useState(searchParams.get('status') || '');
+  const [selectedStatus, setSelectedStatus] = useState(
+    searchParams.get('status') || ''
+  );
 
   // Update URL params when filters change (if using router)
   useEffect(() => {
     if (!router) return; // Skip if no router (for non-URL based filtering)
-    
+
     const params = new URLSearchParams(searchParams);
-    
+
     // Update search param
     if (search) {
       params.set('search', search);
     } else {
       params.delete('search');
     }
-    
+
     // Update vendor param
     if (selectedVendor) {
       params.set('vendorId', selectedVendor.id);
     } else {
       params.delete('vendorId');
     }
-    
+
     // Update project param
     if (selectedProject) {
       params.set('projectId', selectedProject.id);
     } else {
       params.delete('projectId');
     }
-    
+
     // Update status param
     if (selectedStatus) {
       params.set('status', selectedStatus);
     } else {
       params.delete('status');
     }
-    
+
     const newUrl = params.toString() ? `?${params.toString()}` : '';
     router.replace(newUrl as any, { scroll: false });
-  }, [search, selectedVendor, selectedProject, selectedStatus, router, searchParams]);
+  }, [
+    search,
+    selectedVendor,
+    selectedProject,
+    selectedStatus,
+    router,
+    searchParams,
+  ]);
 
   // Clear all filters
   const clearFilters = () => {
@@ -84,7 +99,8 @@ export default function FilterBar({
     setSelectedStatus('');
   };
 
-  const hasActiveFilters = search || selectedVendor || selectedProject || selectedStatus;
+  const hasActiveFilters =
+    search || selectedVendor || selectedProject || selectedStatus;
 
   return (
     <div className={`space-y-3 ${className}`}>
@@ -103,7 +119,9 @@ export default function FilterBar({
         {/* Vendor filter */}
         {showVendorFilter && vendorOptions.length > 0 && (
           <div className="min-w-[160px]">
-            <label className="block text-xs text-neutral-500 mb-1">Vendor</label>
+            <label className="block text-xs text-neutral-500 mb-1">
+              Vendor
+            </label>
             <SharedSelect
               value={selectedVendor}
               onChange={setSelectedVendor}
@@ -116,7 +134,9 @@ export default function FilterBar({
         {/* Project filter */}
         {showProjectFilter && projectOptions.length > 0 && (
           <div className="min-w-[160px]">
-            <label className="block text-xs text-neutral-500 mb-1">Project</label>
+            <label className="block text-xs text-neutral-500 mb-1">
+              Project
+            </label>
             <SharedSelect
               value={selectedProject}
               onChange={setSelectedProject}
@@ -129,12 +149,17 @@ export default function FilterBar({
         {/* Status filter */}
         {showStatusFilter && statusOptions.length > 0 && (
           <div className="min-w-[120px]">
-            <label className="block text-xs text-neutral-500 mb-1">Status</label>
+            <label className="block text-xs text-neutral-500 mb-1">
+              Status
+            </label>
             <SharedSelect
               simple
               simpleValue={selectedStatus}
               onSimpleChange={setSelectedStatus}
-              simpleOptions={[{ value: '', label: 'All statuses' }, ...statusOptions]}
+              simpleOptions={[
+                { value: '', label: 'All statuses' },
+                ...statusOptions,
+              ]}
             />
           </div>
         )}

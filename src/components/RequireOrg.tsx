@@ -1,6 +1,6 @@
-"use client";
-import { useEffect, useState } from 'react';
+'use client';
 import { useRouter } from 'next/navigation';
+import { useEffect, useState } from 'react';
 import { getSupabaseClient } from '@/lib/supabase/client';
 
 interface RequireOrgProps {
@@ -16,7 +16,9 @@ export default function RequireOrg({ children }: RequireOrgProps) {
     async function checkAuthAndOrg() {
       try {
         // Check user authentication
-        const { data: { user } } = await supabase.auth.getUser();
+        const {
+          data: { user },
+        } = await supabase.auth.getUser();
         if (!user) {
           router.replace('/login');
           return;

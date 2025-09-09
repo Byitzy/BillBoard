@@ -1,11 +1,11 @@
 'use client';
 import { useEffect, useState } from 'react';
-import { getSupabaseClient } from '@/lib/supabase/client';
+import BillActions from '@/components/bills/BillActions';
 import BillHeader from '@/components/bills/BillHeader';
 import OccurrenceList from '@/components/bills/OccurrenceList';
-import BillActions from '@/components/bills/BillActions';
+import { getSupabaseClient } from '@/lib/supabase/client';
 
-type Props = { params: { id: string } };
+type Props = { params: Promise<{ id: string }> };
 
 type Bill = {
   id: string;
@@ -31,21 +31,30 @@ export default function BillDetailPage({ params }: Props) {
   const [occ, setOcc] = useState<Occ[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [resolvedParams, setResolvedParams] = useState<{ id: string } | null>(
+    null
+  );
+
+  useEffect(() => {
+    params.then(setResolvedParams);
+  }, [params]);
 
   async function load() {
+    if (!resolvedParams) return;
+
     setLoading(true);
     setError(null);
     const { data: bills, error: be } = await supabase
       .from('bills')
       .select('id,title,amount_total,currency,due_date,recurring_rule')
-      .eq('id', params.id)
+      .eq('id', resolvedParams.id)
       .limit(1);
     if (be) setError(be.message);
     setBill((bills?.[0] as any) ?? null);
     const { data: occurrences, error: oe } = await supabase
       .from('bill_occurrences')
       .select('id,sequence,amount_due,due_date,suggested_submission_date,state')
-      .eq('bill_id', params.id)
+      .eq('bill_id', resolvedParams.id)
       .order('sequence');
     if (oe) setError(oe.message);
     setOcc((occurrences ?? []) as Occ[]);
@@ -53,8 +62,10 @@ export default function BillDetailPage({ params }: Props) {
   }
 
   useEffect(() => {
-    load();
-  }, [params.id]); // eslint-disable-line react-hooks/exhaustive-deps
+    if (resolvedParams) {
+      load();
+    }
+  }, [resolvedParams]); // eslint-disable-line react-hooks/exhaustive-deps
 
   return (
     <div className="space-y-4">

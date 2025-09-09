@@ -1,13 +1,13 @@
-"use client";
+'use client';
 import Link from 'next/link';
 import { useState } from 'react';
-import { getSupabaseClient } from '@/lib/supabase/client';
-import { getDefaultOrgId } from '@/lib/org';
-import PDFExportButton from '@/components/PDFExportButton';
-import CSVExportButton from '@/components/CSVExportButton';
 import BillForm from '@/components/BillForm';
-import FilterBar from '@/components/ui/FilterBar';
+import CSVExportButton from '@/components/CSVExportButton';
 import { useLocale } from '@/components/i18n/LocaleProvider';
+import PDFExportButton from '@/components/PDFExportButton';
+import FilterBar from '@/components/ui/FilterBar';
+import { getDefaultOrgId } from '@/lib/org';
+import { getSupabaseClient } from '@/lib/supabase/client';
 
 type BillRow = {
   id: string;
@@ -27,18 +27,19 @@ type ClientBillsPageProps = {
   projectOptions: { id: string; name: string }[];
 };
 
-export default function ClientBillsPage({ 
-  initialBills, 
-  initialNextDue, 
+export default function ClientBillsPage({
+  initialBills,
+  initialNextDue,
   initialError,
   filterContext,
   vendorOptions,
-  projectOptions 
+  projectOptions,
 }: ClientBillsPageProps) {
   const supabase = getSupabaseClient();
   const { t } = useLocale();
   const [bills, setBills] = useState<BillRow[]>(initialBills);
-  const [nextDue, setNextDue] = useState<Record<string, string | undefined>>(initialNextDue);
+  const [nextDue, setNextDue] =
+    useState<Record<string, string | undefined>>(initialNextDue);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(initialError);
 
@@ -51,20 +52,22 @@ export default function ClientBillsPage({
       setLoading(false);
       return;
     }
-    
+
     // Get current URL search params to maintain filters
     const urlParams = new URLSearchParams(window.location.search);
-    
+
     let query = supabase
       .from('bills')
-      .select(`
+      .select(
+        `
         id,
         title,
         amount_total,
         due_date,
         vendors(name),
         projects(name)
-      `)
+      `
+      )
       .eq('org_id', orgId);
 
     // Apply same filters as server-side
@@ -80,8 +83,10 @@ export default function ClientBillsPage({
     const status = urlParams.get('status') || 'active';
     query = query.eq('status', status);
 
-    const { data, error } = await query.order('created_at', { ascending: false });
-    
+    const { data, error } = await query.order('created_at', {
+      ascending: false,
+    });
+
     if (error) setError(error.message);
     else {
       const rows = (data ?? []).map((row: any) => ({
@@ -96,15 +101,18 @@ export default function ClientBillsPage({
       let filteredRows = rows;
       if (urlParams.get('search')) {
         const searchLower = urlParams.get('search')!.toLowerCase();
-        filteredRows = rows.filter(bill => 
-          bill.title.toLowerCase().includes(searchLower) ||
-          (bill.vendor_name && bill.vendor_name.toLowerCase().includes(searchLower)) ||
-          (bill.project_name && bill.project_name.toLowerCase().includes(searchLower))
+        filteredRows = rows.filter(
+          (bill) =>
+            bill.title.toLowerCase().includes(searchLower) ||
+            (bill.vendor_name &&
+              bill.vendor_name.toLowerCase().includes(searchLower)) ||
+            (bill.project_name &&
+              bill.project_name.toLowerCase().includes(searchLower))
         );
       }
-      
+
       setBills(filteredRows);
-      
+
       // compute next due for recurring bills
       const ids = rows.filter((b) => !b.due_date).map((b) => b.id);
       if (ids.length > 0) {
@@ -135,7 +143,10 @@ export default function ClientBillsPage({
           <h1 className="text-xl font-semibold">{t('bills.title')}</h1>
           {filterContext && (
             <p className="text-sm text-neutral-500 mt-1">
-              {filterContext} • <Link href="/bills" className="text-blue-600 hover:underline">Clear filter</Link>
+              {filterContext} •{' '}
+              <Link href="/bills" className="text-blue-600 hover:underline">
+                Clear filter
+              </Link>
             </p>
           )}
         </div>
@@ -143,11 +154,11 @@ export default function ClientBillsPage({
           <div className="flex items-center gap-2">
             <CSVExportButton
               type="data"
-              data={bills.map(b => ({
+              data={bills.map((b) => ({
                 Vendor: b.vendor_name ?? '—',
                 Project: b.project_name ?? '—',
                 Amount: `$${b.amount_total.toFixed(2)}`,
-                'Due Date': b.due_date ?? '—'
+                'Due Date': b.due_date ?? '—',
               }))}
               columns={['Vendor', 'Project', 'Amount', 'Due Date']}
               filename={`bills-list-${new Date().toISOString().slice(0, 10)}.csv`}
@@ -155,11 +166,11 @@ export default function ClientBillsPage({
             />
             <PDFExportButton
               type="data"
-              data={bills.map(b => ({
+              data={bills.map((b) => ({
                 Vendor: b.vendor_name ?? '—',
                 Project: b.project_name ?? '—',
                 Amount: `$${b.amount_total.toFixed(2)}`,
-                'Due Date': b.due_date ?? '—'
+                'Due Date': b.due_date ?? '—',
               }))}
               columns={['Vendor', 'Project', 'Amount', 'Due Date']}
               title="Bills List"
@@ -172,7 +183,7 @@ export default function ClientBillsPage({
 
       <BillForm onCreated={reload} />
 
-      <FilterBar 
+      <FilterBar
         searchPlaceholder="Search bills by title, vendor, or project..."
         vendorOptions={vendorOptions}
         projectOptions={projectOptions}
@@ -180,7 +191,7 @@ export default function ClientBillsPage({
           { value: 'active', label: 'Active' },
           { value: 'pending_approval', label: 'Pending' },
           { value: 'approved', label: 'Approved' },
-          { value: 'on_hold', label: 'On Hold' }
+          { value: 'on_hold', label: 'On Hold' },
         ]}
         className="my-4"
       />
@@ -208,18 +219,28 @@ export default function ClientBillsPage({
             ) : bills.length === 0 ? (
               <tr>
                 <td className="px-3 py-4 text-neutral-500" colSpan={5}>
-                  {filterContext ? 'No bills match the current filter.' : 'No bills yet.'}
+                  {filterContext
+                    ? 'No bills match the current filter.'
+                    : 'No bills yet.'}
                 </td>
               </tr>
             ) : (
               bills.map((b) => (
-                <tr key={b.id} className="border-t border-neutral-100 dark:border-neutral-800">
+                <tr
+                  key={b.id}
+                  className="border-t border-neutral-100 dark:border-neutral-800"
+                >
                   <td className="px-3 py-2">{b.vendor_name || '—'}</td>
                   <td className="px-3 py-2">{b.project_name || '—'}</td>
                   <td className="px-3 py-2">${b.amount_total.toFixed(2)}</td>
-                  <td className="px-3 py-2">{b.due_date ?? nextDue[b.id] ?? '—'}</td>
+                  <td className="px-3 py-2">
+                    {b.due_date ?? nextDue[b.id] ?? '—'}
+                  </td>
                   <td className="px-3 py-2 text-right">
-                    <Link href={`/bills/${b.id}`} className="rounded-lg border px-2 py-1 hover:bg-neutral-50 dark:border-neutral-800 dark:hover:bg-neutral-900">
+                    <Link
+                      href={`/bills/${b.id}`}
+                      className="rounded-lg border px-2 py-1 hover:bg-neutral-50 dark:border-neutral-800 dark:hover:bg-neutral-900"
+                    >
                       View
                     </Link>
                   </td>

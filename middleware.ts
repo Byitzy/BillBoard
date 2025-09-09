@@ -24,9 +24,35 @@ export async function middleware(req: NextRequest) {
     return NextResponse.redirect(url);
   }
 
+  // If user is logged in and trying to access auth routes, redirect based on role
   if (session && isAuthRoute) {
-    url.pathname = '/dashboard';
+    // Get user role to determine proper redirect
+    const { data: user } = await supabase.auth.getUser();
+    const isSuperAdmin =
+      user?.user?.user_metadata?.is_super_admin === true ||
+      user?.user?.user_metadata?.is_super_admin === 'true';
+
+    if (isSuperAdmin) {
+      url.pathname = '/super-admin';
+      return NextResponse.redirect(url);
+    }
+
+    // For regular users, we'll let the root page handle the role-based redirect
+    url.pathname = '/';
     return NextResponse.redirect(url);
+  }
+
+  // Protect super-admin routes - only super admins can access
+  if (pathname.startsWith('/super-admin') && session) {
+    const { data: user } = await supabase.auth.getUser();
+    const isSuperAdmin =
+      user?.user?.user_metadata?.is_super_admin === true ||
+      user?.user?.user_metadata?.is_super_admin === 'true';
+
+    if (!isSuperAdmin) {
+      url.pathname = '/dashboard';
+      return NextResponse.redirect(url);
+    }
   }
 
   return res;

@@ -1,11 +1,11 @@
 'use client';
 import { useEffect, useState } from 'react';
-import { getSupabaseClient } from '@/lib/supabase/client';
-import { getDefaultOrgId } from '@/lib/org';
+import DashboardCharts from '@/components/dashboard/DashboardCharts';
+import DashboardMetrics from '@/components/dashboard/DashboardMetrics';
 import { getTotalsByProject } from '@/lib/metrics';
 import type { ProjectTotal } from '@/lib/metrics';
-import DashboardMetrics from '@/components/dashboard/DashboardMetrics';
-import DashboardCharts from '@/components/dashboard/DashboardCharts';
+import { getDefaultOrgId } from '@/lib/org';
+import { getSupabaseClient } from '@/lib/supabase/client';
 
 type ChartPoint = { m: string; v: number };
 type Row = {

@@ -1,12 +1,12 @@
 'use client';
-import { useEffect, useState, useMemo } from 'react';
-import { getSupabaseClient } from '@/lib/supabase/client';
-import { getDefaultOrgId } from '@/lib/org';
-import { useLocale } from '@/components/i18n/LocaleProvider';
 import { Mail, Users, Plus } from 'lucide-react';
-import MemberFilters from '@/components/organization/MemberFilters';
+import { useEffect, useState, useMemo } from 'react';
+import { useLocale } from '@/components/i18n/LocaleProvider';
 import InviteForm from '@/components/organization/InviteForm';
+import MemberFilters from '@/components/organization/MemberFilters';
 import MemberList from '@/components/organization/MemberList';
+import { getDefaultOrgId } from '@/lib/org';
+import { getSupabaseClient } from '@/lib/supabase/client';
 
 type Member = {
   id: string;

@@ -18,6 +18,8 @@ export async function GET(req: NextRequest) {
 
   // Optional: support redirect back to original path via ?next=/somewhere
   const next = url.searchParams.get('next');
-  const dest = next ? next : '/dashboard';
+
+  // If there's a specific next path, use it, otherwise let root page handle role-based redirect
+  const dest = next ? next : '/';
   return NextResponse.redirect(new URL(dest, url.origin));
 }

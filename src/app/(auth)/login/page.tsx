@@ -41,19 +41,7 @@ export default function LoginPage() {
     else window.location.href = '/dashboard';
   }
 
-  async function signUpPassword(e: React.FormEvent) {
-    e.preventDefault();
-    setStatus(null);
-    setLoading(true);
-    const { error } = await supabase.auth.signUp({
-      email,
-      password,
-      options: { emailRedirectTo: redirectTo },
-    });
-    setLoading(false);
-    if (error) setStatus(error.message);
-    else setStatus('Check your email to confirm your account.');
-  }
+  // Removed signUpPassword - public registration is disabled
 
   return (
     <div className="mx-auto max-w-md space-y-4">

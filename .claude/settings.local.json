@@ -23,7 +23,17 @@
       "Bash(gh run list:*)",
       "Bash(gh run view:*)",
       "Bash(node:*)",
-      "Bash(npm run build:*)"
+      "Bash(npm run build:*)",
+      "Bash(npm run lint:*)",
+      "Bash(ls:*)",
+      "Bash(pkill:*)",
+      "Bash(find:*)",
+      "Bash(curl:*)",
+      "Bash(npx supabase db reset:*)",
+      "Bash(pnpm list:*)",
+      "Bash(pnpm update:*)",
+      "Bash(npx eslint:*)",
+      "Bash(pnpm install:*)"
     ],
     "deny": [],
     "ask": []
