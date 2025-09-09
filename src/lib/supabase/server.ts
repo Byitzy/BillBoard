@@ -1,12 +1,29 @@
-import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs';
+import { createServerClient } from '@supabase/ssr';
 import { createClient, type SupabaseClient } from '@supabase/supabase-js';
 import { cookies } from 'next/headers';
 import type { NextRequest } from 'next/server';
 import { APIError } from '@/types/api';
 import type { Database } from '@/types/supabase';
 
-export function getServerClient(): SupabaseClient<Database> {
-  return createRouteHandlerClient<Database>({ cookies });
+export async function getServerClient(): Promise<SupabaseClient<Database>> {
+  const cookieStore = await cookies();
+
+  return createServerClient<Database>(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    {
+      cookies: {
+        getAll() {
+          return cookieStore.getAll();
+        },
+        setAll(cookiesToSet) {
+          cookiesToSet.forEach(({ name, value, options }) =>
+            cookieStore.set(name, value, options)
+          );
+        },
+      },
+    }
+  );
 }
 
 export function getServiceClient(): SupabaseClient<Database> {
@@ -41,7 +58,7 @@ export async function getUserFromRequest(req: NextRequest) {
     if (!error && data.user) return data.user;
   }
   // Fallback to cookie-based session
-  const supabase = getServerClient();
+  const supabase = await getServerClient();
   const { data } = await supabase.auth.getUser();
   return data.user;
 }

@@ -6,7 +6,7 @@ export async function DELETE(
   { params }: { params: Promise<{ orgId: string }> }
 ) {
   try {
-    const supabase = getServerClient();
+    const supabase = await getServerClient();
 
     // Check if user is authenticated and is super admin
     const {

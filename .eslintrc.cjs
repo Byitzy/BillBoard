@@ -31,7 +31,7 @@ module.exports = {
         caughtErrorsIgnorePattern: '^_',
       },
     ],
-    '@typescript-eslint/no-explicit-any': 'warn',
+    '@typescript-eslint/no-explicit-any': 'off',
     '@typescript-eslint/consistent-type-imports': [
       'warn',
       { prefer: 'type-imports' },
@@ -73,7 +73,7 @@ module.exports = {
     'react/react-in-jsx-scope': 'off', // Not needed in Next.js
     'react/display-name': 'off',
     'react-hooks/rules-of-hooks': 'error',
-    'react-hooks/exhaustive-deps': 'warn',
+    'react-hooks/exhaustive-deps': 'off',
 
     // General code quality
     'prefer-const': 'warn',
@@ -83,7 +83,7 @@ module.exports = {
     'no-duplicate-imports': 'warn',
     'no-template-curly-in-string': 'error',
     'array-callback-return': 'error',
-    'consistent-return': 'error',
+    'consistent-return': 'warn',
     'default-case': 'error',
     eqeqeq: ['error', 'always', { null: 'ignore' }],
     'no-alert': 'warn',

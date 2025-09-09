@@ -1,6 +1,5 @@
 import type { SafeResult } from '@/types/api';
-import type { TypedSupabaseClient } from './client';
-import { handleSupabaseError } from './client';
+import { handleSupabaseError, type TypedSupabaseClient } from './client';
 
 // Safe database query wrapper
 export async function safeQuery<T>(

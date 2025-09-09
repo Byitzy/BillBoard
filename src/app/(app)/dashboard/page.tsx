@@ -1,6 +1,6 @@
 'use client';
-import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import { useEffect } from 'react';
 import { getSupabaseClient } from '@/lib/supabase/client';
 import { getUserRoleAndRedirectPath } from '@/lib/supabase/utils';
 
@@ -57,7 +57,7 @@ export default function DashboardPage() {
           // User is not logged in, redirect to login
           router.replace('/login');
         }
-      } catch (error) {
+      } catch (_error) {
         // On error, redirect to login for safety
         router.replace('/login');
       }

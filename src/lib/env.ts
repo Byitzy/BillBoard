@@ -95,7 +95,7 @@ export function validateServerEnvironment(): ServerEnv {
         (issue) => `${issue.path.join('.')}: ${issue.message}`
       );
       throw new Error(
-        `Environment validation failed. Check the above errors and update your .env.local file.`
+        `Environment validation failed:\n${issues.join('\n')}\n\nCheck the above errors and update your .env.local file.`
       );
     }
     throw error;
@@ -107,7 +107,7 @@ export function validateServerEnvironment(): ServerEnv {
 export const env = (() => {
   try {
     return validateClientEnvironment();
-  } catch (error) {
+  } catch (_error) {
     // Return defaults for build-time compatibility
     return {
       NEXT_PUBLIC_SUPABASE_URL: process.env.NEXT_PUBLIC_SUPABASE_URL || '',

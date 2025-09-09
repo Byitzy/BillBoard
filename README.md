@@ -4,22 +4,24 @@ BillBoard is a multi-tenant web app for managing organization bills and project-
 
 ## Features
 
-- Multi-org: members and roles per organization.
-- Bills & Occurrences: one-off or recurring schedules; optional installments.
-- Calendar: month grid with due markers and suggested submission dates.
-- Approvals & Accounting: approve/hold, mark paid/failed.
-- Vendors & Projects: simple directories per org.
-- Quebec banking holidays: previous business day helper for submissions.
-- Theme: 2025-style dark/light with system preference and smooth transitions.
-- Exports: CSV and PDF (scaffolded).
-- CI: GitHub Actions for lint/typecheck/test.
+- **Multi-org**: Members and roles per organization with secure RLS policies
+- **Bills & Occurrences**: One-off or recurring schedules with optional installments
+- **Calendar**: Month grid with due markers and suggested submission dates
+- **Approvals & Accounting**: Approve/hold, mark paid/failed workflow
+- **Vendors & Projects**: Simple directories per organization
+- **Super Admin System**: System-wide user and organization management
+- **Quebec Banking**: Holiday-aware business day logic for submissions
+- **Modern UI**: 2025-style dark/light theme with system preference
+- **Testing**: Comprehensive E2E testing with Playwright
+- **Exports**: CSV and PDF generation
+- **Internationalization**: Multi-language support (en-CA, fr-CA, es-ES)
 
 ## Tech Stack
 
-- Next.js 14 (App Router) + TypeScript
-- Tailwind CSS (dark mode: class) + shadcn/ui + Radix UI (planned)
+- Next.js 15.5.2 (App Router) + TypeScript
+- Tailwind CSS (dark mode: class) + shadcn/ui + Radix UI
 - Supabase (Postgres, Auth, Storage, Edge Functions) with RLS
-- Vitest (unit tests) and Playwright (planned smoke tests)
+- Vitest (unit tests) and Playwright (E2E testing)
 - pnpm 9, ESLint, Prettier
 
 ## Project Structure
@@ -27,13 +29,17 @@ BillBoard is a multi-tenant web app for managing organization bills and project-
 ```
 src/
   app/                # Next.js App Router pages/layout
-  components/         # UI components (scaffolds)
-  lib/                # Utilities (business days, occurrences)
+  components/         # UI components with shadcn/ui
+  lib/                # Utilities (business days, occurrences, Supabase)
+  types/              # TypeScript type definitions
+tests/
+  e2e/                # Playwright E2E tests
 supabase/
   schema.sql          # DB schema, enums, RLS helpers
   edge/
-    generate_occurrences/  # Edge Function scaffold (TS outline)
-.github/workflows/ci.yml   # CI pipeline (lint, typecheck, test)
+    generate_occurrences/  # Edge Function for bill schedules
+playwright.config.ts       # Playwright testing configuration
+.github/workflows/ci.yml   # CI pipeline (planned)
 ```
 
 ## Getting Started
@@ -103,20 +109,34 @@ App runs at `http://localhost:3000`.
 - `pnpm lint` – ESLint
 - `pnpm typecheck` – TypeScript no-emit
 - `pnpm test` – Vitest unit tests
+- `pnpm playwright` – Playwright E2E tests
 
 ## Testing
 
+### Unit Tests
+
 - Unit tests live under `src/lib/*.test.ts`.
-- Run tests:
+- Run with: `pnpm test`
 
-```
-pnpm test
-```
+### End-to-End Tests
 
-If pnpm isn’t available, you can invoke Vitest directly:
+- E2E tests live under `tests/e2e/*.spec.ts`
+- Multi-browser testing (Chrome, Firefox, Safari)
+- Mobile viewport testing
+- Accessibility testing
 
-```
-node node_modules/vitest/vitest.mjs --run
+```bash
+# Run E2E tests
+pnpm playwright
+
+# Visual test runner
+pnpm playwright:ui
+
+# Debug mode (step through tests)
+pnpm playwright:debug
+
+# Run in headed mode (see browser)
+pnpm playwright:headed
 ```
 
 ## Notable Implementation Details
@@ -130,9 +150,31 @@ node node_modules/vitest/vitest.mjs --run
 
 ## CI/CD
 
-- GitHub Actions workflow `.github/workflows/ci.yml` runs on pushes/PRs to `beta` and `main`:
-  - `pnpm install`, `pnpm typecheck`, `pnpm lint`, `pnpm test`
-- Recommended flow: use `beta` as the default development branch, merge into `main` for production.
+### Automated Workflows
+
+**CI Pipeline** (`.github/workflows/ci.yml`)
+
+- **Triggers**: Push/PR to `beta` and `main` branches
+- **Jobs**:
+  - **Lint & Type Check**: ESLint code quality + TypeScript validation
+  - **Build & Test**: Production build + unit tests
+  - **E2E Tests**: Playwright tests (PR only) with report artifacts
+  - **Security Audit**: Dependency vulnerability scanning
+- **Features**: Parallel execution, concurrency control, artifact upload
+
+**Deployment Pipeline** (`.github/workflows/deploy.yml`)
+
+- **Triggers**: Push to `main` branch + manual dispatch
+- **Jobs**:
+  - **Deploy**: Vercel production deployment with security audit
+  - **Notify**: Deployment status reporting
+- **Environment**: Production environment protection
+
+### Recommended Git Flow
+
+- **Development**: Use `beta` as default branch for feature development
+- **Production**: Merge `beta` → `main` triggers automatic deployment
+- **Hotfixes**: Direct commits to `main` for emergency fixes
 
 ## Roadmap
 

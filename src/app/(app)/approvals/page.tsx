@@ -15,7 +15,6 @@ import { ErrorDisplay } from '@/components/ui/ErrorDisplay';
 import { SkeletonTable } from '@/components/ui/Skeleton';
 import { useAsyncOperation } from '@/hooks/useAsyncOperation';
 import { getSupabaseClient } from '@/lib/supabase/client';
-import type { Database } from '@/types/supabase';
 
 type BillOccurrenceWithBill = any;
 

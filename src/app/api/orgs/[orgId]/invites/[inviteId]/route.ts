@@ -1,5 +1,4 @@
-import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs';
-import { cookies } from 'next/headers';
+import { getServerClient } from '@/lib/supabase/server';
 import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
 
@@ -9,7 +8,7 @@ export async function DELETE(
 ) {
   try {
     const { orgId, inviteId } = await params;
-    const supabase = createRouteHandlerClient({ cookies });
+    const supabase = await getServerClient();
     const {
       data: { session },
     } = await supabase.auth.getSession();

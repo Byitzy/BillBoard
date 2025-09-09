@@ -1,9 +1,8 @@
-import { createServerComponentClient } from '@supabase/auth-helpers-nextjs';
-import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
 import ClientBillsPage from '@/components/ClientBillsPage';
 import RequireOrg from '@/components/RequireOrg';
 import { getDefaultOrgId } from '@/lib/org';
+import { getServerClient } from '@/lib/supabase/server';
 
 type BillRow = {
   id: string;
@@ -25,7 +24,7 @@ type BillsPageProps = {
 
 export default async function BillsPage({ searchParams }: BillsPageProps) {
   const resolvedSearchParams = await searchParams;
-  const supabase = createServerComponentClient({ cookies });
+  const supabase = await getServerClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
