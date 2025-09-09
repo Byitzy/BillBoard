@@ -1,0 +1,53 @@
+-- Fix RLS helper functions to include super admin bypass
+-- This handles both boolean and string values for is_super_admin
+
+-- Drop and recreate uid_in_org function to include super admin check
+CREATE OR REPLACE FUNCTION uid_in_org(target_org uuid)
+RETURNS boolean
+LANGUAGE sql
+STABLE
+SET search_path = public, auth
+AS $$
+  SELECT 
+    (auth.jwt() ->> 'user_metadata')::jsonb ->> 'is_super_admin' = 'true' OR
+    ((auth.jwt() ->> 'user_metadata')::jsonb -> 'is_super_admin')::text = 'true' OR
+    EXISTS(SELECT 1 FROM public.org_members WHERE org_id = target_org AND user_id = auth.uid());
+$$;
+
+-- Drop and recreate uid_has_role function to include super admin check  
+CREATE OR REPLACE FUNCTION uid_has_role(target_org uuid, required_role text)
+RETURNS boolean
+LANGUAGE sql
+STABLE
+SET search_path = public, auth
+AS $$
+  SELECT 
+    (auth.jwt() ->> 'user_metadata')::jsonb ->> 'is_super_admin' = 'true' OR
+    ((auth.jwt() ->> 'user_metadata')::jsonb -> 'is_super_admin')::text = 'true' OR
+    EXISTS(
+      SELECT 1 FROM public.org_members 
+      WHERE org_id = target_org 
+      AND user_id = auth.uid() 
+      AND role = required_role
+    );
+$$;
+
+-- Add super admin check to get_user_org function
+CREATE OR REPLACE FUNCTION get_user_org()
+RETURNS uuid
+LANGUAGE sql
+STABLE
+SET search_path = public, auth
+AS $$
+  SELECT 
+    CASE 
+      WHEN (auth.jwt() ->> 'user_metadata')::jsonb ->> 'is_super_admin' = 'true' OR
+           ((auth.jwt() ->> 'user_metadata')::jsonb -> 'is_super_admin')::text = 'true'
+      THEN NULL -- Super admins return NULL to bypass org-specific filtering
+      ELSE (
+        SELECT org_id FROM public.org_members 
+        WHERE user_id = auth.uid() 
+        LIMIT 1
+      )
+    END;
+$$;
