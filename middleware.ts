@@ -5,15 +5,18 @@ export async function middleware(req: NextRequest) {
   const res = NextResponse.next();
   const supabase = createMiddlewareClient({ req, res });
   const {
-    data: { session }
+    data: { session },
   } = await supabase.auth.getSession();
 
   const url = new URL(req.url);
   const pathname = url.pathname;
-  const isAuthRoute = pathname.startsWith('/login') || pathname.startsWith('/auth/callback');
+  const isAuthRoute =
+    pathname.startsWith('/login') || pathname.startsWith('/auth/');
   const isApi = pathname.startsWith('/api');
   const isPublicAsset =
-    pathname.startsWith('/_next') || pathname.startsWith('/favicon') || pathname.startsWith('/robots');
+    pathname.startsWith('/_next') ||
+    pathname.startsWith('/favicon') ||
+    pathname.startsWith('/robots');
 
   // Allow API routes to handle auth themselves (avoid redirects breaking fetch)
   if (!session && !isAuthRoute && !isPublicAsset && !isApi) {
@@ -30,5 +33,7 @@ export async function middleware(req: NextRequest) {
 }
 
 export const config = {
-  matcher: ['/((?!_next/static|_next/image|favicon.ico|robots.txt|sitemap.xml).*)']
+  matcher: [
+    '/((?!_next/static|_next/image|favicon.ico|robots.txt|sitemap.xml).*)',
+  ],
 };

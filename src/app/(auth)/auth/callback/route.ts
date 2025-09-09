@@ -1,6 +1,7 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { cookies } from 'next/headers';
 import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs';
+import { cookies } from 'next/headers';
+import type { NextRequest } from 'next/server';
+import { NextResponse } from 'next/server';
 
 export async function GET(req: NextRequest) {
   const url = new URL(req.url);
@@ -20,4 +21,3 @@ export async function GET(req: NextRequest) {
   const dest = next ? next : '/dashboard';
   return NextResponse.redirect(new URL(dest, url.origin));
 }
-

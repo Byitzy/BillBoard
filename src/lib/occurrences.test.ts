@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest';
-import { generateOccurrences, Bill } from './occurrences';
+import type { Bill } from './occurrences';
+import { generateOccurrences } from './occurrences';
 
 describe('generateOccurrences', () => {
   it('handles one-off bill', () => {
@@ -8,7 +9,7 @@ describe('generateOccurrences', () => {
       org_id: 'o1',
       title: 'One-off',
       amount_total: 1200,
-      due_date: '2025-06-24'
+      due_date: '2025-06-24',
     };
     const occ = generateOccurrences(bill);
     expect(occ.length).toBe(1);
@@ -27,8 +28,8 @@ describe('generateOccurrences', () => {
         interval: 1,
         byMonthDay: 15,
         start_date: '2025-01-15',
-        horizon_months: 6
-      }
+        horizon_months: 6,
+      },
     };
     const occ = generateOccurrences(bill);
     expect(occ.length).toBe(3); // limited by installments

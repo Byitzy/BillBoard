@@ -33,7 +33,12 @@ function easterSunday(year: number): Date {
   return new Date(year, month - 1, day);
 }
 
-function nthWeekdayOfMonth(year: number, monthIndex: number, weekday: number, n: number): Date {
+function nthWeekdayOfMonth(
+  year: number,
+  monthIndex: number,
+  weekday: number,
+  n: number
+): Date {
   // weekday: 0=Sun..6=Sat, monthIndex: 0..11
   const first = new Date(year, monthIndex, 1);
   const shift = (7 + weekday - first.getDay()) % 7;
@@ -41,7 +46,11 @@ function nthWeekdayOfMonth(year: number, monthIndex: number, weekday: number, n:
   return new Date(year, monthIndex, day);
 }
 
-function mondayBeforeDate(year: number, monthIndex: number, dayOfMonth: number): Date {
+function mondayBeforeDate(
+  year: number,
+  monthIndex: number,
+  dayOfMonth: number
+): Date {
   // Find Monday on or before (dayOfMonth - 1), i.e., Monday before given date
   const target = new Date(year, monthIndex, dayOfMonth);
   // Step back 1 day to ensure strictly before the target date
@@ -58,7 +67,8 @@ function observedIfWeekend(d: Date): Date {
   // Keep simple: if Sunday -> Monday; if Saturday -> Friday (Canada Day often Fri if Sat)
   const day = d.getDay();
   const res = new Date(d);
-  if (day === 0) res.setDate(res.getDate() + 1); // Sunday -> Monday
+  if (day === 0)
+    res.setDate(res.getDate() + 1); // Sunday -> Monday
   else if (day === 6) res.setDate(res.getDate() - 1); // Saturday -> Friday
   return startOfDay(res);
 }
@@ -100,6 +110,47 @@ export function isQuebecBankHoliday(date: Date): boolean {
   const d = startOfDay(date);
   const holidays = quebecBankHolidays(d.getFullYear());
   return holidays.some((h) => h.getTime() === d.getTime());
+}
+
+export function getQuebecBankHolidayName(date: Date): string | null {
+  const d = startOfDay(date);
+  const year = d.getFullYear();
+  
+  // New Year's Day (Jan 1) observed
+  const newYear = observedIfWeekend(new Date(year, 0, 1));
+  if (d.getTime() === newYear.getTime()) return "New Year's Day";
+
+  // Good Friday (Friday before Easter Sunday)
+  const easter = easterSunday(year);
+  const goodFriday = new Date(easter);
+  goodFriday.setDate(goodFriday.getDate() - 2);
+  if (d.getTime() === startOfDay(goodFriday).getTime()) return "Good Friday";
+
+  // National Patriots' Day (QC) - Monday preceding May 25
+  const patriotsDay = mondayBeforeDate(year, 4, 25);
+  if (d.getTime() === patriotsDay.getTime()) return "National Patriots' Day";
+
+  // Saint-Jean-Baptiste Day (Jun 24)
+  const stJean = observedIfWeekend(new Date(year, 5, 24));
+  if (d.getTime() === stJean.getTime()) return "Saint-Jean-Baptiste Day";
+
+  // Canada Day (Jul 1) observed
+  const canadaDay = observedIfWeekend(new Date(year, 6, 1));
+  if (d.getTime() === canadaDay.getTime()) return "Canada Day";
+
+  // Labour Day - 1st Monday of September
+  const labourDay = nthWeekdayOfMonth(year, 8, 1, 1);
+  if (d.getTime() === labourDay.getTime()) return "Labour Day";
+
+  // Thanksgiving - 2nd Monday of October
+  const thanksgiving = nthWeekdayOfMonth(year, 9, 1, 2);
+  if (d.getTime() === thanksgiving.getTime()) return "Thanksgiving";
+
+  // Christmas Day (Dec 25) observed
+  const christmas = observedIfWeekend(new Date(year, 11, 25));
+  if (d.getTime() === christmas.getTime()) return "Christmas Day";
+
+  return null;
 }
 
 export function isBusinessDay(date: Date): boolean {

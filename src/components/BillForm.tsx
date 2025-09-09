@@ -2,6 +2,8 @@
 import { useEffect, useMemo, useState } from 'react';
 import { getSupabaseClient } from '@/lib/supabase/client';
 import { getDefaultOrgId } from '@/lib/org';
+import { useLocale } from '@/components/i18n/LocaleProvider';
+import SharedSelect, { SelectOption } from '@/components/ui/SharedSelect';
 
 type Props = { onCreated?: () => void };
 
@@ -9,16 +11,15 @@ type Option = { id: string; name: string };
 
 export default function BillForm({ onCreated }: Props) {
   const supabase = getSupabaseClient();
+  const { t } = useLocale();
 
   const [orgId, setOrgId] = useState<string | null>(null);
   const [amount, setAmount] = useState('');
   const [currency, setCurrency] = useState('CAD');
 
-  const [vendorQuery, setVendorQuery] = useState('');
   const [vendorOptions, setVendorOptions] = useState<Option[]>([]);
   const [vendor, setVendor] = useState<Option | null>(null);
 
-  const [projectQuery, setProjectQuery] = useState('');
   const [projectOptions, setProjectOptions] = useState<Option[]>([]);
   const [project, setProject] = useState<Option | null>(null);
 
@@ -41,45 +42,37 @@ export default function BillForm({ onCreated }: Props) {
     let cancelled = false;
     async function run() {
       if (!orgId) return;
-      if (!vendorQuery.trim()) {
-        setVendorOptions([]);
-        return;
-      }
       const { data } = await supabase
         .from('vendors')
         .select('id,name')
         .eq('org_id', orgId)
-        .ilike('name', `%${vendorQuery.trim()}%`)
-        .limit(8);
+        .order('name')
+        .limit(50);
       if (!cancelled) setVendorOptions((data ?? []) as Option[]);
     }
     run();
     return () => {
       cancelled = true;
     };
-  }, [vendorQuery, orgId, supabase]);
+  }, [orgId, supabase]);
 
   useEffect(() => {
     let cancelled = false;
     async function run() {
       if (!orgId) return;
-      if (!projectQuery.trim()) {
-        setProjectOptions([]);
-        return;
-      }
       const { data } = await supabase
         .from('projects')
         .select('id,name')
         .eq('org_id', orgId)
-        .ilike('name', `%${projectQuery.trim()}%`)
-        .limit(8);
+        .order('name')
+        .limit(50);
       if (!cancelled) setProjectOptions((data ?? []) as Option[]);
     }
     run();
     return () => {
       cancelled = true;
     };
-  }, [projectQuery, orgId, supabase]);
+  }, [orgId, supabase]);
 
   const interval = useMemo(() => {
     switch (frequency) {
@@ -148,22 +141,13 @@ export default function BillForm({ onCreated }: Props) {
     setLoading(true);
     setError(null);
     try {
-      let vendorId: string | null = vendor?.id ?? null;
-      let projectId: string | null = project?.id ?? null;
-
-      if (!vendorId && vendorQuery.trim()) {
-        const v = await ensureVendor(vendorQuery);
-        vendorId = v?.id ?? null;
-      }
-      if (!projectId && projectQuery.trim()) {
-        const p = await ensureProject(projectQuery);
-        projectId = p?.id ?? null;
-      }
+      const vendorId: string | null = vendor?.id ?? null;
+      const projectId: string | null = project?.id ?? null;
 
       const amt = parseFloat(amount);
       if (Number.isNaN(amt)) throw new Error('Please provide a valid amount.');
 
-      const computedTitle = `${vendor?.name || vendorQuery || 'Bill'} ${currency} ${amt.toFixed(2)}`;
+      const computedTitle = `${vendor?.name || 'Bill'} ${currency} ${amt.toFixed(2)}`;
       const payload: any = {
         org_id: orgId,
         title: computedTitle,
@@ -218,9 +202,7 @@ export default function BillForm({ onCreated }: Props) {
       setAmount('');
       setCurrency('CAD');
       setVendor(null);
-      setVendorQuery('');
       setProject(null);
-      setProjectQuery('');
       setIsRecurring(false);
       setDueDate('');
       setStartDate('');
@@ -262,126 +244,44 @@ export default function BillForm({ onCreated }: Props) {
             ))}
           </select>
         </div>
-        <select
-          className="rounded-xl border border-neutral-200 px-3 py-2 text-sm dark:border-neutral-800"
-          value={status}
-          onChange={(e) => setStatus(e.target.value as any)}
-          title="Status"
-        >
-          {[
-            { v: 'active', l: 'Active' },
-            { v: 'pending_approval', l: 'Pending' },
-            { v: 'approved', l: 'Approved' },
-            { v: 'on_hold', l: 'On Hold' }
-          ].map((o) => (
-            <option key={o.v} value={o.v}>
-              {o.l}
-            </option>
-          ))}
-        </select>
+        <SharedSelect
+          simple
+          simpleValue={status}
+          onSimpleChange={(value) => setStatus(value as any)}
+          simpleOptions={[
+            { value: 'active', label: 'Active' },
+            { value: 'pending_approval', label: 'Pending' },
+            { value: 'approved', label: 'Approved' },
+            { value: 'on_hold', label: 'On Hold' }
+          ]}
+        />
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
         {/* Vendor combobox */}
         <div>
           <div className="text-xs text-neutral-500 mb-1">Vendor</div>
-          <div className="relative">
-            <input
-              className="w-full rounded-xl border border-neutral-200  px-3 py-2 text-sm dark:border-neutral-800"
-              placeholder="Type to search or create vendor"
-              value={vendor ? vendor.name : vendorQuery}
-              onChange={(e) => {
-                setVendor(null);
-                setVendorQuery(e.target.value);
-              }}
-            />
-            {vendor === null && vendorQuery && vendorOptions.length > 0 && (
-              <ul className="absolute z-10 mt-1 w-full overflow-hidden rounded-xl border border-neutral-200 bg-white text-sm shadow-sm dark:border-neutral-800 dark:bg-neutral-900">
-                {vendorOptions.map((v) => (
-                  <li key={v.id}>
-                    <button
-                      type="button"
-                      className="w-full px-3 py-2 text-left hover:bg-neutral-100 dark:hover:bg-neutral-800"
-                      onClick={() => {
-                        setVendor(v);
-                        setVendorQuery('');
-                      }}
-                    >
-                      {v.name}
-                    </button>
-                  </li>
-                ))}
-                <li>
-                  <button
-                    type="button"
-                    className="w-full px-3 py-2 text-left hover:bg-neutral-100 dark:hover:bg-neutral-800"
-                    onClick={async () => {
-                      const v = await ensureVendor(vendorQuery);
-                      if (v) {
-                        setVendor(v);
-                        setVendorQuery('');
-                      }
-                    }}
-                  >
-                    Create “{vendorQuery}”
-                  </button>
-                </li>
-              </ul>
-            )}
-          </div>
+          <SharedSelect
+            value={vendor}
+            onChange={setVendor}
+            options={vendorOptions}
+            placeholder="Type to search or create vendor"
+            allowCreate
+            onCreate={ensureVendor}
+          />
         </div>
 
         {/* Project combobox */}
         <div>
           <div className="text-xs text-neutral-500 mb-1">Project</div>
-          <div className="relative">
-            <input
-              className="w-full rounded-xl border border-neutral-200  px-3 py-2 text-sm dark:border-neutral-800"
-              placeholder="Type to search or create project"
-              value={project ? project.name : projectQuery}
-              onChange={(e) => {
-                setProject(null);
-                setProjectQuery(e.target.value);
-              }}
-            />
-            {project === null && projectQuery && (
-              <ul className="absolute z-10 mt-1 w-full overflow-hidden rounded-xl border border-neutral-200 bg-white text-sm shadow-sm dark:border-neutral-800 dark:bg-neutral-900">
-                {projectOptions.length === 0 ? (
-                  <li className="px-3 py-2 text-neutral-500">No matches</li>
-                ) : (
-                  projectOptions.map((p) => (
-                    <li key={p.id}>
-                      <button
-                        type="button"
-                        className="w-full px-3 py-2 text-left hover:bg-neutral-100 dark:hover:bg-neutral-800"
-                        onClick={() => {
-                          setProject(p);
-                          setProjectQuery('');
-                        }}
-                      >
-                        {p.name}
-                      </button>
-                    </li>
-                  ))
-                )}
-                <li>
-                  <button
-                    type="button"
-                    className="w-full px-3 py-2 text-left hover:bg-neutral-100 dark:hover:bg-neutral-800"
-                    onClick={async () => {
-                      const p = await ensureProject(projectQuery);
-                      if (p) {
-                        setProject(p);
-                        setProjectQuery('');
-                      }
-                    }}
-                  >
-                    Create “{projectQuery}”
-                  </button>
-                </li>
-              </ul>
-            )}
-          </div>
+          <SharedSelect
+            value={project}
+            onChange={setProject}
+            options={projectOptions}
+            placeholder="Type to search or create project"
+            allowCreate
+            onCreate={ensureProject}
+          />
         </div>
       </div>
 

@@ -1,5 +1,5 @@
-import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
+import jsPDF from 'jspdf';
 
 export interface PDFOptions {
   filename?: string;
@@ -14,7 +14,7 @@ const DEFAULT_OPTIONS: Required<PDFOptions> = {
   format: 'a4',
   orientation: 'portrait',
   margin: 20,
-  scale: 2
+  scale: 2,
 };
 
 export async function exportElementToPDF(
@@ -46,16 +46,16 @@ export async function exportElementToPDF(
     const pdfHeight = pdf.internal.pageSize.getHeight();
     const margin = opts.margin;
 
-    const availableWidth = pdfWidth - (margin * 2);
-    const availableHeight = pdfHeight - (margin * 2);
+    const availableWidth = pdfWidth - margin * 2;
+    const availableHeight = pdfHeight - margin * 2;
 
     const ratio = Math.min(
       availableWidth / (imgWidth * 0.264583), // Convert px to mm
       availableHeight / (imgHeight * 0.264583)
     );
 
-    const scaledWidth = (imgWidth * 0.264583) * ratio;
-    const scaledHeight = (imgHeight * 0.264583) * ratio;
+    const scaledWidth = imgWidth * 0.264583 * ratio;
+    const scaledHeight = imgHeight * 0.264583 * ratio;
 
     const x = margin + (availableWidth - scaledWidth) / 2;
     const y = margin + (availableHeight - scaledHeight) / 2;
@@ -97,14 +97,14 @@ export async function exportDataToPDF(
     yPos += 15;
 
     // Calculate column widths
-    const availableWidth = pdf.internal.pageSize.getWidth() - (margin * 2);
+    const availableWidth = pdf.internal.pageSize.getWidth() - margin * 2;
     const colWidth = availableWidth / columns.length;
 
     // Add headers
     pdf.setFontSize(12);
     pdf.setFont('helvetica', 'bold');
     columns.forEach((col, index) => {
-      pdf.text(col, margin + (index * colWidth), yPos);
+      pdf.text(col, margin + index * colWidth, yPos);
     });
     yPos += 8;
 
@@ -125,9 +125,11 @@ export async function exportDataToPDF(
 
       columns.forEach((col, index) => {
         const value = row[col] || '';
-        const text = typeof value === 'object' ? JSON.stringify(value) : String(value);
-        const truncated = text.length > 30 ? text.substring(0, 27) + '...' : text;
-        pdf.text(truncated, margin + (index * colWidth), yPos);
+        const text =
+          typeof value === 'object' ? JSON.stringify(value) : String(value);
+        const truncated =
+          text.length > 30 ? text.substring(0, 27) + '...' : text;
+        pdf.text(truncated, margin + index * colWidth, yPos);
       });
       yPos += 6;
     });
@@ -170,12 +172,12 @@ export function generateReportPDF(
 
     pdf.setFont('helvetica', 'normal');
     pdf.setFontSize(10);
-    
+
     Object.entries(summary).forEach(([key, value]) => {
       pdf.text(`${key}: ${value}`, margin, yPos);
       yPos += 5;
     });
-    
+
     yPos += 10;
 
     // Add data section if provided
