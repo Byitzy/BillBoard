@@ -18,13 +18,7 @@ export default function SuperAdminOrgSettingsPage() {
   const params = useParams();
   const router = useRouter();
   const orgId = params.orgId as string;
-
   const [organization, setOrganization] = useState<Organization | null>(null);
-  const [formData, setFormData] = useState({
-    name: '',
-    slug: '',
-    branding_prefix: '',
-  });
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState(false);
@@ -33,49 +27,68 @@ export default function SuperAdminOrgSettingsPage() {
   const [success, setSuccess] = useState<string | null>(null);
   const [isSuperAdmin, setIsSuperAdmin] = useState<boolean | null>(null);
   const [mounted, setMounted] = useState(false);
+  
+  const [formData, setFormData] = useState({
+    name: '',
+    slug: '',
+    branding_prefix: '',
+  });
+
   const supabase = getSupabaseClient();
 
   useEffect(() => {
     setMounted(true);
-    loadOrganization();
-  }, [orgId]);
+  }, []);
+
+  useEffect(() => {
+    async function checkAuthAndLoadData() {
+      try {
+        const {
+          data: { session },
+        } = await supabase.auth.getSession();
+        
+        if (!session?.user) {
+          router.replace('/login');
+          return;
+        }
+
+        const userIsSuperAdmin =
+          session.user.user_metadata?.is_super_admin === 'true' ||
+          session.user.user_metadata?.is_super_admin === true;
+
+        setIsSuperAdmin(userIsSuperAdmin);
+
+        if (!userIsSuperAdmin) {
+          router.replace('/dashboard');
+          return;
+        }
+
+        await loadOrganization();
+      } catch (err: unknown) {
+        setError(err instanceof Error ? err.message : 'Failed to load data');
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    if (orgId) {
+      checkAuthAndLoadData();
+    }
+  }, [orgId, router, supabase]);
 
   async function loadOrganization() {
-    setLoading(true);
-    setError(null);
-
     try {
-      // Check super admin status
-      const {
-        data: { session },
-      } = await supabase.auth.getSession();
-      if (!session?.user) {
-        router.push('/login');
-        return;
-      }
-
-      const isSuperAdminUser =
-        session.user.user_metadata?.is_super_admin === true ||
-        session.user.user_metadata?.is_super_admin === 'true';
-      setIsSuperAdmin(isSuperAdminUser);
-
-      if (!isSuperAdminUser) {
-        setError('Access denied. Super admin privileges required.');
-        setLoading(false);
-        return;
-      }
-
-      // Load organization details
       const { data: orgData, error: orgError } = await supabase
         .from('organizations')
         .select('*')
         .eq('id', orgId)
         .single();
 
-      if (orgError) throw orgError;
-      setOrganization(orgData);
+      if (orgError) {
+        throw orgError;
+      }
 
-      // Set form data
+      setOrganization(orgData);
       setFormData({
         name: orgData.name || '',
         slug: orgData.slug || '',
@@ -85,8 +98,6 @@ export default function SuperAdminOrgSettingsPage() {
       setError(
         err instanceof Error ? err.message : 'Failed to load organization'
       );
-    } finally {
-      setLoading(false);
     }
   }
 
@@ -106,23 +117,24 @@ export default function SuperAdminOrgSettingsPage() {
         })
         .eq('id', orgId);
 
-      if (updateError) throw updateError;
+      if (updateError) {
+        throw updateError;
+      }
 
-      setSuccess('Organization settings updated successfully!');
-      await loadOrganization(); // Reload data
+      setSuccess('Settings saved successfully');
+      await loadOrganization();
     } catch (err: unknown) {
-      setError(
-        err instanceof Error ? err.message : 'Failed to update organization'
-      );
+      setError(err instanceof Error ? err.message : 'Failed to save settings');
     } finally {
       setSaving(false);
     }
   }
 
   async function deleteOrganization() {
+    if (!organization) return;
+    
     setDeleting(true);
     setError(null);
-    setSuccess(null);
 
     try {
       const {
@@ -194,19 +206,19 @@ export default function SuperAdminOrgSettingsPage() {
     );
   }
 
-  if (error || !organization) {
+  if (error && !organization) {
     return (
-      <div className="text-center py-8">
-        <h1 className="text-xl font-bold text-red-600 mb-2">Error</h1>
-        <p className="text-neutral-600 mb-4">
-          {error || 'Organization not found'}
-        </p>
-        <Link
-          href="/super-admin"
-          className="bg-blue-600 text-white px-4 py-2 rounded-xl hover:bg-blue-700"
-        >
-          Back to Super Admin
-        </Link>
+      <div className="flex min-h-[50vh] items-center justify-center">
+        <div className="text-center">
+          <h1 className="text-2xl font-bold text-red-600 mb-2">Error</h1>
+          <p className="text-neutral-600 dark:text-neutral-400">{error}</p>
+          <Link
+            href="/super-admin"
+            className="bg-blue-600 text-white px-4 py-2 rounded-xl hover:bg-blue-700"
+          >
+            Back to Super Admin
+          </Link>
+        </div>
       </div>
     );
   }
@@ -227,7 +239,7 @@ export default function SuperAdminOrgSettingsPage() {
             <h1 className="text-2xl font-bold">Organization Settings</h1>
           </div>
           <p className="text-sm text-neutral-500">
-            Configure settings for {organization.name}
+            Configure settings for {organization?.name}
           </p>
         </div>
       </div>
@@ -246,114 +258,109 @@ export default function SuperAdminOrgSettingsPage() {
       )}
 
       {/* Settings Form */}
-      <div className="bg-white dark:bg-neutral-900 rounded-xl border border-neutral-200 dark:border-neutral-800 p-6">
-        <h2 className="text-lg font-semibold mb-6">Basic Information</h2>
+      {organization && (
+        <div className="bg-white dark:bg-neutral-800 rounded-xl border border-neutral-200 dark:border-neutral-700 p-6">
+          <h2 className="text-lg font-semibold mb-4">General Settings</h2>
+          <form onSubmit={saveSettings} className="space-y-4">
+            <div>
+              <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-2">
+                Organization Name
+              </label>
+              <input
+                type="text"
+                value={formData.name}
+                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                className="w-full px-3 py-2 border border-neutral-300 dark:border-neutral-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-neutral-900"
+                required
+              />
+            </div>
 
-        <form onSubmit={saveSettings} className="space-y-4">
-          <div>
-            <label className="block text-sm font-medium mb-1">
-              Organization Name
-            </label>
-            <input
-              type="text"
-              required
-              value={formData.name}
-              onChange={(e) =>
-                setFormData({ ...formData, name: e.target.value })
-              }
-              className="w-full px-3 py-2 border border-neutral-200 dark:border-neutral-700 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-            />
-          </div>
+            <div>
+              <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-2">
+                Slug
+              </label>
+              <input
+                type="text"
+                value={formData.slug}
+                onChange={(e) => setFormData({ ...formData, slug: e.target.value })}
+                className="w-full px-3 py-2 border border-neutral-300 dark:border-neutral-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-neutral-900"
+                placeholder="organization-slug"
+              />
+              <p className="text-xs text-neutral-500 mt-1">
+                Used for organization URLs and identification
+              </p>
+            </div>
 
-          <div>
-            <label className="block text-sm font-medium mb-1">URL Slug</label>
-            <input
-              type="text"
-              value={formData.slug}
-              onChange={(e) =>
-                setFormData({ ...formData, slug: e.target.value })
-              }
-              className="w-full px-3 py-2 border border-neutral-200 dark:border-neutral-700 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              placeholder="organization-url-slug"
-            />
-            <p className="text-xs text-neutral-500 mt-1">
-              Used for organization URLs. Leave empty for auto-generation.
-            </p>
-          </div>
+            <div>
+              <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-2">
+                Branding Prefix
+              </label>
+              <input
+                type="text"
+                value={formData.branding_prefix}
+                onChange={(e) => setFormData({ ...formData, branding_prefix: e.target.value })}
+                className="w-full px-3 py-2 border border-neutral-300 dark:border-neutral-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-neutral-900"
+                placeholder="ORG"
+              />
+              <p className="text-xs text-neutral-500 mt-1">
+                Short prefix for bill numbers and documentation
+              </p>
+            </div>
 
-          <div>
-            <label className="block text-sm font-medium mb-1">
-              Branding Prefix
-            </label>
-            <input
-              type="text"
-              value={formData.branding_prefix}
-              onChange={(e) =>
-                setFormData({ ...formData, branding_prefix: e.target.value })
-              }
-              className="w-full px-3 py-2 border border-neutral-200 dark:border-neutral-700 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              placeholder="ORG"
-            />
-            <p className="text-xs text-neutral-500 mt-1">
-              Short prefix used for bill numbers and other identifiers.
-            </p>
-          </div>
-
-          <div className="flex gap-2 pt-4">
-            <button
-              type="submit"
-              disabled={saving}
-              className="inline-flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-xl hover:bg-blue-700 disabled:opacity-50"
-            >
-              <Save className="h-4 w-4" />
-              {saving ? 'Saving...' : 'Save Changes'}
-            </button>
-
-            <Link
-              href={`/super-admin/organizations/${orgId}`}
-              className="inline-flex items-center gap-2 bg-neutral-200 dark:bg-neutral-700 px-4 py-2 rounded-xl hover:bg-neutral-300 dark:hover:bg-neutral-600"
-            >
-              Cancel
-            </Link>
-          </div>
-        </form>
-      </div>
+            <div className="flex gap-3 pt-4">
+              <button
+                type="submit"
+                disabled={saving}
+                className="inline-flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-xl hover:bg-blue-700 disabled:opacity-50"
+              >
+                <Save className="h-4 w-4" />
+                {saving ? 'Saving...' : 'Save Changes'}
+              </button>
+            </div>
+          </form>
+        </div>
+      )}
 
       {/* Danger Zone */}
-      <div className="bg-white dark:bg-neutral-900 rounded-xl border border-red-200 dark:border-red-800 p-6">
-        <h2 className="text-lg font-semibold text-red-600 mb-4">Danger Zone</h2>
-        <p className="text-sm text-neutral-600 mb-4">
-          These actions are irreversible. Please proceed with caution.
+      <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-xl p-6">
+        <h2 className="text-lg font-semibold text-red-700 dark:text-red-300 mb-4">
+          Danger Zone
+        </h2>
+        <p className="text-red-600 dark:text-red-400 mb-4">
+          Permanently delete this organization and all associated data. This action cannot be undone.
         </p>
+        <button
+          onClick={() => setShowDeleteConfirm(true)}
+          className="inline-flex items-center gap-2 bg-red-600 text-white px-4 py-2 rounded-xl hover:bg-red-700"
+        >
+          <Trash2 className="h-4 w-4" />
+          Delete Organization
+        </button>
 
-        {!showDeleteConfirm ? (
-          <button
-            onClick={() => setShowDeleteConfirm(true)}
-            className="inline-flex items-center gap-2 bg-red-600 text-white px-4 py-2 rounded-xl hover:bg-red-700"
-          >
-            <Trash2 className="h-4 w-4" />
-            Delete Organization
-          </button>
-        ) : (
-          <div className="space-y-3">
-            <p className="text-sm text-red-600 font-medium">
-              Are you sure? This action cannot be undone.
-            </p>
-            <div className="flex gap-2">
-              <button
-                onClick={deleteOrganization}
-                disabled={deleting}
-                className="inline-flex items-center gap-2 bg-red-600 text-white px-4 py-2 rounded-xl hover:bg-red-700 disabled:opacity-50"
-              >
-                <Trash2 className="h-4 w-4" />
-                {deleting ? 'Deleting...' : 'Yes, Delete'}
-              </button>
-              <button
-                onClick={() => setShowDeleteConfirm(false)}
-                className="px-4 py-2 bg-neutral-200 dark:bg-neutral-700 rounded-xl hover:bg-neutral-300 dark:hover:bg-neutral-600"
-              >
-                Cancel
-              </button>
+        {/* Delete Confirmation Modal */}
+        {showDeleteConfirm && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+            <div className="bg-white dark:bg-neutral-800 rounded-xl p-6 max-w-md w-full">
+              <h3 className="text-lg font-semibold mb-4">Confirm Deletion</h3>
+              <p className="text-neutral-600 dark:text-neutral-400 mb-6">
+                Are you sure you want to delete "{organization?.name}"? This action cannot be undone and will permanently remove all associated data.
+              </p>
+              <div className="flex gap-3">
+                <button
+                  onClick={deleteOrganization}
+                  disabled={deleting}
+                  className="inline-flex items-center gap-2 bg-red-600 text-white px-4 py-2 rounded-xl hover:bg-red-700 disabled:opacity-50"
+                >
+                  <Trash2 className="h-4 w-4" />
+                  {deleting ? 'Deleting...' : 'Yes, Delete'}
+                </button>
+                <button
+                  onClick={() => setShowDeleteConfirm(false)}
+                  className="px-4 py-2 bg-neutral-200 dark:bg-neutral-700 rounded-xl hover:bg-neutral-300 dark:hover:bg-neutral-600"
+                >
+                  Cancel
+                </button>
+              </div>
             </div>
           </div>
         )}

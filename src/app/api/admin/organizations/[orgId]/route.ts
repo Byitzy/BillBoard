@@ -11,24 +11,23 @@ const adminClient = createClient(supabaseUrl, serviceKey, {
   },
 });
 
-// Helper function to check if user is super admin
-async function isSuperAdmin(authHeader: string | null): Promise<boolean> {
+async function isSuperAdmin(authHeader: string | null) {
   if (!authHeader || !authHeader.startsWith('Bearer ')) {
     return false;
   }
 
   const token = authHeader.substring(7);
-
+  
   try {
     const {
       data: { user },
-      error,
     } = await adminClient.auth.getUser(token);
-    if (error || !user) return false;
+
+    if (!user) return false;
 
     return (
-      user.user_metadata?.is_super_admin === true ||
-      user.user_metadata?.is_super_admin === 'true'
+      user.user_metadata?.is_super_admin === 'true' ||
+      user.user_metadata?.is_super_admin === true
     );
   } catch {
     return false;
@@ -51,10 +50,17 @@ export async function DELETE(
 
     const { orgId } = params;
 
-    // Check if organization exists
+    if (!orgId) {
+      return NextResponse.json(
+        { error: 'Organization ID is required' },
+        { status: 400 }
+      );
+    }
+
+    // Check if organization exists and get its name
     const { data: org, error: orgError } = await adminClient
       .from('organizations')
-      .select('id, name')
+      .select('name')
       .eq('id', orgId)
       .single();
 
@@ -65,36 +71,27 @@ export async function DELETE(
       );
     }
 
-    // Check if organization has any bills, projects, or other data
-    const [billsResult, projectsResult, vendorsResult] = await Promise.all([
-      adminClient
-        .from('bills')
-        .select('id', { count: 'exact' })
-        .eq('org_id', orgId),
-      adminClient
-        .from('projects')
-        .select('id', { count: 'exact' })
-        .eq('org_id', orgId),
-      adminClient
-        .from('vendors')
-        .select('id', { count: 'exact' })
-        .eq('org_id', orgId),
+    // Check if organization has any dependencies (bills, vendors, projects, etc.)
+    const [
+      { count: billCount },
+      { count: vendorCount },
+      { count: projectCount },
+      { count: memberCount },
+    ] = await Promise.all([
+      adminClient.from('bills').select('*', { count: 'exact', head: true }).eq('org_id', orgId),
+      adminClient.from('vendors').select('*', { count: 'exact', head: true }).eq('org_id', orgId),
+      adminClient.from('projects').select('*', { count: 'exact', head: true }).eq('org_id', orgId),
+      adminClient.from('org_members').select('*', { count: 'exact', head: true }).eq('org_id', orgId),
     ]);
 
-    const hasData =
-      (billsResult.count || 0) > 0 ||
-      (projectsResult.count || 0) > 0 ||
-      (vendorsResult.count || 0) > 0;
-
-    if (hasData) {
+    if (billCount! > 0 || vendorCount! > 0 || projectCount! > 0) {
       return NextResponse.json(
         {
-          error:
-            'Cannot delete organization with existing data. Please remove all bills, projects, and vendors first.',
+          error: 'Cannot delete organization with existing data',
           details: {
-            bills: billsResult.count || 0,
-            projects: projectsResult.count || 0,
-            vendors: vendorsResult.count || 0,
+            bills: billCount,
+            vendors: vendorCount,
+            projects: projectCount,
           },
         },
         { status: 400 }

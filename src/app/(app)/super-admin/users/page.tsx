@@ -27,68 +27,74 @@ export default function SuperAdminUsersPage() {
   const [organizations, setOrganizations] = useState<Organization[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [showCreateForm, setShowCreateForm] = useState(false);
+  const [formLoading, setFormLoading] = useState(false);
   const [isSuperAdmin, setIsSuperAdmin] = useState<boolean | null>(null);
   const [mounted, setMounted] = useState(false);
-
-  // Form states
-  const [showCreateForm, setShowCreateForm] = useState(false);
+  
   const [formData, setFormData] = useState({
     email: '',
     password: '',
     fullName: '',
-    role: 'admin' as 'admin' | 'super_admin',
+    role: 'user',
     organizationId: '',
   });
-  const [formLoading, setFormLoading] = useState(false);
 
   const supabase = getSupabaseClient();
 
   useEffect(() => {
     setMounted(true);
-    loadData();
+  }, []);
+
+  useEffect(() => {
+    async function checkAuthAndLoadData() {
+      try {
+        const {
+          data: { session },
+        } = await supabase.auth.getSession();
+        
+        if (!session?.user) {
+          setError('Authentication required');
+          return;
+        }
+
+        const userIsSuperAdmin =
+          session.user.user_metadata?.is_super_admin === 'true' ||
+          session.user.user_metadata?.is_super_admin === true;
+
+        setIsSuperAdmin(userIsSuperAdmin);
+
+        if (!userIsSuperAdmin) {
+          setError('Super admin privileges required');
+          return;
+        }
+
+        await loadData();
+      } catch (err: unknown) {
+        setError(err instanceof Error ? err.message : 'Failed to load data');
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    checkAuthAndLoadData();
   }, [supabase]);
 
   async function loadData() {
-    setLoading(true);
-    setError(null);
-
     try {
-      // Check super admin status
-      const {
-        data: { session },
-      } = await supabase.auth.getSession();
-      if (!session?.user) {
-        window.location.href = '/login';
-        return;
-      }
-
-      const isSuperAdminUser =
-        session.user.user_metadata?.is_super_admin === true ||
-        session.user.user_metadata?.is_super_admin === 'true';
-      setIsSuperAdmin(isSuperAdminUser);
-
-      if (!isSuperAdminUser) {
-        setError('Access denied. Super admin privileges required.');
-        setLoading(false);
-        return;
-      }
-
-      // Load all users via API
-      const response = await fetch('/api/admin/users', {
+      // Fetch users - this would need a proper API endpoint
+      const usersResponse = await fetch('/api/admin/users', {
         headers: {
-          Authorization: `Bearer ${session.access_token}`,
+          Authorization: `Bearer ${(await supabase.auth.getSession()).data.session?.access_token}`,
         },
       });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || 'Failed to load users');
+      
+      if (usersResponse.ok) {
+        const { users: usersData } = await usersResponse.json();
+        setUsers(usersData || []);
       }
 
-      const { users } = await response.json();
-      setUsers(users);
-
-      // Load organizations for the form
+      // Fetch organizations
       const { data: orgsData, error: orgsError } = await supabase
         .from('organizations')
         .select('id, name, slug')
@@ -97,8 +103,6 @@ export default function SuperAdminUsersPage() {
       setOrganizations(orgsData);
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : 'Failed to load data');
-    } finally {
-      setLoading(false);
     }
   }
 
@@ -108,12 +112,6 @@ export default function SuperAdminUsersPage() {
     setError(null);
 
     try {
-      console.log('Creating user with data:', {
-        email: formData.email,
-        role: formData.role,
-        is_super_admin: formData.role === 'super_admin',
-      });
-
       const {
         data: { session },
       } = await supabase.auth.getSession();
@@ -150,7 +148,7 @@ export default function SuperAdminUsersPage() {
         email: '',
         password: '',
         fullName: '',
-        role: 'admin',
+        role: 'user',
         organizationId: '',
       });
       setShowCreateForm(false);
@@ -162,30 +160,10 @@ export default function SuperAdminUsersPage() {
     }
   }
 
-  // Prevent hydration mismatch by not rendering until mounted
   if (!mounted) {
     return (
       <div className="flex min-h-[50vh] items-center justify-center">
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-      </div>
-    );
-  }
-
-  if (isSuperAdmin === false && !loading) {
-    return (
-      <div className="flex min-h-[50vh] items-center justify-center">
-        <div className="text-center">
-          <h1 className="text-2xl font-bold text-red-600 mb-2">
-            Access Denied
-          </h1>
-          <p className="text-neutral-600">Super admin privileges required.</p>
-          <Link
-            href="/super-admin"
-            className="text-blue-600 hover:underline mt-4 inline-block"
-          >
-            Return to Super Admin Dashboard
-          </Link>
-        </div>
       </div>
     );
   }
@@ -209,7 +187,10 @@ export default function SuperAdminUsersPage() {
           <ArrowLeft className="h-5 w-5" />
         </Link>
         <div className="flex-1">
-          <h1 className="text-2xl font-bold">User Management</h1>
+          <div className="flex items-center gap-3 mb-2">
+            <Users className="h-6 w-6 text-blue-600" />
+            <h1 className="text-2xl font-bold">User Management</h1>
+          </div>
           <p className="text-neutral-600">Create and manage system users</p>
         </div>
         <button
@@ -234,93 +215,78 @@ export default function SuperAdminUsersPage() {
           <form onSubmit={createUser} className="space-y-4">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium mb-1">Email</label>
+                <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-2">
+                  Email
+                </label>
                 <input
                   type="email"
-                  required
                   value={formData.email}
-                  onChange={(e) =>
-                    setFormData({ ...formData, email: e.target.value })
-                  }
-                  className="w-full px-3 py-2 border border-neutral-200 dark:border-neutral-700 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                  className="w-full px-3 py-2 border border-neutral-300 dark:border-neutral-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-neutral-800"
+                  required
                 />
               </div>
-
               <div>
-                <label className="block text-sm font-medium mb-1">
+                <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-2">
                   Full Name
                 </label>
                 <input
                   type="text"
-                  required
                   value={formData.fullName}
-                  onChange={(e) =>
-                    setFormData({ ...formData, fullName: e.target.value })
-                  }
-                  className="w-full px-3 py-2 border border-neutral-200 dark:border-neutral-700 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  onChange={(e) => setFormData({ ...formData, fullName: e.target.value })}
+                  className="w-full px-3 py-2 border border-neutral-300 dark:border-neutral-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-neutral-800"
                 />
               </div>
-
+            </div>
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium mb-1">
+                <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-2">
                   Password
                 </label>
                 <input
                   type="password"
-                  required
                   value={formData.password}
-                  onChange={(e) =>
-                    setFormData({ ...formData, password: e.target.value })
-                  }
-                  className="w-full px-3 py-2 border border-neutral-200 dark:border-neutral-700 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  placeholder="Must include upper, lower, number, special char"
+                  onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                  className="w-full px-3 py-2 border border-neutral-300 dark:border-neutral-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-neutral-800"
+                  required
                 />
               </div>
-
               <div>
-                <label className="block text-sm font-medium mb-1">
-                  User Type
+                <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-2">
+                  Role
                 </label>
                 <select
                   value={formData.role}
-                  onChange={(e) =>
-                    setFormData({
-                      ...formData,
-                      role: e.target.value as 'admin' | 'super_admin',
-                    })
-                  }
-                  className="w-full px-3 py-2 border border-neutral-200 dark:border-neutral-700 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  onChange={(e) => setFormData({ ...formData, role: e.target.value })}
+                  className="w-full px-3 py-2 border border-neutral-300 dark:border-neutral-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-neutral-800"
                 >
-                  <option value="admin">Organization Admin</option>
+                  <option value="user">User</option>
+                  <option value="admin">Admin</option>
                   <option value="super_admin">Super Admin</option>
                 </select>
               </div>
             </div>
 
-            {formData.role === 'admin' && (
-              <div>
-                <label className="block text-sm font-medium mb-1">
-                  Organization
-                </label>
-                <select
-                  value={formData.organizationId}
-                  onChange={(e) =>
-                    setFormData({ ...formData, organizationId: e.target.value })
-                  }
-                  className="w-full px-3 py-2 border border-neutral-200 dark:border-neutral-700 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  required
-                >
-                  <option value="">Select Organization</option>
-                  {organizations.map((org) => (
-                    <option key={org.id} value={org.id}>
-                      {org.name} {org.slug && `(${org.slug})`}
-                    </option>
-                  ))}
-                </select>
-              </div>
-            )}
+            <div>
+              <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-2">
+                Organization (Optional)
+              </label>
+              <select
+                value={formData.organizationId}
+                onChange={(e) => setFormData({ ...formData, organizationId: e.target.value })}
+                className="w-full px-3 py-2 border border-neutral-300 dark:border-neutral-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-neutral-800"
+              >
+                <option value="">Select organization...</option>
+                {organizations.map((org) => (
+                  <option key={org.id} value={org.id}>
+                    {org.name}
+                  </option>
+                ))}
+              </select>
+            </div>
 
-            <div className="flex gap-2">
+            <div className="flex gap-3">
               <button
                 type="submit"
                 disabled={formLoading}
@@ -348,85 +314,65 @@ export default function SuperAdminUsersPage() {
             Total users: {users.length}
           </p>
         </div>
-
         <div className="overflow-x-auto">
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="border-b border-neutral-200 dark:border-neutral-800 bg-neutral-50 dark:bg-neutral-800/50">
-                <th className="px-4 py-3 text-left font-medium">User</th>
-                <th className="px-4 py-3 text-left font-medium">Role</th>
-                <th className="px-4 py-3 text-left font-medium">Status</th>
-                <th className="px-4 py-3 text-left font-medium">Created</th>
+          <table className="w-full">
+            <thead className="bg-neutral-50 dark:bg-neutral-800">
+              <tr>
+                <th className="text-left px-4 py-3 text-xs font-medium text-neutral-500 dark:text-neutral-400 uppercase tracking-wider">
+                  User
+                </th>
+                <th className="text-left px-4 py-3 text-xs font-medium text-neutral-500 dark:text-neutral-400 uppercase tracking-wider">
+                  Role
+                </th>
+                <th className="text-left px-4 py-3 text-xs font-medium text-neutral-500 dark:text-neutral-400 uppercase tracking-wider">
+                  Status
+                </th>
+                <th className="text-left px-4 py-3 text-xs font-medium text-neutral-500 dark:text-neutral-400 uppercase tracking-wider">
+                  Created
+                </th>
               </tr>
             </thead>
-            <tbody>
-              {users.length === 0 ? (
-                <tr>
-                  <td
-                    colSpan={4}
-                    className="px-4 py-8 text-center text-neutral-500"
-                  >
-                    No users found
+            <tbody className="divide-y divide-neutral-200 dark:divide-neutral-700">
+              {users.map((user) => (
+                <tr key={user.id} className="hover:bg-neutral-50 dark:hover:bg-neutral-800/50">
+                  <td className="px-4 py-3">
+                    <div>
+                      <div className="font-medium text-neutral-900 dark:text-neutral-100">
+                        {user.user_metadata?.full_name || user.email || 'Unknown'}
+                      </div>
+                      <div className="text-sm text-neutral-500 dark:text-neutral-400">
+                        {user.email}
+                      </div>
+                    </div>
+                  </td>
+                  <td className="px-4 py-3">
+                    <div className="flex items-center gap-2">
+                      {user.user_metadata?.is_super_admin ? (
+                        <Shield className="h-4 w-4 text-purple-500" />
+                      ) : null}
+                      <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
+                        user.user_metadata?.is_super_admin
+                          ? 'bg-purple-100 text-purple-800 dark:bg-purple-900/20 dark:text-purple-300'
+                          : 'bg-blue-100 text-blue-800 dark:bg-blue-900/20 dark:text-blue-300'
+                      }`}>
+                        {user.user_metadata?.is_super_admin ? 'Super Admin' : user.user_metadata?.role || 'User'}
+                      </span>
+                    </div>
+                  </td>
+                  <td className="px-4 py-3">
+                    <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
+                      user.email_confirmed_at
+                        ? 'bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-300'
+                        : 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/20 dark:text-yellow-300'
+                    }`}>
+                      {user.email_confirmed_at ? 'Confirmed' : 'Pending'}
+                    </span>
+                  </td>
+                  <td className="px-4 py-3 text-neutral-600 dark:text-neutral-400">
+                    {new Date(user.created_at).toLocaleDateString()}
                   </td>
                 </tr>
-              ) : (
-                users.map((user) => (
-                  <tr
-                    key={user.id}
-                    className="border-b border-neutral-200 dark:border-neutral-800 hover:bg-neutral-50 dark:hover:bg-neutral-800/50"
-                  >
-                    <td className="px-4 py-3">
-                      <div className="flex items-center gap-3">
-                        <div className="p-2 bg-blue-100 dark:bg-blue-900/20 rounded-lg">
-                          {user.user_metadata?.is_super_admin ? (
-                            <Shield className="h-4 w-4 text-purple-600" />
-                          ) : (
-                            <Users className="h-4 w-4 text-blue-600" />
-                          )}
-                        </div>
-                        <div>
-                          <p className="font-medium">
-                            {user.user_metadata?.full_name || 'Unknown'}
-                          </p>
-                          <p className="text-xs text-neutral-500">
-                            {user.email || 'No email'}
-                          </p>
-                          <p className="text-xs text-neutral-400 font-mono">
-                            {user.id}
-                          </p>
-                        </div>
-                      </div>
-                    </td>
-                    <td className="px-4 py-3">
-                      <div className="flex items-center gap-2">
-                        {user.user_metadata?.is_super_admin ? (
-                          <span className="px-2 py-1 bg-purple-100 dark:bg-purple-900/20 text-purple-700 dark:text-purple-300 rounded-md text-xs font-medium">
-                            Super Admin
-                          </span>
-                        ) : (
-                          <span className="px-2 py-1 bg-blue-100 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300 rounded-md text-xs">
-                            {user.user_metadata?.role || 'User'}
-                          </span>
-                        )}
-                      </div>
-                    </td>
-                    <td className="px-4 py-3">
-                      <span
-                        className={`px-2 py-1 rounded-md text-xs ${
-                          user.email_confirmed_at
-                            ? 'bg-green-100 dark:bg-green-900/20 text-green-700 dark:text-green-300'
-                            : 'bg-yellow-100 dark:bg-yellow-900/20 text-yellow-700 dark:text-yellow-300'
-                        }`}
-                      >
-                        {user.email_confirmed_at ? 'Confirmed' : 'Pending'}
-                      </span>
-                    </td>
-                    <td className="px-4 py-3 text-neutral-600 dark:text-neutral-400">
-                      {new Date(user.created_at).toLocaleDateString()}
-                    </td>
-                  </tr>
-                ))
-              )}
+              ))}
             </tbody>
           </table>
         </div>

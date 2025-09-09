@@ -88,34 +88,43 @@ export default function SuperAdminLayout({
           <h1 className="text-2xl font-bold text-red-600 mb-2">
             Access Denied
           </h1>
-          <p className="text-neutral-600">Super admin privileges required.</p>
+          <p className="text-neutral-600 dark:text-neutral-400">
+            Super admin privileges required.
+          </p>
+          <Link
+            href="/dashboard"
+            className="text-blue-600 hover:underline mt-4 inline-block"
+          >
+            Return to Dashboard
+          </Link>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-neutral-50 dark:bg-neutral-900">
-      {/* Super Admin Sidebar */}
-      <aside className="fixed left-0 top-0 h-full w-64 bg-white dark:bg-neutral-800 border-r border-neutral-200 dark:border-neutral-700 z-50">
-        <div className="p-6">
-          {/* Header */}
-          <div className="flex items-center gap-3 mb-8">
-            <div className="p-2 bg-gradient-to-br from-purple-500 to-blue-600 rounded-lg">
-              <Crown className="h-6 w-6 text-white" />
-            </div>
-            <div>
-              <div className="text-lg font-bold bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent">
-                BillBoard Admin
+    <div className="min-h-screen bg-gradient-to-br from-purple-50 via-blue-50 to-indigo-100 dark:from-purple-900 dark:via-blue-900 dark:to-indigo-900">
+      <div className="flex h-screen">
+        {/* Sidebar */}
+        <div className="w-64 bg-white/90 dark:bg-neutral-900/90 backdrop-blur-xl border-r border-purple-200/50 dark:border-purple-800/50 shadow-xl">
+          <div className="p-6">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-purple-600 to-blue-600 flex items-center justify-center shadow-lg">
+                <Crown className="w-5 h-5 text-white" />
               </div>
-              <div className="text-xs text-neutral-500">
-                Super Administrator
+              <div>
+                <h1 className="text-lg font-bold bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent">
+                  Super Admin
+                </h1>
+                <p className="text-xs text-neutral-500 dark:text-neutral-400">
+                  System Management
+                </p>
               </div>
             </div>
           </div>
 
           {/* Navigation */}
-          <nav className="space-y-2">
+          <nav className="px-4 pb-4 space-y-1">
             {superAdminNav.map(({ href, label, icon: Icon }) => {
               const active = pathname === href;
               return (
@@ -147,14 +156,16 @@ export default function SuperAdminLayout({
             </button>
           </div>
         </div>
-      </aside>
 
-      {/* Main Content */}
-      <main className="ml-64 min-h-screen">
-        <div className="p-8">
-          <ErrorBoundary>{children}</ErrorBoundary>
-        </div>
-      </main>
+        {/* Main Content */}
+        <main className="flex-1 overflow-hidden">
+          <div className="h-full overflow-auto">
+            <div className="p-8">
+              <ErrorBoundary>{children}</ErrorBoundary>
+            </div>
+          </div>
+        </main>
+      </div>
     </div>
   );
 }
