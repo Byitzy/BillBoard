@@ -38,7 +38,7 @@ export default function LoginPage() {
     });
     setLoading(false);
     if (error) setStatus(error.message);
-    else window.location.href = '/dashboard';
+    else window.location.href = '/';
   }
 
   // Removed signUpPassword - public registration is disabled

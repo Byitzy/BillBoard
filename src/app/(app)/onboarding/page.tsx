@@ -32,7 +32,7 @@ export default function OnboardingPage() {
       const data = await res.json();
       if (!res.ok)
         throw new Error(data.error || 'Failed to create organization');
-      router.push('/dashboard');
+      router.push('/');
     } catch (e: any) {
       setError(e.message || 'Error');
     } finally {
