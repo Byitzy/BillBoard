@@ -2,8 +2,7 @@
 import { useEffect, useState } from 'react';
 import DashboardCharts from '@/components/dashboard/DashboardCharts';
 import DashboardMetrics from '@/components/dashboard/DashboardMetrics';
-import { getTotalsByProject } from '@/lib/metrics';
-import type { ProjectTotal } from '@/lib/metrics';
+import { getTotalsByProject, type ProjectTotal } from '@/lib/metrics';
 import { getDefaultOrgId } from '@/lib/org';
 import { getSupabaseClient } from '@/lib/supabase/client';
 

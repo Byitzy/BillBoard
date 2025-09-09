@@ -1,5 +1,5 @@
 'use client';
-import { Building2, Users, Settings, Plus, Eye } from 'lucide-react';
+import { Building2, Users, Settings, Eye } from 'lucide-react';
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import { getSupabaseClient } from '@/lib/supabase/client';
@@ -325,7 +325,7 @@ export default function SuperAdminDashboard() {
                   </td>
                 </tr>
               ) : (
-                organizations.map((org, index) => (
+                organizations.map((org) => (
                   <tr
                     key={org.id}
                     className="hover:bg-neutral-50 dark:hover:bg-neutral-800/50 transition-colors duration-150"

@@ -14,7 +14,6 @@ import type { Route } from 'next';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useEffect, useState } from 'react';
-import type { ComponentType } from 'react';
 import { useLocale } from '@/components/i18n/LocaleProvider';
 import { getSupabaseClient } from '@/lib/supabase/client';
 import { cn } from '@/lib/utils';
