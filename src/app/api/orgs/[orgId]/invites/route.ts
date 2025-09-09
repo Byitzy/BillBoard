@@ -19,9 +19,10 @@ const inviteSchema = z.object({
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { orgId: string } }
+  { params }: { params: Promise<{ orgId: string }> }
 ) {
   try {
+    const { orgId } = await params;
     const supabase = createRouteHandlerClient({ cookies });
     const {
       data: { session },
@@ -35,7 +36,7 @@ export async function GET(
     const { data: memberRole } = await supabase
       .from('org_members')
       .select('role')
-      .eq('org_id', params.orgId)
+      .eq('org_id', orgId)
       .eq('user_id', session.user.id)
       .single();
 
@@ -66,7 +67,7 @@ export async function GET(
         invited_by:auth.users!invited_by(email)
       `
       )
-      .eq('org_id', params.orgId)
+      .eq('org_id', orgId)
       .is('accepted_at', null)
       .order('created_at', { ascending: false });
 
@@ -86,9 +87,10 @@ export async function GET(
 
 export async function POST(
   request: NextRequest,
-  { params }: { params: { orgId: string } }
+  { params }: { params: Promise<{ orgId: string }> }
 ) {
   try {
+    const { orgId } = await params;
     const supabase = createRouteHandlerClient({ cookies });
     const {
       data: { session },
@@ -105,7 +107,7 @@ export async function POST(
     const { data: memberRole } = await supabase
       .from('org_members')
       .select('role')
-      .eq('org_id', params.orgId)
+      .eq('org_id', orgId)
       .eq('user_id', session.user.id)
       .single();
 
@@ -127,7 +129,7 @@ export async function POST(
     const { data: invite, error } = await (supabase as any)
       .from('org_invites')
       .insert({
-        org_id: params.orgId,
+        org_id: orgId,
         email,
         role,
         status,

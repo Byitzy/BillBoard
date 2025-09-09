@@ -4,9 +4,9 @@ import { getServiceClient, getUserFromRequest } from '@/lib/supabase/server';
 
 export async function GET(
   _req: NextRequest,
-  { params }: { params: { orgId: string } }
+  { params }: { params: Promise<{ orgId: string }> }
 ) {
-  const orgId = params.orgId;
+  const { orgId } = await params;
 
   const user = await getUserFromRequest(_req as any);
   if (!user)

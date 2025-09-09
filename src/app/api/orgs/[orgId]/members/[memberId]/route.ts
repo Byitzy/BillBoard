@@ -23,10 +23,9 @@ const updateMemberSchema = z
 
 export async function PATCH(
   request: NextRequest,
-  { params }: { params: { orgId: string; memberId: string } }
+  { params }: { params: Promise<{ orgId: string; memberId: string }> }
 ) {
-  const orgId = params.orgId;
-  const memberId = params.memberId;
+  const { orgId, memberId } = await params;
 
   const user = await getUserFromRequest(request as any);
   if (!user)
@@ -107,10 +106,9 @@ export async function PATCH(
 
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { orgId: string; memberId: string } }
+  { params }: { params: Promise<{ orgId: string; memberId: string }> }
 ) {
-  const orgId = params.orgId;
-  const memberId = params.memberId;
+  const { orgId, memberId } = await params;
 
   const user = await getUserFromRequest(request as any);
   if (!user)

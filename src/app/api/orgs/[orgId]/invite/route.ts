@@ -4,7 +4,7 @@ import { getServiceClient, getUserFromRequest } from '@/lib/supabase/server';
 
 export async function POST(
   req: NextRequest,
-  { params }: { params: { orgId: string } }
+  { params }: { params: Promise<{ orgId: string }> }
 ) {
   const body = await req.json().catch(() => null);
   const email = body?.email?.toString().trim();
@@ -17,7 +17,7 @@ export async function POST(
     | 'viewer';
   if (!email)
     return NextResponse.json({ error: 'email is required' }, { status: 400 });
-  const orgId = params.orgId;
+  const { orgId } = await params;
 
   // Verify requester is admin of org using cookie-authenticated client
   const user = await getUserFromRequest(req);

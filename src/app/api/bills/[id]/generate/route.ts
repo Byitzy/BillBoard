@@ -7,9 +7,9 @@ export const dynamic = 'force-dynamic';
 
 export async function POST(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
-  const billId = params.id;
+  const { id: billId } = await params;
   const admin = getServiceClient();
 
   // AuthZ: require user to be a member of the bill's org
