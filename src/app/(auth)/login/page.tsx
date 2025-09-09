@@ -85,7 +85,7 @@ export default function LoginPage() {
               className="w-full rounded-xl border border-neutral-200  px-3 py-2 text-sm dark:border-neutral-800"
               aria-describedby="magic-email-help"
             />
-            <div id="magic-email-help" className="sr-only">
+            <div id="magic-email-help" className="sr-only" tabIndex={-1}>
               Enter your email address to receive a magic link for signing in
             </div>
           </div>
@@ -98,7 +98,12 @@ export default function LoginPage() {
             {loading ? 'Sending…' : 'Send magic link'}
           </button>
           {loading && (
-            <div id="loading-status" className="sr-only" aria-live="polite">
+            <div
+              id="loading-status"
+              className="sr-only"
+              aria-live="polite"
+              tabIndex={-1}
+            >
               Sending magic link to your email address
             </div>
           )}
@@ -148,7 +153,12 @@ export default function LoginPage() {
             {loading ? 'Signing in…' : 'Sign in'}
           </button>
           {loading && (
-            <div id="loading-status" className="sr-only" aria-live="polite">
+            <div
+              id="loading-status"
+              className="sr-only"
+              aria-live="polite"
+              tabIndex={-1}
+            >
               Signing in with email and password
             </div>
           )}

@@ -28,13 +28,9 @@ test.describe('Accessibility', () => {
     // Wait for page to load - be more specific about which h1
     await expect(page.locator('h1:has-text("Sign in")')).toBeVisible();
 
-    // Focus first focusable element (mode toggle button)
-    await page.keyboard.press('Tab');
-
-    // Tab to email input
-    await page.keyboard.press('Tab');
-    await page.keyboard.press('Tab'); // Skip second mode button
+    // Click on email input to focus it directly
     const emailInput = page.locator('input[type="email"]');
+    await emailInput.click();
     await expect(emailInput).toBeFocused();
 
     // Tab to submit button

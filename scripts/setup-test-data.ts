@@ -36,7 +36,6 @@ const supabase = createClient(supabaseUrl, supabaseServiceKey, {
 // Test organization and user data
 const TEST_ORG = {
   name: 'E2E Test Organization',
-  settings: {},
 };
 
 const TEST_USERS = [
