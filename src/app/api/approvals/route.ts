@@ -57,7 +57,10 @@ export async function POST(request: NextRequest) {
       .eq('id', billOccurrenceId)
       .single();
 
-    if (!billOccurrence || (billOccurrence.bills as any)?.org_id !== userProfile.org_id) {
+    if (
+      !billOccurrence ||
+      (billOccurrence.bills as any)?.org_id !== userProfile.org_id
+    ) {
       return NextResponse.json(
         { error: 'Bill occurrence not found or access denied' },
         { status: 404 }
@@ -86,7 +89,8 @@ export async function POST(request: NextRequest) {
         .select()
         .single();
 
-      if (error) throw new APIError('Failed to update approval', 'DATABASE_ERROR');
+      if (error)
+        throw new APIError('Failed to update approval', 'DATABASE_ERROR');
       result = data;
     } else {
       // Create new approval
@@ -104,12 +108,20 @@ export async function POST(request: NextRequest) {
         .select()
         .single();
 
-      if (error) throw new APIError('Failed to create approval', 'DATABASE_ERROR');
+      if (error)
+        throw new APIError('Failed to create approval', 'DATABASE_ERROR');
       result = data;
     }
 
     // Update bill occurrence state based on approval
-    let newState: 'scheduled' | 'pending_approval' | 'approved' | 'on_hold' | 'paid' | 'failed' | 'canceled' = 'pending_approval';
+    let newState:
+      | 'scheduled'
+      | 'pending_approval'
+      | 'approved'
+      | 'on_hold'
+      | 'paid'
+      | 'failed'
+      | 'canceled' = 'pending_approval';
     if (decision === 'approved') {
       newState = 'approved';
     } else if (decision === 'hold') {
@@ -125,8 +137,6 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({ data: result });
   } catch (error) {
-    console.error('Approval API error:', error);
-    
     if (error instanceof APIError) {
       return NextResponse.json(
         { error: error.message },
@@ -180,13 +190,15 @@ export async function GET(request: NextRequest) {
     // Get approvals for the bill occurrence
     const { data: approvals, error } = await supabase
       .from('approvals')
-      .select(`
+      .select(
+        `
         *,
         org_members!approvals_approver_id_fkey(
           user_id,
           users(email, name)
         )
-      `)
+      `
+      )
       .eq('bill_occurrence_id', billOccurrenceId)
       .eq('org_id', userProfile.org_id)
       .order('created_at', { ascending: false });
@@ -197,8 +209,6 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json({ data: approvals || [] });
   } catch (error) {
-    console.error('Approval fetch API error:', error);
-    
     if (error instanceof APIError) {
       return NextResponse.json(
         { error: error.message },

@@ -30,7 +30,6 @@ export async function DELETE(
 
     return NextResponse.json({ success: true });
   } catch (error) {
-    console.error('Error deleting invite:', error);
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }

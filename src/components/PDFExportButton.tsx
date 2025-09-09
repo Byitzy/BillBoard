@@ -84,7 +84,7 @@ export default function PDFExportButton({
           throw new Error('Invalid export type');
       }
     } catch (err) {
-      console.error('Export failed:', err);
+      // Error is handled by the usePDFExport hook
     }
   };
 

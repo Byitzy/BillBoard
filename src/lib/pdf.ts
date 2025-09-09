@@ -63,7 +63,6 @@ export async function exportElementToPDF(
     pdf.addImage(imgData, 'PNG', x, y, scaledWidth, scaledHeight);
     pdf.save(opts.filename);
   } catch (error) {
-    console.error('Failed to generate PDF:', error);
     throw new Error('Failed to generate PDF export');
   }
 }
@@ -136,7 +135,6 @@ export async function exportDataToPDF(
 
     pdf.save(opts.filename);
   } catch (error) {
-    console.error('Failed to generate data PDF:', error);
     throw new Error('Failed to generate PDF export');
   }
 }
@@ -216,7 +214,6 @@ export function generateReportPDF(
     pdf.save(opts.filename);
     return Promise.resolve();
   } catch (error) {
-    console.error('Failed to generate report PDF:', error);
     throw new Error('Failed to generate PDF report');
   }
 }

@@ -85,7 +85,7 @@ export default function CSVExportButton({
           throw new Error('Invalid export type');
       }
     } catch (err) {
-      console.error('CSV export failed:', err);
+      // Error is handled by the useCSVExport hook
     }
   };
 

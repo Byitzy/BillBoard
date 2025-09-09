@@ -41,7 +41,6 @@ export default function RequireOrg({ children }: RequireOrgProps) {
 
         setIsChecking(false);
       } catch (error) {
-        console.error('Auth check failed:', error);
         router.replace('/login');
       }
     }

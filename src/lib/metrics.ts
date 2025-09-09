@@ -2,10 +2,15 @@ import type { SupabaseClient } from '@supabase/supabase-js';
 
 export type DateRange = {
   start: string; // ISO date string
-  end: string;   // ISO date string
+  end: string; // ISO date string
 };
 
-export type BillState = 'scheduled' | 'approved' | 'on_hold' | 'paid' | 'cancelled';
+export type BillState =
+  | 'scheduled'
+  | 'approved'
+  | 'on_hold'
+  | 'paid'
+  | 'cancelled';
 
 export type ProjectTotal = {
   project: string;
@@ -22,32 +27,33 @@ export async function getTotalsByProject(
   opts?: { states?: BillState[] }
 ): Promise<ProjectTotal[]> {
   const states = opts?.states ?? ['scheduled', 'approved'];
-  
+
   const { data, error } = await supabase
     .from('bill_occurrences')
-    .select(`
+    .select(
+      `
       amount_due,
       bills!inner (
         projects (name)
       )
-    `)
+    `
+    )
     .eq('org_id', orgId)
     .in('state', states)
     .gte('due_date', range.start)
     .lte('due_date', range.end);
 
   if (error) {
-    console.error('Error fetching project totals:', error);
     return [];
   }
 
   // Aggregate by project
   const projectMap = new Map<string, number>();
-  
+
   (data || []).forEach((occurrence: any) => {
     const amount = Number(occurrence.amount_due || 0);
     const projectName = occurrence.bills?.projects?.name || 'No Project';
-    
+
     projectMap.set(projectName, (projectMap.get(projectName) || 0) + amount);
   });
 

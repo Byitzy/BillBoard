@@ -29,7 +29,6 @@ export default async function BillsPage({ searchParams }: BillsPageProps) {
   const {
     data: { user },
   } = await supabase.auth.getUser();
-  console.log('SSR Bills user:', user?.id);
   if (!user) {
     // Let client guard handle auth - avoid SSR redirect loop
     return (

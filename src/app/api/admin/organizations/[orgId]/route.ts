@@ -74,7 +74,6 @@ export async function DELETE(
       .eq('org_id', orgId);
 
     if (membersError) {
-      console.error('Error deleting org members:', membersError);
       return NextResponse.json(
         { error: 'Failed to delete organization members' },
         { status: 500 }
@@ -88,7 +87,6 @@ export async function DELETE(
       .eq('id', orgId);
 
     if (orgError) {
-      console.error('Error deleting organization:', orgError);
       return NextResponse.json(
         { error: 'Failed to delete organization' },
         { status: 500 }
@@ -97,7 +95,6 @@ export async function DELETE(
 
     return NextResponse.json({ success: true });
   } catch (error) {
-    console.error('Error in DELETE /api/admin/organizations/[orgId]:', error);
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }

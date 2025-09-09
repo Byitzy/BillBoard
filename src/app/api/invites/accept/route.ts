@@ -45,7 +45,6 @@ export async function POST(request: NextRequest) {
         { status: 400 }
       );
     }
-    console.error('Error accepting invite:', error);
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }

@@ -108,12 +108,6 @@ export default function SuperAdminUsersPage() {
     setError(null);
 
     try {
-      console.log('Creating user with data:', {
-        email: formData.email,
-        role: formData.role,
-        is_super_admin: formData.role === 'super_admin',
-      });
-
       const {
         data: { session },
       } = await supabase.auth.getSession();
@@ -143,7 +137,6 @@ export default function SuperAdminUsersPage() {
       }
 
       const { user: newUser } = await response.json();
-      console.log('User creation result:', { newUser });
 
       // Reset form and reload data
       setFormData({

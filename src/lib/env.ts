@@ -67,7 +67,6 @@ export function validateClientEnvironment(): ClientEnv {
 export function validateServerEnvironment(): ServerEnv {
   // Skip validation if explicitly requested (e.g., during build)
   if (process.env.SKIP_ENV_VALIDATION === 'true') {
-    console.warn('⚠️ Environment validation skipped');
     return {} as ServerEnv;
   }
 
@@ -95,8 +94,6 @@ export function validateServerEnvironment(): ServerEnv {
       const issues = error.issues.map(
         (issue) => `${issue.path.join('.')}: ${issue.message}`
       );
-      console.error('❌ Environment validation failed:');
-      issues.forEach((issue) => console.error(`  - ${issue}`));
       throw new Error(
         `Environment validation failed. Check the above errors and update your .env.local file.`
       );
@@ -111,7 +108,6 @@ export const env = (() => {
   try {
     return validateClientEnvironment();
   } catch (error) {
-    console.error('❌ Failed to validate environment:', error);
     // Return defaults for build-time compatibility
     return {
       NEXT_PUBLIC_SUPABASE_URL: process.env.NEXT_PUBLIC_SUPABASE_URL || '',

@@ -29,7 +29,7 @@ export function LocaleProvider({ children }: { children: React.ReactNode }) {
           setGlobalLocale(userLocale);
         }
       } catch (error) {
-        console.warn('Failed to load user locale:', error);
+        // Failed to load user locale - continue with default
       }
     }
     loadLocale();

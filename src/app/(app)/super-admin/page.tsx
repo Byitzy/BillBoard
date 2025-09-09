@@ -46,14 +46,6 @@ export default function SuperAdminDashboard() {
         return;
       }
 
-      console.log('Super Admin Check:', {
-        userId: session.user.id,
-        email: session.user.email,
-        metadata: session.user.user_metadata,
-        is_super_admin: session.user.user_metadata?.is_super_admin,
-        type: typeof session.user.user_metadata?.is_super_admin,
-      });
-
       const isSuperAdminUser =
         session.user.user_metadata?.is_super_admin === true ||
         session.user.user_metadata?.is_super_admin === 'true';
@@ -66,7 +58,6 @@ export default function SuperAdminDashboard() {
       }
 
       // Load organizations with member and bill counts
-      console.log('Loading organizations...');
       const { data: orgsData, error: orgsError } = await supabase
         .from('organizations')
         .select(
@@ -79,7 +70,6 @@ export default function SuperAdminDashboard() {
         )
         .order('created_at', { ascending: false });
 
-      console.log('Organizations query result:', { orgsData, orgsError });
       if (orgsError) throw orgsError;
 
       // Get member counts for each org

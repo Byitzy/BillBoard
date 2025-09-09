@@ -1,4 +1,4 @@
-"use client";
+'use client';
 import { useEffect, useState } from 'react';
 import { getSupabaseClient } from '@/lib/supabase/client';
 import { Settings, Users, Building2 } from 'lucide-react';
@@ -24,33 +24,34 @@ export default function SuperAdminOrganizationsPage() {
   async function loadOrganizations() {
     try {
       setLoading(true);
-      
+
       // Fetch organizations with member count
       const { data: orgs, error: orgsError } = await supabase
         .from('organizations')
-        .select(`
+        .select(
+          `
           id,
           name,
           created_at,
           org_members(count)
-        `)
+        `
+        )
         .order('created_at', { ascending: false });
 
       if (orgsError) {
-        console.error('Error fetching organizations:', orgsError);
         setError('Failed to load organizations');
         return;
       }
 
       // Transform the data to include member count
-      const orgsWithCount = orgs?.map(org => ({
-        ...org,
-        member_count: org.org_members?.[0]?.count || 0
-      })) || [];
+      const orgsWithCount =
+        orgs?.map((org) => ({
+          ...org,
+          member_count: org.org_members?.[0]?.count || 0,
+        })) || [];
 
       setOrganizations(orgsWithCount);
     } catch (error) {
-      console.error('Error loading organizations:', error);
       setError('Failed to load organizations');
     } finally {
       setLoading(false);
@@ -69,7 +70,9 @@ export default function SuperAdminOrganizationsPage() {
     <div className="space-y-6">
       <div>
         <h1 className="text-2xl font-bold">Organization Management</h1>
-        <p className="text-gray-600 dark:text-gray-400">Manage all organizations in the system</p>
+        <p className="text-gray-600 dark:text-gray-400">
+          Manage all organizations in the system
+        </p>
       </div>
 
       {error && (
@@ -80,7 +83,10 @@ export default function SuperAdminOrganizationsPage() {
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {organizations.map((org) => (
-          <div key={org.id} className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border p-6">
+          <div
+            key={org.id}
+            className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border p-6"
+          >
             <div className="flex items-start justify-between mb-4">
               <div className="flex items-center gap-3">
                 <div className="p-2 bg-blue-100 dark:bg-blue-900 rounded-lg">

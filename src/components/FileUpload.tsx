@@ -92,7 +92,6 @@ export default function FileUpload({
         setFiles((prev) => [...prev, uploadedFile]);
         onUpload?.(uploadedFile);
       } catch (err: any) {
-        console.error('Upload error:', err);
         setError(err.message || 'Failed to upload file');
       }
     },

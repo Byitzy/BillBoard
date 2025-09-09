@@ -96,7 +96,6 @@ export async function PATCH(
         { status: 400 }
       );
     }
-    console.error('Error updating member:', error);
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }
