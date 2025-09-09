@@ -26,14 +26,10 @@ type BillsPageProps = {
 export default async function BillsPage({ searchParams }: BillsPageProps) {
   const resolvedSearchParams = await searchParams;
   const supabase = createServerComponentClient({ cookies });
-<<<<<<< HEAD:src/app/(app)/bills/page.tsx
   const {
     data: { user },
   } = await supabase.auth.getUser();
   console.log('SSR Bills user:', user?.id);
-=======
-  const { data: { user } } = await supabase.auth.getUser();
->>>>>>> origin/beta:src/app/bills/page.tsx
   if (!user) {
     // Let client guard handle auth - avoid SSR redirect loop
     return (
