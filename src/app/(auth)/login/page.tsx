@@ -41,22 +41,17 @@ export default function LoginPage() {
     });
     setLoading(false);
     if (error) {
-      console.error('Login error:', error);
       setStatus(error.message);
     } else if (data.user) {
-      console.log('Login successful for user:', data.user.email);
       try {
         // Get user role and redirect to appropriate dashboard
         const { redirectPath } = await getUserRoleAndRedirectPath(
           supabase,
           data.user.id
         );
-        console.log('Redirecting to:', redirectPath);
-        router.push(redirectPath);
+        router.push(redirectPath as any);
       } catch (roleError) {
-        console.error('Error getting user role:', roleError);
-        // Temporary: redirect to dashboard for debugging
-        console.log('Redirecting to /dashboard as fallback');
+        // Fallback to dashboard on error
         router.push('/dashboard');
       }
     }
