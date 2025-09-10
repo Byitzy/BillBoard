@@ -96,7 +96,7 @@ export async function POST(request: NextRequest) {
     const today = new Date().toISOString().split('T')[0];
     console.log('📅 Processing bills for date:', today);
 
-    // Find all scheduled bills where due_date is today or earlier, including bill auto_approve setting
+    // Find all scheduled bills where due_date is today or earlier
     const { data: billsToProcess, error: queryError } = await adminClient
       .from('bill_occurrences')
       .select(
@@ -107,13 +107,14 @@ export async function POST(request: NextRequest) {
         due_date, 
         state,
         bills!inner (
-          id,
-          auto_approve
+          id
         )
       `
       )
       .eq('state', 'scheduled')
       .lte('due_date', today);
+
+    console.log('📊 Query result:', { billsToProcess, queryError });
 
     if (queryError) {
       console.error('❌ Database query error:', queryError);
@@ -133,35 +134,50 @@ export async function POST(request: NextRequest) {
       });
     }
 
-    // Process each bill based on its auto_approve setting
+    // Process all bills to pending_approval for now (until migration is run)
     const approveNowIds: string[] = [];
     const pendingApprovalIds: string[] = [];
 
+    console.log(
+      '📝 Processing bills:',
+      billsToProcess?.map((b) => ({ id: b.id, due_date: b.due_date }))
+    );
+
     billsToProcess!.forEach((bill: any) => {
-      if (bill.bills.auto_approve) {
-        approveNowIds.push(bill.id);
-      } else {
-        pendingApprovalIds.push(bill.id);
-      }
+      // For now, send all to pending approval until auto_approve column exists
+      pendingApprovalIds.push(bill.id);
+    });
+
+    console.log('🔄 Bills to update:', {
+      approveNow: approveNowIds.length,
+      pendingApproval: pendingApprovalIds.length,
     });
 
     // Update bills that should be auto-approved
     const updateErrors: any[] = [];
     if (approveNowIds.length > 0) {
+      console.log('✅ Auto-approving bills:', approveNowIds);
       const { error } = await adminClient
         .from('bill_occurrences')
         .update({ state: 'approved' })
         .in('id', approveNowIds);
-      if (error) updateErrors.push(error);
+      if (error) {
+        console.error('❌ Auto-approve error:', error);
+        updateErrors.push(error);
+      }
     }
 
     // Update bills that should go to pending approval
     if (pendingApprovalIds.length > 0) {
+      console.log('⏳ Moving to pending approval:', pendingApprovalIds);
       const { error } = await adminClient
         .from('bill_occurrences')
         .update({ state: 'pending_approval' })
         .in('id', pendingApprovalIds);
-      if (error) updateErrors.push(error);
+      if (error) {
+        console.error('❌ Pending approval error:', error);
+        updateErrors.push(error);
+      }
     }
 
     const updateError = updateErrors.length > 0 ? updateErrors[0] : null;
