@@ -185,6 +185,23 @@ export async function GET(request: NextRequest) {
       );
     }
 
+    // Verify bill occurrence exists and belongs to user's org
+    const { data: billOccurrence } = await supabase
+      .from('bill_occurrences')
+      .select('id, bill_id, bills(org_id)')
+      .eq('id', billOccurrenceId)
+      .single();
+
+    if (
+      !billOccurrence ||
+      (billOccurrence.bills as any)?.org_id !== userProfile.org_id
+    ) {
+      return NextResponse.json(
+        { error: 'Bill occurrence not found or access denied' },
+        { status: 403 }
+      );
+    }
+
     // Get approvals for the bill occurrence
     const { data: approvals, error } = await supabase
       .from('approvals')
