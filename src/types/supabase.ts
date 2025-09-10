@@ -157,6 +157,7 @@ export interface Database {
             | 'approved'
             | 'on_hold'
             | 'canceled';
+          auto_approve: boolean;
           created_at: string;
           updated_at: string;
         };
@@ -178,6 +179,7 @@ export interface Database {
             | 'approved'
             | 'on_hold'
             | 'canceled';
+          auto_approve?: boolean;
           created_at?: string;
           updated_at?: string;
         };
@@ -199,6 +201,7 @@ export interface Database {
             | 'approved'
             | 'on_hold'
             | 'canceled';
+          auto_approve?: boolean;
           created_at?: string;
           updated_at?: string;
         };

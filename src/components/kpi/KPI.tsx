@@ -1,5 +1,4 @@
 'use client';
-import { motion } from 'framer-motion';
 import { useLocale } from '@/components/i18n/LocaleProvider';
 import type { ProjectTotal } from '@/lib/metrics';
 import { formatCurrency } from '@/lib/metrics';
@@ -26,12 +25,9 @@ export default function KPI({
 }: Props) {
   const { t } = useLocale();
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 6 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.25, delay: 0.05 * index }}
+    <div
       className={cn(
-        'relative group rounded-2xl border border-neutral-200 p-5 shadow-sm dark:border-neutral-800 cursor-pointer transition-all duration-200 hover:-translate-y-1 hover:shadow-lg hover:scale-[1.02]',
+        'relative group rounded-2xl border border-neutral-200 bg-white dark:bg-neutral-900 p-5 shadow-sm dark:border-neutral-800 cursor-pointer transition-all duration-200 hover:-translate-y-1 hover:shadow-lg hover:scale-[1.02]',
         className
       )}
       onClick={() => {
@@ -67,6 +63,6 @@ export default function KPI({
           )}
         </div>
       )}
-    </motion.div>
+    </div>
   );
 }

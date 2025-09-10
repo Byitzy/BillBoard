@@ -19,6 +19,7 @@ import { getSupabaseClient } from '@/lib/supabase/client';
 type ChartPoint = { m: string; v: number };
 type Row = {
   id: string;
+  bill_id?: string;
   vendor?: string | null;
   project?: string | null;
   due_date: string;
@@ -39,6 +40,7 @@ export default function AdminDashboard() {
   const supabase = getSupabaseClient();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [processingBills, setProcessingBills] = useState(false);
 
   // Original dashboard metrics
   const [todayTotal, setTodayTotal] = useState(0);
@@ -187,10 +189,23 @@ export default function AdminDashboard() {
     }
     setChart(pts);
 
-    // Recent items
+    // Recent items (with proper vendor/project data)
     const { data: recent } = await supabase
       .from('bill_occurrences')
-      .select('id,due_date,amount_due,state')
+      .select(
+        `
+        id,
+        bill_id,
+        due_date,
+        amount_due,
+        state,
+        bills(
+          id,
+          vendors(name),
+          projects(name)
+        )
+      `
+      )
       .eq('org_id', id)
       .order('due_date', { ascending: true })
       .limit(10);
@@ -198,6 +213,9 @@ export default function AdminDashboard() {
     setRows(
       (recent ?? []).map((r: any) => ({
         id: r.id,
+        bill_id: r.bill_id,
+        vendor: r.bills?.vendors?.name || null,
+        project: r.bills?.projects?.name || null,
         due_date: r.due_date,
         amount_due: Number(r.amount_due),
         state: r.state,
@@ -226,7 +244,7 @@ export default function AdminDashboard() {
         .from('bill_occurrences')
         .select('*', { count: 'exact', head: true })
         .eq('org_id', id)
-        .eq('state', 'scheduled'),
+        .eq('state', 'pending_approval'),
       supabase
         .from('vendors')
         .select('*', { count: 'exact', head: true })
@@ -250,6 +268,31 @@ export default function AdminDashboard() {
     if (!rows) return 0;
     return rows.reduce((acc, r) => acc + Number(r.amount_due || 0), 0);
   }
+
+  const processPendingBills = async () => {
+    setProcessingBills(true);
+    try {
+      const response = await fetch('/api/admin/process-bills', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+
+      const result = await response.json();
+
+      if (!response.ok) {
+        throw new Error(result.error || 'Failed to process bills');
+      }
+
+      // Reload the dashboard to show updated counts
+      await loadAdminDashboard();
+    } catch (error: any) {
+      setError(error.message || 'Failed to process bills');
+    } finally {
+      setProcessingBills(false);
+    }
+  };
 
   if (loading) {
     return (
@@ -286,6 +329,14 @@ export default function AdminDashboard() {
           </p>
         </div>
         <div className="flex gap-2">
+          <button
+            onClick={processPendingBills}
+            disabled={processingBills}
+            className="inline-flex items-center gap-2 bg-green-600 text-white px-4 py-2 rounded-xl hover:bg-green-700 disabled:opacity-50"
+          >
+            <Clock className="h-4 w-4" />
+            {processingBills ? 'Processing...' : 'Process Pending Bills'}
+          </button>
           <Link
             href="/settings/organization"
             className="inline-flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-xl hover:bg-blue-700"

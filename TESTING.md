@@ -1,6 +1,65 @@
 # BillBoard Testing & Issues Tracking
 
-## 🔧 **Issues Fixed & Ready for Testing**
+## 🎉 **NEW: Smart Bill Approval Workflow**
+
+### ✅ **Intelligent Bill State Management**
+
+- **Status**: IMPLEMENTED - Ready for Testing
+- **What was done**: Complete overhaul of bill approval workflow with smart one-time vs recurring bill handling
+- **Key Features**:
+  - One-time bills go directly to pending approval (no scheduling delay)
+  - Recurring bills can auto-approve based on user preference
+  - Due date-based processing instead of confusing submission dates
+  - Admin dashboard with manual processing capability
+
+### **Test Cases for New Workflow**
+
+#### Test 1: One-Time Bill Creation
+
+1. Go to `/bills` and create a new bill
+2. Leave "Recurring" unchecked
+3. Set a due date
+4. Submit the bill
+5. **Expected**: Bill immediately appears in `/approvals` page as pending approval
+
+#### Test 2: Recurring Bill with Manual Approval
+
+1. Create a new bill with "Recurring" checked
+2. Set frequency (e.g., monthly) and start date
+3. Leave "Auto-approve when due" unchecked
+4. Submit the bill
+5. Go to admin dashboard and click "Process Pending Bills"
+6. **Expected**: Bills with due dates today/past appear in `/approvals` for manual approval
+
+#### Test 3: Recurring Bill with Auto-Approval
+
+1. Create a new bill with "Recurring" checked
+2. Set frequency and start date
+3. Check "Auto-approve when due"
+4. Submit the bill
+5. Go to admin dashboard and click "Process Pending Bills"
+6. **Expected**: Bills with due dates today/past are automatically approved
+
+#### Test 4: Admin Dashboard Processing
+
+1. Go to `/dashboard/admin`
+2. Note the "Pending Approvals" count
+3. Click "Process Pending Bills" button
+4. **Expected**: Count updates and success message shows processed bills breakdown
+
+#### Test 5: Approval Workflow
+
+1. Ensure you have bills in pending approval state
+2. Go to `/approvals` page
+3. Try approving, holding, and rejecting bills
+4. **Expected**: No 404 errors, smooth approval process with state updates
+
+### **Database Migration Required**
+
+- New `auto_approve` column added to `bills` table
+- Run migration: `supabase/migrations/20241209000001_add_auto_approve_to_bills.sql`
+
+## 🔧 **Previous Issues Fixed & Ready for Testing**
 
 ### ✅ **Performance Improvements**
 
@@ -123,6 +182,62 @@
 - [ ] **Accessibility**: Keyboard navigation works
 - [ ] **Dark Mode**: All improvements work in dark theme
 - [ ] **Forms**: Bill creation and other forms work correctly
+
+---
+
+## 🚨 **Current Critical Issues (In Progress)**
+
+### ❌ **Bill Approval 403 Forbidden Error**
+
+- **Status**: DEBUGGING - In Progress
+- **Issue**: Getting 403 Forbidden when trying to approve bills (POST /rest/v1/approvals)
+- **Impact**: Cannot approve bills through the UI
+- **Test**:
+  1. Go to `/approvals` page
+  2. Try to approve any bill
+  3. Check console for "403 (Forbidden)" error
+- **Next Steps**: Debug authentication in useApprovals hook
+
+### ❌ **Invisible KPI Cards on Admin Dashboard**
+
+- **Status**: PARTIALLY FIXED - Needs Verification
+- **Issue**: Today, This Week, Next 2 Weeks cards are invisible but clickable
+- **What was done**: Removed framer-motion animations causing invisibility
+- **Test**:
+  1. Go to `/dashboard/admin`
+  2. Check if KPI metric cards are visible
+- **Expected**: Should see all four KPI cards clearly
+
+### ❌ **Member Invitations Not Working**
+
+- **Status**: IDENTIFIED - Needs Database Schema Fix
+- **Issue**: Invitations appear to work but members are not actually added
+- **Root Cause**: Missing `org_invites` table in database schema, using mock data
+- **Impact**: Cannot actually invite new organization members
+- **Test**:
+  1. Go to `/settings/organization`
+  2. Try inviting a member
+  3. Check if they appear in members list
+- **Fix Required**: Implement real org_invites database table
+
+### ❌ **Bill States Confusion**
+
+- **Status**: NEEDS REVIEW - Workflow Analysis Required
+- **Issue**: New bills default to "scheduled" but user wants "pending_approval"
+- **Current States**: scheduled, pending_approval, approved, on_hold, paid
+- **Desired Workflow**: New bills → pending_approval → approved → paid
+- **Test**: Create a new bill and check its initial state
+- **Action Required**: Review bill occurrence generation logic
+
+### ❌ **Bill Approvals Page Showing Zeros**
+
+- **Status**: NEEDS INVESTIGATION
+- **Issue**: Bill Approvals page shows "0" for all metrics
+- **Possible Cause**: Related to bill state workflow or data refresh issues
+- **Test**:
+  1. Go to `/approvals`
+  2. Check if any pending approvals show up
+- **Note**: User mentioned old bills showed up after approving one, suggesting refresh issue
 
 ---
 

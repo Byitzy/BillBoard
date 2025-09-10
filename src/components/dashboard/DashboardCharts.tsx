@@ -36,7 +36,7 @@ export default function DashboardCharts({
           <table className="w-full text-sm" role="table">
             <thead>
               <tr className="text-left" role="row">
-                {['Vendor', 'Project', 'Due', 'Amount', 'State'].map((h) => (
+                {['Vendor', 'Project', 'Due', 'Amount', 'Status'].map((h) => (
                   <th
                     key={h}
                     scope="col"
@@ -66,13 +66,51 @@ export default function DashboardCharts({
                   const billUrl = r.bill_id ? `/bills/${r.bill_id}` : '#';
                   const isClickable = !!r.bill_id;
 
+                  const getStatusLabel = (state: string) => {
+                    switch (state) {
+                      case 'scheduled':
+                        return 'Ready to Pay';
+                      case 'pending_approval':
+                        return 'Pending Approval';
+                      case 'approved':
+                        return 'Approved';
+                      case 'on_hold':
+                        return 'On Hold';
+                      case 'paid':
+                        return 'Paid';
+                      default:
+                        return state;
+                    }
+                  };
+
+                  const getStatusColor = (state: string) => {
+                    switch (state) {
+                      case 'scheduled':
+                        return 'text-blue-600';
+                      case 'pending_approval':
+                        return 'text-yellow-600';
+                      case 'approved':
+                        return 'text-green-600';
+                      case 'on_hold':
+                        return 'text-orange-600';
+                      case 'paid':
+                        return 'text-green-800';
+                      default:
+                        return 'text-neutral-600';
+                    }
+                  };
+
                   const rowContent = (
                     <>
                       <td className="px-3 py-2">{r.vendor || '—'}</td>
                       <td className="px-3 py-2">{r.project || '—'}</td>
                       <td className="px-3 py-2">{r.due_date}</td>
                       <td className="px-3 py-2">${r.amount_due.toFixed(2)}</td>
-                      <td className="px-3 py-2">{r.state}</td>
+                      <td
+                        className={`px-3 py-2 font-medium ${getStatusColor(r.state)}`}
+                      >
+                        {getStatusLabel(r.state)}
+                      </td>
                     </>
                   );
 
