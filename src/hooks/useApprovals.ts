@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import type { Database } from '@/types/supabase';
 import { useAsyncOperation } from './useAsyncOperation';
+import { getSupabaseClient } from '@/lib/supabase/client';
 
 type Approval = Database['public']['Tables']['approvals']['Row'] & {
   org_members: {
@@ -23,9 +24,12 @@ interface CreateApprovalData {
 }
 
 export function useApprovals(billOccurrenceId?: string) {
+  const supabase = getSupabaseClient();
   const [approvals, setApprovals] = useState<Approval[]>([]);
-  const { execute: executeCreate, loading: createLoading } = useAsyncOperation<Approval>();
-  const { execute: executeFetch, loading: fetchLoading } = useAsyncOperation<Approval[]>();
+  const { execute: executeCreate, loading: createLoading } =
+    useAsyncOperation<Approval>();
+  const { execute: executeFetch, loading: fetchLoading } =
+    useAsyncOperation<Approval[]>();
 
   const fetchApprovals = async (occurrenceId: string) => {
     const result = await executeFetch(async () => {
@@ -44,16 +48,22 @@ export function useApprovals(billOccurrenceId?: string) {
     if (result.success) {
       setApprovals(result.data);
     }
-    
+
     return result;
   };
 
   const createApproval = async (approvalData: CreateApprovalData) => {
     const result = await executeCreate(async () => {
+      // Get session token for authorization
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
+
       const response = await fetch('/api/approvals', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          ...(session && { Authorization: `Bearer ${session.access_token}` }),
         },
         body: JSON.stringify({
           billOccurrenceId: approvalData.billOccurrenceId,
@@ -64,7 +74,9 @@ export function useApprovals(billOccurrenceId?: string) {
 
       if (!response.ok) {
         const errorData = await response.json();
-        throw new Error(errorData.error || `Failed to create approval: ${response.statusText}`);
+        throw new Error(
+          errorData.error || `Failed to create approval: ${response.statusText}`
+        );
       }
 
       const data = await response.json();
@@ -99,7 +111,12 @@ export function useApprovals(billOccurrenceId?: string) {
     return { approved, onHold, rejected, total };
   };
 
-  const getOverallStatus = (): 'approved' | 'pending' | 'on_hold' | 'rejected' | null => {
+  const getOverallStatus = ():
+    | 'approved'
+    | 'pending'
+    | 'on_hold'
+    | 'rejected'
+    | null => {
     if (approvals.length === 0) return null;
 
     const hasRejected = approvals.some((a) => a.decision === 'rejected');

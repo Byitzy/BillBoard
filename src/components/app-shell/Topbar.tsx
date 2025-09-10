@@ -1,14 +1,6 @@
 'use client';
 import type { Session } from '@supabase/supabase-js';
-import {
-  Bell,
-  ChevronDown,
-  Plus,
-  Search,
-  LogIn,
-  LogOut,
-  Menu,
-} from 'lucide-react';
+import { ChevronDown, Plus, Search, LogIn, LogOut, Menu } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { useEffect, useRef, useState } from 'react';
@@ -16,7 +8,6 @@ import MobileSidebar from '@/components/app-shell/MobileSidebar';
 import { useLocale } from '@/components/i18n/LocaleProvider';
 import NotificationCenter from '@/components/NotificationCenter';
 import { getSupabaseClient } from '@/lib/supabase/client';
-import { cn } from '@/lib/utils';
 
 export default function Topbar() {
   const [menuOpen, setMenuOpen] = useState(false);

@@ -11,6 +11,7 @@ import {
   Calendar,
   DollarSign,
 } from 'lucide-react';
+import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useState, useEffect } from 'react';
 import ApprovalPanel from '@/components/ApprovalPanel';
@@ -70,6 +71,7 @@ export default function ApprovalsPage() {
 
   const loadData = async () => {
     const result = await fetchData(async () => {
+      // Force fresh data by clearing any potential Supabase caching
       const { data, error } = await supabase
         .from('bill_occurrences')
         .select(
@@ -318,12 +320,12 @@ export default function ApprovalsPage() {
                       {statusFilter === 'all' &&
                         billOccurrences.length === 0 && (
                           <div className="space-y-3">
-                            <a
+                            <Link
                               href="/bills"
                               className="inline-flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-xl hover:bg-blue-700"
                             >
                               📝 Create Bills
-                            </a>
+                            </Link>
                             <p className="text-sm text-neutral-600">
                               Bills with due dates will automatically create
                               occurrences for approval

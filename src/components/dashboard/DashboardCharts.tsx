@@ -1,5 +1,4 @@
 'use client';
-import Link from 'next/link';
 import RentLine from '@/components/charts/RentLine';
 
 type ChartPoint = { m: string; v: number };
