@@ -28,7 +28,7 @@ export default function CalendarMonth({ date, renderDay, getDayClass }: Props) {
         <div
           key={d.toISOString()}
           className={cn(
-            'min-h-24 border border-neutral-200 dark:border-neutral-800 rounded p-2',
+            'min-h-24 border border-neutral-200 dark:border-neutral-800 rounded p-2 group hover:bg-neutral-50 dark:hover:bg-neutral-800/50 transition-colors',
             getDayClass ? getDayClass(d) : ''
           )}
         >
