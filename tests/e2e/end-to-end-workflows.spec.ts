@@ -32,8 +32,8 @@ test.describe('End-to-End Workflows', () => {
   test('Complete Bill Management Workflow', async ({ page }) => {
     await loginAs(page, adminUser);
 
-    // Navigate to bills section
-    await page.click('text=Manage Bills');
+    // Navigate to bills section via sidebar
+    await page.click('aside a[href="/bills"]');
     await expect(page).toHaveURL(/.*bills.*/);
 
     // Get initial bill count
@@ -45,8 +45,11 @@ test.describe('End-to-End Workflows', () => {
     // Save bill
     await page.click('button[type="submit"]');
 
-    // Wait for form to reset and new bill to appear
-    await page.waitForTimeout(3000);
+    // Wait for form submission and page reload
+    await page.waitForTimeout(2000);
+
+    // Wait for the bill form to reset (amount field should be empty)
+    await expect(page.locator('input[name="amount"]')).toHaveValue('');
 
     // Verify bill was created by checking that we have one more bill row
     const finalBillRows = await page.locator('table tbody tr').count();
@@ -59,8 +62,8 @@ test.describe('End-to-End Workflows', () => {
   test('Vendor Management Workflow', async ({ page }) => {
     await loginAs(page, adminUser);
 
-    // Navigate to vendors
-    await page.click('text=Vendors');
+    // Navigate to vendors via sidebar
+    await page.click('aside a[href="/vendors"]');
     await expect(page.url()).toContain('vendors');
 
     // Check existing vendors are visible
@@ -85,8 +88,8 @@ test.describe('End-to-End Workflows', () => {
   test('Project Management Workflow', async ({ page }) => {
     await loginAs(page, adminUser);
 
-    // Navigate to projects
-    await page.click('text=Projects');
+    // Navigate to projects via sidebar
+    await page.click('aside a[href="/projects"]');
     await expect(page.url()).toContain('projects');
 
     // Verify test projects exist
@@ -106,8 +109,8 @@ test.describe('End-to-End Workflows', () => {
   test('Calendar Navigation and Bill Occurrences', async ({ page }) => {
     await loginAs(page, adminUser);
 
-    // Navigate to calendar
-    await page.click('text=Calendar');
+    // Navigate to calendar via sidebar
+    await page.click('aside a[href="/calendar"]');
     await expect(page.url()).toContain('calendar');
 
     // Verify calendar loads
@@ -147,14 +150,13 @@ test.describe('End-to-End Workflows', () => {
     // Should be on admin dashboard
     await expect(page).toHaveURL('/dashboard/admin');
 
-    // Check for KPI cards/metrics
+    // Check for admin-specific KPI cards/metrics
     const kpiElements = [
+      'text=Members',
       'text=Total Bills',
       'text=Pending',
-      'text=Approved',
-      'text=This Month',
-      'text=Revenue',
-      'text=Expenses',
+      'text=Vendors',
+      'text=Projects',
     ];
 
     // At least some metrics should be visible
@@ -254,17 +256,27 @@ test.describe('End-to-End Workflows', () => {
   test('Data Export Functionality', async ({ page }) => {
     await loginAs(page, adminUser);
 
-    // Navigate to bills or reports section
-    await page.click('text=Bills');
+    // Navigate to bills section via sidebar
+    await page.click('aside a[href="/bills"]');
 
-    // Look for export functionality
-    const exportButton = page
-      .locator(
-        'button:has-text("Export"), button:has-text("Download"), text=CSV, text=PDF'
-      )
-      .first();
+    // Look for export functionality - search for each type separately
+    const exportSelectors = [
+      'button:has-text("Export")',
+      'button:has-text("Download")',
+      'button:has-text("CSV")',
+      'button:has-text("PDF")',
+    ];
 
-    if (await exportButton.isVisible()) {
+    let exportButton = null;
+    for (const selector of exportSelectors) {
+      const element = page.locator(selector).first();
+      if (await element.isVisible()) {
+        exportButton = element;
+        break;
+      }
+    }
+
+    if (exportButton && (await exportButton.isVisible())) {
       // Set up download handler
       const downloadPromise = page.waitForEvent('download');
       await exportButton.click();
@@ -286,9 +298,10 @@ test.describe('End-to-End Workflows', () => {
     ];
 
     for (const area of searchAreas) {
-      // Navigate to the page
-      await page.click(`text=${area.page}`);
-      await expect(page.url()).toContain(area.page.toLowerCase());
+      // Navigate to the page via sidebar
+      const href = area.page.toLowerCase();
+      await page.click(`aside a[href="/${href}"]`);
+      await expect(page.url()).toContain(href);
 
       // Find search input
       const searchInput = page
