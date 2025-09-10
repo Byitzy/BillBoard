@@ -18,6 +18,16 @@
     "test:run": "vitest run",
     "playwright": "playwright test",
     "playwright:setup": "tsx scripts/setup-test-data.ts && playwright test",
+    "turbo:build": "turbo build",
+    "turbo:lint": "turbo lint",
+    "turbo:lint:fix": "turbo lint:fix",
+    "turbo:format": "turbo format",
+    "turbo:format:check": "turbo format:check",
+    "turbo:typecheck": "turbo typecheck",
+    "turbo:test": "turbo test",
+    "turbo:test:run": "turbo test:run",
+    "turbo:playwright": "turbo playwright",
+    "turbo:playwright:setup": "turbo playwright:setup",
     "playwright:ui": "playwright test --ui",
     "playwright:headed": "playwright test --headed",
     "playwright:debug": "playwright test --debug",
@@ -28,7 +38,8 @@
     "db:seed:clean": "node scripts/seed.js --clean",
     "test:setup": "tsx scripts/setup-test-data.ts",
     "gen:schema": "echo 'Use supabase gen types --local > src/types/supabase.ts'",
-    "quality": "npm run typecheck && npm run lint && npm run format:check",
+    "quality": "pnpm typecheck && pnpm lint && pnpm format:check",
+    "turbo:quality": "turbo quality",
     "prepare": "husky"
   },
   "dependencies": {
@@ -82,6 +93,7 @@
     "prettier-plugin-tailwindcss": "^0.6.14",
     "tailwindcss": "3.4.7",
     "tsx": "^4.20.5",
+    "turbo": "^2.5.6",
     "typescript": "5.5.3",
     "vitest": "1.6.0"
   }

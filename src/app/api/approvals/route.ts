@@ -1,6 +1,6 @@
 import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
-import { getServerClient } from '@/lib/supabase/server';
+import { getServerClient, getUserFromRequest } from '@/lib/supabase/server';
 import { APIError } from '@/types/api';
 import type { Database } from '@/types/supabase';
 
@@ -8,14 +8,13 @@ type ApprovalInsert = Database['public']['Tables']['approvals']['Insert'];
 
 export async function POST(request: NextRequest) {
   try {
-    const supabase = await getServerClient();
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
+    const user = await getUserFromRequest(request);
 
     if (!user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
+
+    const supabase = await getServerClient();
 
     const body = await request.json();
     const { billOccurrenceId, decision, notes } = body;
@@ -153,14 +152,13 @@ export async function POST(request: NextRequest) {
 
 export async function GET(request: NextRequest) {
   try {
-    const supabase = await getServerClient();
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
+    const user = await getUserFromRequest(request);
 
     if (!user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
+
+    const supabase = await getServerClient();
 
     const { searchParams } = new URL(request.url);
     const billOccurrenceId = searchParams.get('billOccurrenceId');

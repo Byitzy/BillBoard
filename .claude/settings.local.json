@@ -39,7 +39,9 @@
       "Bash(npx tsx:*)",
       "Bash(npx playwright test:*)",
       "Bash(npx supabase:*)",
-      "Bash(pnpm run dev:*)"
+      "Bash(pnpm run dev:*)",
+      "Bash(pnpm turbo:build:*)",
+      "Bash(pnpm turbo:typecheck:*)"
     ],
     "deny": [],
     "ask": []
