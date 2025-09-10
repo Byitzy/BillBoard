@@ -1,6 +1,10 @@
 import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
-import { getServerClient, getUserFromRequest } from '@/lib/supabase/server';
+import {
+  getServerClient,
+  getUserFromRequest,
+  getServiceClient,
+} from '@/lib/supabase/server';
 import { APIError } from '@/types/api';
 import type { Database } from '@/types/supabase';
 
@@ -14,7 +18,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const supabase = await getServerClient();
+    const adminClient = getServiceClient();
 
     const body = await request.json();
     const { billOccurrenceId, decision, notes } = body;
@@ -26,12 +30,11 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Get user's organization
-    const { data: userProfile } = await supabase
+    // Get user's organization using admin client
+    const { data: userProfile, error: profileError } = await adminClient
       .from('org_members')
       .select('org_id, role')
       .eq('user_id', user.id)
-      .eq('status', 'active')
       .single();
 
     if (!userProfile) {
@@ -49,8 +52,8 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Verify bill occurrence exists and belongs to user's org
-    const { data: billOccurrence } = await supabase
+    // Verify bill occurrence exists and belongs to user's org using admin client
+    const { data: billOccurrence } = await adminClient
       .from('bill_occurrences')
       .select('id, bill_id, bills(org_id)')
       .eq('id', billOccurrenceId)
@@ -66,8 +69,8 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Check if approval already exists
-    const { data: existingApproval } = await supabase
+    // Check if approval already exists using admin client
+    const { data: existingApproval } = await adminClient
       .from('approvals')
       .select('id')
       .eq('bill_occurrence_id', billOccurrenceId)
@@ -77,12 +80,12 @@ export async function POST(request: NextRequest) {
     let result;
 
     if (existingApproval) {
-      // Update existing approval
-      const { data, error } = await supabase
+      // Update existing approval using admin client
+      const { data, error } = await adminClient
         .from('approvals')
         .update({
           decision,
-          notes,
+          comment: notes,
         })
         .eq('id', existingApproval.id)
         .select()
@@ -92,7 +95,7 @@ export async function POST(request: NextRequest) {
         throw new APIError('Failed to update approval', 'DATABASE_ERROR');
       result = data;
     } else {
-      // Create new approval
+      // Create new approval using admin client
       const approvalData: ApprovalInsert = {
         org_id: userProfile.org_id,
         bill_occurrence_id: billOccurrenceId,
@@ -101,14 +104,22 @@ export async function POST(request: NextRequest) {
         notes,
       };
 
-      const { data, error } = await supabase
+      const { data, error } = await adminClient
         .from('approvals')
-        .insert(approvalData)
+        .insert({
+          ...approvalData,
+          comment: approvalData.notes,
+          notes: undefined,
+        })
         .select()
         .single();
 
-      if (error)
-        throw new APIError('Failed to create approval', 'DATABASE_ERROR');
+      if (error) {
+        return NextResponse.json(
+          { error: 'Failed to create approval' },
+          { status: 500 }
+        );
+      }
       result = data;
     }
 
@@ -129,7 +140,7 @@ export async function POST(request: NextRequest) {
       newState = 'canceled';
     }
 
-    await supabase
+    await adminClient
       .from('bill_occurrences')
       .update({ state: newState })
       .eq('id', billOccurrenceId);
@@ -144,7 +155,13 @@ export async function POST(request: NextRequest) {
     }
 
     return NextResponse.json(
-      { error: 'Internal server error' },
+      {
+        error: 'Internal server error',
+        debug: {
+          message: error instanceof Error ? error.message : 'Unknown error',
+          stack: error instanceof Error ? error.stack : undefined,
+        },
+      },
       { status: 500 }
     );
   }
@@ -170,12 +187,12 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    // Get user's organization
-    const { data: userProfile } = await supabase
+    // Get user's organization using admin client to bypass RLS
+    const adminClient = getServiceClient();
+    const { data: userProfile, error: profileError } = await adminClient
       .from('org_members')
-      .select('org_id')
+      .select('org_id, user_id, role')
       .eq('user_id', user.id)
-      .eq('status', 'active')
       .single();
 
     if (!userProfile) {
@@ -185,41 +202,47 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    // Verify bill occurrence exists and belongs to user's org
-    const { data: billOccurrence } = await supabase
+    // First check if bill occurrence exists at all using admin client
+    const { data: billOccurrence, error: billError } = await adminClient
       .from('bill_occurrences')
-      .select('id, bill_id, bills(org_id)')
+      .select('id, bill_id, org_id')
       .eq('id', billOccurrenceId)
       .single();
 
-    if (
-      !billOccurrence ||
-      (billOccurrence.bills as any)?.org_id !== userProfile.org_id
-    ) {
+    if (billError) {
       return NextResponse.json(
-        { error: 'Bill occurrence not found or access denied' },
+        { error: 'Bill occurrence not found' },
         { status: 403 }
       );
     }
 
-    // Get approvals for the bill occurrence
-    const { data: approvals, error } = await supabase
+    if (!billOccurrence) {
+      return NextResponse.json(
+        { error: 'Bill occurrence not found' },
+        { status: 403 }
+      );
+    }
+
+    // Check org ownership directly from bill_occurrences table
+    if (billOccurrence.org_id !== userProfile.org_id) {
+      return NextResponse.json(
+        { error: 'Access denied - different organization' },
+        { status: 403 }
+      );
+    }
+
+    // Get approvals for the bill occurrence using admin client (no ORDER BY)
+    const { data: approvals, error } = await adminClient
       .from('approvals')
-      .select(
-        `
-        *,
-        org_members!approvals_approver_id_fkey(
-          user_id,
-          users(email, name)
-        )
-      `
-      )
+      .select('*')
       .eq('bill_occurrence_id', billOccurrenceId)
-      .eq('org_id', userProfile.org_id)
-      .order('created_at', { ascending: false });
+      .eq('org_id', userProfile.org_id);
 
     if (error) {
-      throw new APIError('Failed to fetch approvals', 'DATABASE_ERROR');
+      return NextResponse.json(
+        { error: 'Failed to fetch approvals' },
+        { status: 500 }
+      );
     }
 
     return NextResponse.json({ data: approvals || [] });

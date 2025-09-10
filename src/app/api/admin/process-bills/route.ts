@@ -76,16 +76,10 @@ async function isAdmin(
 
 export async function POST(request: NextRequest) {
   try {
-    console.log('🔄 Processing bills request started');
-
     const authHeader = request.headers.get('authorization');
-    console.log('🔐 Auth header present:', !!authHeader);
-
     const { isAdmin: userIsAdmin, userId } = await isAdmin(authHeader);
-    console.log('👤 User is admin:', userIsAdmin, 'User ID:', userId);
 
     if (!userIsAdmin) {
-      console.log('❌ Access denied - not admin');
       return NextResponse.json(
         { error: 'Admin access required' },
         { status: 401 }
@@ -94,7 +88,6 @@ export async function POST(request: NextRequest) {
 
     // Get today's date in ISO format (YYYY-MM-DD)
     const today = new Date().toISOString().split('T')[0];
-    console.log('📅 Processing bills for date:', today);
 
     // Find all scheduled bills where due_date is today or earlier
     const { data: billsToProcess, error: queryError } = await adminClient
@@ -114,12 +107,9 @@ export async function POST(request: NextRequest) {
       .eq('state', 'scheduled')
       .lte('due_date', today);
 
-    console.log('📊 Query result:', { billsToProcess, queryError });
-
     if (queryError) {
-      console.error('❌ Database query error:', queryError);
       return NextResponse.json(
-        { error: 'Failed to query bills', details: queryError.message },
+        { error: 'Failed to query bills' },
         { status: 500 }
       );
     }
@@ -138,44 +128,30 @@ export async function POST(request: NextRequest) {
     const approveNowIds: string[] = [];
     const pendingApprovalIds: string[] = [];
 
-    console.log(
-      '📝 Processing bills:',
-      billsToProcess?.map((b) => ({ id: b.id, due_date: b.due_date }))
-    );
-
     billsToProcess!.forEach((bill: any) => {
       // For now, send all to pending approval until auto_approve column exists
       pendingApprovalIds.push(bill.id);
     });
 
-    console.log('🔄 Bills to update:', {
-      approveNow: approveNowIds.length,
-      pendingApproval: pendingApprovalIds.length,
-    });
-
     // Update bills that should be auto-approved
     const updateErrors: any[] = [];
     if (approveNowIds.length > 0) {
-      console.log('✅ Auto-approving bills:', approveNowIds);
       const { error } = await adminClient
         .from('bill_occurrences')
         .update({ state: 'approved' })
         .in('id', approveNowIds);
       if (error) {
-        console.error('❌ Auto-approve error:', error);
         updateErrors.push(error);
       }
     }
 
     // Update bills that should go to pending approval
     if (pendingApprovalIds.length > 0) {
-      console.log('⏳ Moving to pending approval:', pendingApprovalIds);
       const { error } = await adminClient
         .from('bill_occurrences')
         .update({ state: 'pending_approval' })
         .in('id', pendingApprovalIds);
       if (error) {
-        console.error('❌ Pending approval error:', error);
         updateErrors.push(error);
       }
     }
@@ -197,12 +173,8 @@ export async function POST(request: NextRequest) {
       message: `Successfully processed ${billsProcessed} bills: ${approveNowIds.length} auto-approved, ${pendingApprovalIds.length} require approval`,
     });
   } catch (error) {
-    console.error('❌ Unexpected error in process-bills:', error);
     return NextResponse.json(
-      {
-        error: 'Internal server error',
-        details: error instanceof Error ? error.message : 'Unknown error',
-      },
+      { error: 'Internal server error' },
       { status: 500 }
     );
   }
