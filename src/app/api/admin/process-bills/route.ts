@@ -2,10 +2,17 @@ import { createClient } from '@supabase/supabase-js';
 import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
-const adminClient = createClient(supabaseUrl, serviceKey, {
+if (!supabaseUrl || !serviceKey) {
+  console.error('❌ Missing environment variables:', {
+    supabaseUrl: !!supabaseUrl,
+    serviceKey: !!serviceKey,
+  });
+}
+
+const adminClient = createClient(supabaseUrl!, serviceKey!, {
   auth: {
     autoRefreshToken: false,
     persistSession: false,
@@ -17,6 +24,7 @@ async function isAdmin(
   authHeader: string | null
 ): Promise<{ isAdmin: boolean; userId?: string }> {
   if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    console.log('❌ No valid auth header');
     return { isAdmin: false };
   }
 
@@ -27,10 +35,21 @@ async function isAdmin(
       data: { user },
       error,
     } = await adminClient.auth.getUser(token);
-    if (error || !user) return { isAdmin: false };
+
+    if (error) {
+      console.error('❌ Auth error:', error);
+      return { isAdmin: false };
+    }
+
+    if (!user) {
+      console.log('❌ No user found from token');
+      return { isAdmin: false };
+    }
+
+    console.log('✅ User authenticated:', user.id);
 
     // Check if user is admin in any organization
-    const { data: userProfile } = await adminClient
+    const { data: userProfile, error: profileError } = await adminClient
       .from('org_members')
       .select('role, org_id')
       .eq('user_id', user.id)
@@ -38,11 +57,19 @@ async function isAdmin(
       .eq('role', 'admin')
       .single();
 
+    if (profileError) {
+      console.error('❌ Profile query error:', profileError);
+      return { isAdmin: false };
+    }
+
+    console.log('👤 User profile:', userProfile);
+
     return {
       isAdmin: !!userProfile,
       userId: user.id,
     };
   } catch (error) {
+    console.error('❌ Unexpected auth error:', error);
     return { isAdmin: false };
   }
 }
@@ -62,7 +89,7 @@ export async function POST(request: NextRequest) {
     // Get today's date in ISO format (YYYY-MM-DD)
     const today = new Date().toISOString().split('T')[0];
 
-    // Find all scheduled bills where due_date is today or earlier, including bill auto_approve setting
+    // Find all scheduled bills where due_date is today or earlier
     const { data: billsToProcess, error: queryError } = await adminClient
       .from('bill_occurrences')
       .select(
@@ -73,8 +100,7 @@ export async function POST(request: NextRequest) {
         due_date, 
         state,
         bills!inner (
-          id,
-          auto_approve
+          id
         )
       `
       )
@@ -98,16 +124,13 @@ export async function POST(request: NextRequest) {
       });
     }
 
-    // Process each bill based on its auto_approve setting
+    // Process all bills to pending_approval for now (until migration is run)
     const approveNowIds: string[] = [];
     const pendingApprovalIds: string[] = [];
 
     billsToProcess!.forEach((bill: any) => {
-      if (bill.bills.auto_approve) {
-        approveNowIds.push(bill.id);
-      } else {
-        pendingApprovalIds.push(bill.id);
-      }
+      // For now, send all to pending approval until auto_approve column exists
+      pendingApprovalIds.push(bill.id);
     });
 
     // Update bills that should be auto-approved
@@ -117,7 +140,9 @@ export async function POST(request: NextRequest) {
         .from('bill_occurrences')
         .update({ state: 'approved' })
         .in('id', approveNowIds);
-      if (error) updateErrors.push(error);
+      if (error) {
+        updateErrors.push(error);
+      }
     }
 
     // Update bills that should go to pending approval
@@ -126,7 +151,9 @@ export async function POST(request: NextRequest) {
         .from('bill_occurrences')
         .update({ state: 'pending_approval' })
         .in('id', pendingApprovalIds);
-      if (error) updateErrors.push(error);
+      if (error) {
+        updateErrors.push(error);
+      }
     }
 
     const updateError = updateErrors.length > 0 ? updateErrors[0] : null;

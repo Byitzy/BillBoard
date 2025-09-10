@@ -33,8 +33,18 @@ export function useApprovals(billOccurrenceId?: string) {
 
   const fetchApprovals = async (occurrenceId: string) => {
     const result = await executeFetch(async () => {
+      // Get session token for authorization
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
+
       const response = await fetch(
-        `/api/approvals?billOccurrenceId=${encodeURIComponent(occurrenceId)}`
+        `/api/approvals?billOccurrenceId=${encodeURIComponent(occurrenceId)}`,
+        {
+          headers: {
+            ...(session && { Authorization: `Bearer ${session.access_token}` }),
+          },
+        }
       );
 
       if (!response.ok) {
