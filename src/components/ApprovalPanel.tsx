@@ -20,7 +20,9 @@ export default function ApprovalPanel({
 }: ApprovalPanelProps) {
   const [notes, setNotes] = useState('');
   const [showNotesInput, setShowNotesInput] = useState(false);
-  const [pendingDecision, setPendingDecision] = useState<'approved' | 'hold' | 'rejected' | null>(null);
+  const [pendingDecision, setPendingDecision] = useState<
+    'approved' | 'hold' | 'rejected' | null
+  >(null);
 
   const {
     approvals,
@@ -32,13 +34,17 @@ export default function ApprovalPanel({
     createLoading,
   } = useApprovals(billOccurrenceId);
 
-  const currentUserApproval = currentUserId ? getUserApproval(currentUserId) : null;
+  const currentUserApproval = currentUserId
+    ? getUserApproval(currentUserId)
+    : null;
   const approvalSummary = getApprovalSummary();
   const overallStatus = getOverallStatus();
 
-  const handleApprovalDecision = async (decision: 'approved' | 'hold' | 'rejected') => {
+  const handleApprovalDecision = async (
+    decision: 'approved' | 'hold' | 'rejected'
+  ) => {
     setPendingDecision(decision);
-    
+
     const result = await createApproval({
       billOccurrenceId,
       decision,
@@ -49,7 +55,7 @@ export default function ApprovalPanel({
       setNotes('');
       setShowNotesInput(false);
     }
-    
+
     setPendingDecision(null);
   };
 
@@ -84,7 +90,11 @@ export default function ApprovalPanel({
 
     const statusConfig = {
       approved: { label: 'Approved', color: 'text-emerald-600', icon: Check },
-      pending: { label: 'Pending Review', color: 'text-amber-600', icon: Clock },
+      pending: {
+        label: 'Pending Review',
+        color: 'text-amber-600',
+        icon: Clock,
+      },
       on_hold: { label: 'On Hold', color: 'text-amber-600', icon: Clock },
       rejected: { label: 'Rejected', color: 'text-red-600', icon: X },
     };
@@ -93,7 +103,9 @@ export default function ApprovalPanel({
     const Icon = config.icon;
 
     return (
-      <div className={`flex items-center gap-1 text-sm font-medium ${config.color}`}>
+      <div
+        className={`flex items-center gap-1 text-sm font-medium ${config.color}`}
+      >
         <Icon className="h-4 w-4" />
         {config.label}
       </div>
@@ -136,11 +148,11 @@ export default function ApprovalPanel({
         <div className="space-y-3">
           {currentUserApproval && (
             <div className="text-sm text-neutral-600">
-              Your decision: 
+              Your decision:
               <span
-                className={`ml-1 inline-flex items-center gap-1 px-2 py-1 rounded text-xs font-medium border ${
-                  getStatusColor(currentUserApproval.decision)
-                }`}
+                className={`ml-1 inline-flex items-center gap-1 px-2 py-1 rounded text-xs font-medium border ${getStatusColor(
+                  currentUserApproval.decision
+                )}`}
               >
                 {getStatusIcon(currentUserApproval.decision)}
                 {currentUserApproval.decision}
@@ -160,25 +172,31 @@ export default function ApprovalPanel({
               className="inline-flex items-center gap-1 rounded-lg bg-emerald-600 text-white px-3 py-2 text-sm font-medium hover:bg-emerald-700 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               <Check className="h-4 w-4" />
-              {createLoading && pendingDecision === 'approved' ? 'Approving...' : 'Approve'}
+              {createLoading && pendingDecision === 'approved'
+                ? 'Approving...'
+                : 'Approve'}
             </button>
-            
+
             <button
               onClick={() => handleApprovalDecision('hold')}
               disabled={createLoading && pendingDecision === 'hold'}
               className="inline-flex items-center gap-1 rounded-lg bg-amber-600 text-white px-3 py-2 text-sm font-medium hover:bg-amber-700 focus:outline-none focus:ring-2 focus:ring-amber-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               <Clock className="h-4 w-4" />
-              {createLoading && pendingDecision === 'hold' ? 'Putting on Hold...' : 'Hold'}
+              {createLoading && pendingDecision === 'hold'
+                ? 'Putting on Hold...'
+                : 'Hold'}
             </button>
-            
+
             <button
               onClick={() => handleApprovalDecision('rejected')}
               disabled={createLoading && pendingDecision === 'rejected'}
               className="inline-flex items-center gap-1 rounded-lg bg-red-600 text-white px-3 py-2 text-sm font-medium hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               <X className="h-4 w-4" />
-              {createLoading && pendingDecision === 'rejected' ? 'Rejecting...' : 'Reject'}
+              {createLoading && pendingDecision === 'rejected'
+                ? 'Rejecting...'
+                : 'Reject'}
             </button>
 
             <button
@@ -210,7 +228,9 @@ export default function ApprovalPanel({
       {/* Approval History */}
       {showHistory && approvals.length > 0 && (
         <div className="space-y-2">
-          <h4 className="text-sm font-medium text-neutral-900">Approval History</h4>
+          <h4 className="text-sm font-medium text-neutral-900">
+            Approval History
+          </h4>
           <div className="space-y-2 max-h-48 overflow-y-auto">
             {approvals.map((approval) => (
               <div
@@ -219,9 +239,9 @@ export default function ApprovalPanel({
               >
                 <div className="flex items-start gap-3">
                   <div
-                    className={`flex items-center gap-1 rounded px-2 py-1 text-xs font-medium border ${
-                      getStatusColor(approval.decision)
-                    }`}
+                    className={`flex items-center gap-1 rounded px-2 py-1 text-xs font-medium border ${getStatusColor(
+                      approval.decision
+                    )}`}
                   >
                     {getStatusIcon(approval.decision)}
                     {approval.decision}
@@ -233,7 +253,9 @@ export default function ApprovalPanel({
                         'Unknown User'}
                     </div>
                     {approval.notes && (
-                      <div className="mt-1 text-neutral-600">{approval.notes}</div>
+                      <div className="mt-1 text-neutral-600">
+                        {approval.notes}
+                      </div>
                     )}
                   </div>
                 </div>

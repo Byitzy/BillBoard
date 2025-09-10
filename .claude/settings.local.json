@@ -41,7 +41,8 @@
       "Bash(npx supabase:*)",
       "Bash(pnpm run dev:*)",
       "Bash(pnpm turbo:build:*)",
-      "Bash(pnpm turbo:typecheck:*)"
+      "Bash(pnpm turbo:typecheck:*)",
+      "Bash(git rm:*)"
     ],
     "deny": [],
     "ask": []

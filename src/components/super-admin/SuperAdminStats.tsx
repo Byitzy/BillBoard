@@ -1,4 +1,4 @@
-"use client";
+'use client';
 import { motion } from 'framer-motion';
 import { Building2, Users, UserCheck } from 'lucide-react';
 import { useRouter } from 'next/navigation';
@@ -9,7 +9,11 @@ type Props = {
   activeMembers: number;
 };
 
-export default function SuperAdminStats({ totalOrgs, totalUsers, activeMembers }: Props) {
+export default function SuperAdminStats({
+  totalOrgs,
+  totalUsers,
+  activeMembers,
+}: Props) {
   const router = useRouter();
 
   const stats = [
@@ -19,7 +23,8 @@ export default function SuperAdminStats({ totalOrgs, totalUsers, activeMembers }
       icon: Building2,
       href: '/super-admin/organizations' as any,
       gradient: 'from-blue-500 to-blue-600',
-      bgGradient: 'from-blue-50 to-blue-100 dark:from-blue-950 dark:to-blue-900'
+      bgGradient:
+        'from-blue-50 to-blue-100 dark:from-blue-950 dark:to-blue-900',
     },
     {
       name: 'Total Users',
@@ -27,7 +32,8 @@ export default function SuperAdminStats({ totalOrgs, totalUsers, activeMembers }
       icon: Users,
       href: '/super-admin/users' as any,
       gradient: 'from-purple-500 to-purple-600',
-      bgGradient: 'from-purple-50 to-purple-100 dark:from-purple-950 dark:to-purple-900'
+      bgGradient:
+        'from-purple-50 to-purple-100 dark:from-purple-950 dark:to-purple-900',
     },
     {
       name: 'Active Members',
@@ -35,7 +41,8 @@ export default function SuperAdminStats({ totalOrgs, totalUsers, activeMembers }
       icon: UserCheck,
       href: '/super-admin/organizations' as any,
       gradient: 'from-green-500 to-green-600',
-      bgGradient: 'from-green-50 to-green-100 dark:from-green-950 dark:to-green-900'
+      bgGradient:
+        'from-green-50 to-green-100 dark:from-green-950 dark:to-green-900',
     },
   ];
 
@@ -54,14 +61,20 @@ export default function SuperAdminStats({ totalOrgs, totalUsers, activeMembers }
           >
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-gray-600 dark:text-gray-400">{stat.name}</p>
-                <p className="text-3xl font-bold text-gray-900 dark:text-white mt-2">{stat.value}</p>
+                <p className="text-sm font-medium text-gray-600 dark:text-gray-400">
+                  {stat.name}
+                </p>
+                <p className="text-3xl font-bold text-gray-900 dark:text-white mt-2">
+                  {stat.value}
+                </p>
               </div>
-              <div className={`p-3 rounded-xl bg-gradient-to-r ${stat.gradient}`}>
+              <div
+                className={`p-3 rounded-xl bg-gradient-to-r ${stat.gradient}`}
+              >
                 <Icon className="w-6 h-6 text-white" />
               </div>
             </div>
-            
+
             {/* Hover effect overlay */}
             <div className="absolute inset-0 bg-white/5 dark:bg-white/5 opacity-0 hover:opacity-100 transition-opacity duration-200" />
           </motion.div>

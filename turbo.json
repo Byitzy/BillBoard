@@ -42,6 +42,10 @@
     "quality": {
       "outputs": [],
       "dependsOn": ["typecheck", "lint", "format:check"]
+    },
+    "dev:check": {
+      "outputs": [],
+      "dependsOn": ["typecheck", "lint", "format:check"]
     }
   },
   "globalDependencies": [

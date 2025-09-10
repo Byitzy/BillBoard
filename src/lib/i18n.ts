@@ -3,13 +3,13 @@ export const translations = {
   'en-US': {
     // Navigation
     'nav.dashboard': 'Dashboard',
-    'nav.calendar': 'Calendar', 
+    'nav.calendar': 'Calendar',
     'nav.bills': 'Bills',
     'nav.vendors': 'Vendors',
     'nav.projects': 'Projects',
     'nav.updates': 'Updates',
     'nav.settings': 'Settings',
-    
+
     // Dashboard
     'dashboard.title': 'Dashboard',
     'dashboard.subtitle': 'Overview of key metrics and recent items.',
@@ -21,14 +21,14 @@ export const translations = {
     'dashboard.monthlyTotals': 'Monthly Totals',
     'dashboard.loading': 'Loading...',
     'dashboard.nothingComingUp': 'Nothing coming up.',
-    
+
     // Bills
     'bills.title': 'Bills',
     'bills.createAndManage': 'Create and manage bills',
     'bills.newBillName': 'New bill name',
     'bills.add': 'Add',
     'bills.noBillsYet': 'No bills yet.',
-    
+
     // Vendors
     'vendors.title': 'Vendors',
     'vendors.manageDirectory': 'Manage vendor directory',
@@ -37,17 +37,17 @@ export const translations = {
     'vendors.bills': 'Bills',
     'vendors.deleteVendor': 'Delete this vendor? This cannot be undone.',
     'vendors.vendorExists': 'Vendor already exists',
-    
+
     // Projects
     'projects.title': 'Projects',
     'projects.createAndManage': 'Create and manage projects',
     'projects.newProjectName': 'New project name',
     'projects.noProjectsYet': 'No projects yet.',
     'projects.deleteProject': 'Delete this project?',
-    
+
     // Updates
     'updates.title': 'Updates & Feedback',
-    
+
     // Settings
     'settings.profile': 'Profile',
     'settings.appearance': 'Appearance',
@@ -57,7 +57,7 @@ export const translations = {
     'settings.currency': 'Currency',
     'settings.save': 'Save Settings',
     'settings.saving': 'Saving...',
-    
+
     // Common
     'common.loading': 'Loading...',
     'common.save': 'Save',
@@ -90,7 +90,7 @@ export const translations = {
     'common.allVendors': 'All vendors',
     'common.allProjects': 'All projects',
     'common.allStatuses': 'All statuses',
-    
+
     // Organization & Roles
     'org.settings': 'Organization Settings',
     'org.members': 'Members',
@@ -111,38 +111,38 @@ export const translations = {
     'org.revokeInvite': 'Revoke this invitation?',
     'org.cannotChangeOwnRole': 'Cannot change your own role',
     'org.cannotRemoveSelf': 'Cannot remove yourself from the organization',
-    
+
     // Role labels
     'roles.admin': 'Administrator',
-    'roles.approver': 'Approver', 
+    'roles.approver': 'Approver',
     'roles.accountant': 'Accountant',
     'roles.data_entry': 'Data Entry',
     'roles.analyst': 'Analyst',
     'roles.viewer': 'Viewer',
-    
+
     // Role descriptions
     'roles.adminDesc': 'Full access to all features and settings',
     'roles.approverDesc': 'Can approve bill occurrences and view all data',
     'roles.accountantDesc': 'Can manage payments and bill states',
     'roles.data_entryDesc': 'Can create and edit bills, vendors, and projects',
     'roles.analystDesc': 'Read-only access to all data for reporting',
-    'roles.viewerDesc': 'Basic read-only access'
+    'roles.viewerDesc': 'Basic read-only access',
   },
-  
+
   'fr-FR': {
-    // Navigation  
+    // Navigation
     'nav.dashboard': 'Tableau de bord',
     'nav.calendar': 'Calendrier',
-    'nav.bills': 'Factures', 
+    'nav.bills': 'Factures',
     'nav.vendors': 'Fournisseurs',
     'nav.projects': 'Projets',
     'nav.updates': 'Mises à jour',
     'nav.settings': 'Paramètres',
-    
+
     // Dashboard
     'dashboard.title': 'Tableau de bord',
     'dashboard.subtitle': 'Aperçu des métriques clés et des éléments récents.',
-    'dashboard.today': 'Aujourd\'hui',
+    'dashboard.today': "Aujourd'hui",
     'dashboard.thisWeek': 'Cette semaine',
     'dashboard.next2Weeks': 'Prochaines 2 semaines',
     'dashboard.onHold': 'En attente',
@@ -150,33 +150,34 @@ export const translations = {
     'dashboard.monthlyTotals': 'Totaux mensuels',
     'dashboard.loading': 'Chargement...',
     'dashboard.nothingComingUp': 'Rien à venir.',
-    
+
     // Bills
     'bills.title': 'Factures',
     'bills.createAndManage': 'Créer et gérer les factures',
     'bills.newBillName': 'Nom de la nouvelle facture',
     'bills.add': 'Ajouter',
     'bills.noBillsYet': 'Aucune facture pour le moment.',
-    
+
     // Vendors
     'vendors.title': 'Fournisseurs',
-    'vendors.manageDirectory': 'Gérer l\'annuaire des fournisseurs',
+    'vendors.manageDirectory': "Gérer l'annuaire des fournisseurs",
     'vendors.newVendorName': 'Nom du nouveau fournisseur',
     'vendors.noVendorsYet': 'Aucun fournisseur pour le moment.',
     'vendors.bills': 'Factures',
-    'vendors.deleteVendor': 'Supprimer ce fournisseur ? Cette action ne peut pas être annulée.',
+    'vendors.deleteVendor':
+      'Supprimer ce fournisseur ? Cette action ne peut pas être annulée.',
     'vendors.vendorExists': 'Le fournisseur existe déjà',
-    
+
     // Projects
     'projects.title': 'Projets',
     'projects.createAndManage': 'Créer et gérer les projets',
     'projects.newProjectName': 'Nom du nouveau projet',
     'projects.noProjectsYet': 'Aucun projet pour le moment.',
     'projects.deleteProject': 'Supprimer ce projet ?',
-    
+
     // Updates
     'updates.title': 'Mises à jour et commentaires',
-    
+
     // Settings
     'settings.profile': 'Profil',
     'settings.appearance': 'Apparence',
@@ -186,7 +187,7 @@ export const translations = {
     'settings.currency': 'Devise',
     'settings.save': 'Enregistrer les paramètres',
     'settings.saving': 'Enregistrement...',
-    
+
     // Common
     'common.loading': 'Chargement...',
     'common.save': 'Enregistrer',
@@ -196,12 +197,12 @@ export const translations = {
     'common.actions': 'Actions',
     'common.name': 'Nom',
     'common.amount': 'Montant',
-    'common.dueDate': 'Date d\'échéance',
+    'common.dueDate': "Date d'échéance",
     'common.status': 'Statut',
     'common.state': 'État',
     'common.due': 'Échéance',
     'common.new': 'Nouveau',
-    'common.today': 'Aujourd\'hui',
+    'common.today': "Aujourd'hui",
     'common.prev': 'Précédent',
     'common.next': 'Suivant',
     'common.noMatches': 'Aucun résultat',
@@ -219,9 +220,9 @@ export const translations = {
     'common.allVendors': 'Tous les fournisseurs',
     'common.allProjects': 'Tous les projets',
     'common.allStatuses': 'Tous les statuts',
-    
+
     // Organization & Roles
-    'org.settings': 'Paramètres d\'organisation',
+    'org.settings': "Paramètres d'organisation",
     'org.members': 'Membres',
     'org.invite': 'Inviter un membre',
     'org.inviteNewMember': 'Inviter un nouveau membre',
@@ -230,44 +231,49 @@ export const translations = {
     'org.rolePermissions': 'Permissions des rôles',
     'org.emailAddress': 'Adresse e-mail',
     'org.role': 'Rôle',
-    'org.sendInvitation': 'Envoyer l\'invitation',
+    'org.sendInvitation': "Envoyer l'invitation",
     'org.sending': 'Envoi en cours...',
     'org.invitedAs': 'Invité en tant que',
     'org.expires': 'Expire',
     'org.revoke': 'Révoquer',
     'org.joined': 'Rejoint',
-    'org.removeMember': 'Retirer ce membre de l\'organisation ?',
+    'org.removeMember': "Retirer ce membre de l'organisation ?",
     'org.revokeInvite': 'Révoquer cette invitation ?',
     'org.cannotChangeOwnRole': 'Impossible de changer votre propre rôle',
-    'org.cannotRemoveSelf': 'Impossible de vous retirer de l\'organisation',
-    
+    'org.cannotRemoveSelf': "Impossible de vous retirer de l'organisation",
+
     // Role labels
     'roles.admin': 'Administrateur',
-    'roles.approver': 'Approbateur', 
+    'roles.approver': 'Approbateur',
     'roles.accountant': 'Comptable',
     'roles.data_entry': 'Saisie de données',
     'roles.analyst': 'Analyste',
     'roles.viewer': 'Observateur',
-    
+
     // Role descriptions
-    'roles.adminDesc': 'Accès complet à toutes les fonctionnalités et paramètres',
-    'roles.approverDesc': 'Peut approuver les occurrences de factures et voir toutes les données',
-    'roles.accountantDesc': 'Peut gérer les paiements et les états des factures',
-    'roles.data_entryDesc': 'Peut créer et modifier des factures, fournisseurs et projets',
-    'roles.analystDesc': 'Accès en lecture seule à toutes les données pour les rapports',
-    'roles.viewerDesc': 'Accès de base en lecture seule'
+    'roles.adminDesc':
+      'Accès complet à toutes les fonctionnalités et paramètres',
+    'roles.approverDesc':
+      'Peut approuver les occurrences de factures et voir toutes les données',
+    'roles.accountantDesc':
+      'Peut gérer les paiements et les états des factures',
+    'roles.data_entryDesc':
+      'Peut créer et modifier des factures, fournisseurs et projets',
+    'roles.analystDesc':
+      'Accès en lecture seule à toutes les données pour les rapports',
+    'roles.viewerDesc': 'Accès de base en lecture seule',
   },
-  
+
   'es-ES': {
     // Navigation
     'nav.dashboard': 'Panel',
     'nav.calendar': 'Calendario',
     'nav.bills': 'Facturas',
-    'nav.vendors': 'Proveedores', 
+    'nav.vendors': 'Proveedores',
     'nav.projects': 'Proyectos',
     'nav.updates': 'Actualizaciones',
     'nav.settings': 'Configuración',
-    
+
     // Dashboard
     'dashboard.title': 'Panel',
     'dashboard.subtitle': 'Resumen de métricas clave y elementos recientes.',
@@ -279,33 +285,34 @@ export const translations = {
     'dashboard.monthlyTotals': 'Totales mensuales',
     'dashboard.loading': 'Cargando...',
     'dashboard.nothingComingUp': 'Nada próximo.',
-    
+
     // Bills
     'bills.title': 'Facturas',
     'bills.createAndManage': 'Crear y gestionar facturas',
     'bills.newBillName': 'Nombre de nueva factura',
     'bills.add': 'Agregar',
     'bills.noBillsYet': 'Sin facturas aún.',
-    
+
     // Vendors
     'vendors.title': 'Proveedores',
     'vendors.manageDirectory': 'Gestionar directorio de proveedores',
     'vendors.newVendorName': 'Nombre del nuevo proveedor',
     'vendors.noVendorsYet': 'Sin proveedores aún.',
     'vendors.bills': 'Facturas',
-    'vendors.deleteVendor': '¿Eliminar este proveedor? Esto no se puede deshacer.',
+    'vendors.deleteVendor':
+      '¿Eliminar este proveedor? Esto no se puede deshacer.',
     'vendors.vendorExists': 'El proveedor ya existe',
-    
+
     // Projects
     'projects.title': 'Proyectos',
     'projects.createAndManage': 'Crear y gestionar proyectos',
     'projects.newProjectName': 'Nombre del nuevo proyecto',
     'projects.noProjectsYet': 'Sin proyectos aún.',
     'projects.deleteProject': '¿Eliminar este proyecto?',
-    
+
     // Updates
     'updates.title': 'Actualizaciones y comentarios',
-    
+
     // Settings
     'settings.profile': 'Perfil',
     'settings.appearance': 'Apariencia',
@@ -315,7 +322,7 @@ export const translations = {
     'settings.currency': 'Moneda',
     'settings.save': 'Guardar configuración',
     'settings.saving': 'Guardando...',
-    
+
     // Common
     'common.loading': 'Cargando...',
     'common.save': 'Guardar',
@@ -348,7 +355,7 @@ export const translations = {
     'common.allVendors': 'Todos los proveedores',
     'common.allProjects': 'Todos los proyectos',
     'common.allStatuses': 'Todos los estados',
-    
+
     // Organization & Roles
     'org.settings': 'Configuración de organización',
     'org.members': 'Miembros',
@@ -369,27 +376,31 @@ export const translations = {
     'org.revokeInvite': '¿Revocar esta invitación?',
     'org.cannotChangeOwnRole': 'No puedes cambiar tu propio rol',
     'org.cannotRemoveSelf': 'No puedes eliminarte de la organización',
-    
+
     // Role labels
     'roles.admin': 'Administrador',
-    'roles.approver': 'Aprobador', 
+    'roles.approver': 'Aprobador',
     'roles.accountant': 'Contador',
     'roles.data_entry': 'Entrada de datos',
     'roles.analyst': 'Analista',
     'roles.viewer': 'Observador',
-    
+
     // Role descriptions
-    'roles.adminDesc': 'Acceso completo a todas las características y configuraciones',
-    'roles.approverDesc': 'Puede aprobar ocurrencias de facturas y ver todos los datos',
+    'roles.adminDesc':
+      'Acceso completo a todas las características y configuraciones',
+    'roles.approverDesc':
+      'Puede aprobar ocurrencias de facturas y ver todos los datos',
     'roles.accountantDesc': 'Puede gestionar pagos y estados de facturas',
-    'roles.data_entryDesc': 'Puede crear y editar facturas, proveedores y proyectos',
-    'roles.analystDesc': 'Acceso de solo lectura a todos los datos para informes',
-    'roles.viewerDesc': 'Acceso básico de solo lectura'
-  }
+    'roles.data_entryDesc':
+      'Puede crear y editar facturas, proveedores y proyectos',
+    'roles.analystDesc':
+      'Acceso de solo lectura a todos los datos para informes',
+    'roles.viewerDesc': 'Acceso básico de solo lectura',
+  },
 };
 
 export type Locale = keyof typeof translations;
-export type TranslationKey = keyof typeof translations['en-US'];
+export type TranslationKey = keyof (typeof translations)['en-US'];
 
 let currentLocale: Locale = 'en-US';
 
