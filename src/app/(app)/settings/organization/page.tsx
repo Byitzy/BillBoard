@@ -1,4 +1,8 @@
 'use client';
+
+// Disable caching to ensure fresh data
+export const dynamic = 'force-dynamic';
+
 import { Mail, Users } from 'lucide-react';
 import { useEffect, useState, useMemo } from 'react';
 import { useLocale } from '@/components/i18n/LocaleProvider';

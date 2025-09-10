@@ -1,5 +1,8 @@
 'use client';
 
+// Disable caching to ensure fresh data
+export const dynamic = 'force-dynamic';
+
 import {
   CheckCircle,
   Clock,
@@ -297,13 +300,36 @@ export default function ApprovalsPage() {
             <tbody className="divide-y divide-neutral-200 bg-white">
               {filteredOccurrences.length === 0 ? (
                 <tr>
-                  <td
-                    colSpan={5}
-                    className="px-6 py-12 text-center text-neutral-500"
-                  >
-                    <div className="space-y-2">
-                      <Clock className="mx-auto h-8 w-8 text-neutral-400" />
-                      <p>No bills found for the selected filter</p>
+                  <td colSpan={5} className="px-6 py-12">
+                    <div className="text-center">
+                      <div className="mx-auto mb-4 h-12 w-12 rounded-lg bg-neutral-100 dark:bg-neutral-800 flex items-center justify-center">
+                        <Clock className="h-6 w-6 text-neutral-400" />
+                      </div>
+                      <p className="text-lg font-medium text-neutral-900 dark:text-neutral-100 mb-2">
+                        {statusFilter === 'all' && billOccurrences.length === 0
+                          ? 'No bills require approval yet'
+                          : 'No bills found for the selected filter'}
+                      </p>
+                      <p className="text-neutral-500 mb-6">
+                        {statusFilter === 'all' && billOccurrences.length === 0
+                          ? 'Bill occurrences will appear here when bills are created and scheduled for payment. Start by creating some bills to see approval items.'
+                          : 'Try adjusting your filter criteria or creating more bills to see approval items.'}
+                      </p>
+                      {statusFilter === 'all' &&
+                        billOccurrences.length === 0 && (
+                          <div className="space-y-3">
+                            <a
+                              href="/bills"
+                              className="inline-flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-xl hover:bg-blue-700"
+                            >
+                              📝 Create Bills
+                            </a>
+                            <p className="text-sm text-neutral-600">
+                              Bills with due dates will automatically create
+                              occurrences for approval
+                            </p>
+                          </div>
+                        )}
                     </div>
                   </td>
                 </tr>

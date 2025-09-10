@@ -222,66 +222,6 @@ export default function ViewerDashboard() {
         </div>
       </div>
 
-      {/* Summary Stats */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <div className="bg-white dark:bg-neutral-900 rounded-xl border border-neutral-200 dark:border-neutral-800 p-4">
-          <div className="flex items-center gap-3">
-            <div className="p-2 bg-blue-100 dark:bg-blue-900/20 rounded-lg">
-              <Calendar className="h-5 w-5 text-blue-600" />
-            </div>
-            <div>
-              <p className="text-sm text-neutral-600 dark:text-neutral-400">
-                This Month
-              </p>
-              <p className="text-xl font-semibold">
-                {stats.totalBillsThisMonth} bills
-              </p>
-              <p className="text-sm text-neutral-500">
-                ${stats.totalAmountThisMonth.toFixed(2)} total
-              </p>
-            </div>
-          </div>
-        </div>
-
-        <div className="bg-white dark:bg-neutral-900 rounded-xl border border-neutral-200 dark:border-neutral-800 p-4">
-          <div className="flex items-center gap-3">
-            <div className="p-2 bg-orange-100 dark:bg-orange-900/20 rounded-lg">
-              <Clock className="h-5 w-5 text-orange-600" />
-            </div>
-            <div>
-              <p className="text-sm text-neutral-600 dark:text-neutral-400">
-                Upcoming (2 weeks)
-              </p>
-              <p className="text-xl font-semibold">
-                {stats.upcomingBillsCount} bills
-              </p>
-              <p className="text-sm text-neutral-500">
-                ${stats.upcomingBillsAmount.toFixed(2)} total
-              </p>
-            </div>
-          </div>
-        </div>
-
-        <div className="bg-white dark:bg-neutral-900 rounded-xl border border-neutral-200 dark:border-neutral-800 p-4">
-          <div className="flex items-center gap-3">
-            <div className="p-2 bg-green-100 dark:bg-green-900/20 rounded-lg">
-              <DollarSign className="h-5 w-5 text-green-600" />
-            </div>
-            <div>
-              <p className="text-sm text-neutral-600 dark:text-neutral-400">
-                Recently Paid
-              </p>
-              <p className="text-xl font-semibold">
-                {stats.recentlyPaidCount} bills
-              </p>
-              <p className="text-sm text-neutral-500">
-                ${stats.recentlyPaidAmount.toFixed(2)} total
-              </p>
-            </div>
-          </div>
-        </div>
-      </div>
-
       {/* Recent Activity */}
       <div className="bg-white dark:bg-neutral-900 rounded-xl border border-neutral-200 dark:border-neutral-800 overflow-hidden">
         <div className="p-4 border-b border-neutral-200 dark:border-neutral-800">

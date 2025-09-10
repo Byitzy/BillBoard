@@ -301,65 +301,6 @@ export default function AccountantDashboard() {
         </div>
       </div>
 
-      {/* Financial Stats */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        <div className="bg-white dark:bg-neutral-900 rounded-xl border border-neutral-200 dark:border-neutral-800 p-4">
-          <div className="flex items-center gap-3">
-            <div className="p-2 bg-blue-100 dark:bg-blue-900/20 rounded-lg">
-              <DollarSign className="h-5 w-5 text-blue-600" />
-            </div>
-            <div>
-              <p className="text-sm text-neutral-600 dark:text-neutral-400">
-                This Month
-              </p>
-              <p className="text-xl font-semibold">
-                ${stats.totalMonthlyBills.toFixed(2)}
-              </p>
-              {stats.savingsThisMonth !== 0 && (
-                <p
-                  className={`text-xs ${stats.savingsThisMonth > 0 ? 'text-green-600' : 'text-red-600'}`}
-                >
-                  {stats.savingsThisMonth > 0 ? '↓' : '↑'} $
-                  {Math.abs(stats.savingsThisMonth).toFixed(2)} vs avg
-                </p>
-              )}
-            </div>
-          </div>
-        </div>
-
-        <div className="bg-white dark:bg-neutral-900 rounded-xl border border-neutral-200 dark:border-neutral-800 p-4">
-          <div className="flex items-center gap-3">
-            <div className="p-2 bg-green-100 dark:bg-green-900/20 rounded-lg">
-              <TrendingUp className="h-5 w-5 text-green-600" />
-            </div>
-            <div>
-              <p className="text-sm text-neutral-600 dark:text-neutral-400">
-                Paid This Month
-              </p>
-              <p className="text-xl font-semibold">
-                ${stats.paidThisMonth.toFixed(2)}
-              </p>
-            </div>
-          </div>
-        </div>
-
-        <div className="bg-white dark:bg-neutral-900 rounded-xl border border-neutral-200 dark:border-neutral-800 p-4">
-          <div className="flex items-center gap-3">
-            <div className="p-2 bg-orange-100 dark:bg-orange-900/20 rounded-lg">
-              <Calendar className="h-5 w-5 text-orange-600" />
-            </div>
-            <div>
-              <p className="text-sm text-neutral-600 dark:text-neutral-400">
-                Next 7 Days
-              </p>
-              <p className="text-xl font-semibold">
-                ${stats.nextWeekTotal.toFixed(2)}
-              </p>
-            </div>
-          </div>
-        </div>
-      </div>
-
       {/* Overdue Alert */}
       {stats.unpaidOverdue > 0 && (
         <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-xl p-4">

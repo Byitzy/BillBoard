@@ -4,6 +4,10 @@ import RequireOrg from '@/components/RequireOrg';
 import { getDefaultOrgId } from '@/lib/org';
 import { getServerClient } from '@/lib/supabase/server';
 
+// Disable caching for this page to ensure fresh data
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
+
 type BillRow = {
   id: string;
   title: string;
