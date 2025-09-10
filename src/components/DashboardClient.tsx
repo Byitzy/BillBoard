@@ -9,6 +9,7 @@ import { getSupabaseClient } from '@/lib/supabase/client';
 type ChartPoint = { m: string; v: number };
 type Row = {
   id: string;
+  bill_id?: string;
   vendor?: string | null;
   project?: string | null;
   due_date: string;
@@ -154,13 +155,29 @@ export default function DashboardClient() {
         // Recent items (next 10 occurrences by due date)
         const { data: recent } = await supabase
           .from('bill_occurrences')
-          .select('id,due_date,amount_due,state')
+          .select(
+            `
+            id,
+            bill_id,
+            due_date,
+            amount_due,
+            state,
+            bills(
+              id,
+              vendors(name),
+              projects(name)
+            )
+          `
+          )
           .eq('org_id', id)
           .order('due_date', { ascending: true })
           .limit(10);
         setRows(
           (recent ?? []).map((r: any) => ({
             id: r.id,
+            bill_id: r.bill_id,
+            vendor: r.bills?.vendors?.name || null,
+            project: r.bills?.projects?.name || null,
             due_date: r.due_date,
             amount_due: Number(r.amount_due),
             state: r.state,

@@ -34,6 +34,7 @@ export default function BillForm({ onCreated }: Props) {
   const [status, setStatus] = useState<
     'pending_approval' | 'approved' | 'on_hold' | 'active'
   >('active');
+  const [autoApprove, setAutoApprove] = useState(false);
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -165,6 +166,7 @@ export default function BillForm({ onCreated }: Props) {
         project_id: projectId,
         description: notes || null,
         status,
+        auto_approve: isRecurring ? autoApprove : false, // Only recurring bills can use auto_approve
       };
 
       if (!isRecurring) {
@@ -196,14 +198,35 @@ export default function BillForm({ onCreated }: Props) {
         .single();
       if (error) throw error;
 
-      // Ask server to (re)generate occurrences for this bill
+      // Handle bill occurrences based on type
       if (inserted?.id) {
-        const { data: sessionRes } = await supabase.auth.getSession();
-        const access = sessionRes.session?.access_token;
-        await fetch(`/api/bills/${inserted.id}/generate`, {
-          method: 'POST',
-          headers: access ? { Authorization: `Bearer ${access}` } : undefined,
-        });
+        if (isRecurring) {
+          // For recurring bills: use the generate API to create scheduled occurrences
+          const { data: sessionRes } = await supabase.auth.getSession();
+          const access = sessionRes.session?.access_token;
+          await fetch(`/api/bills/${inserted.id}/generate`, {
+            method: 'POST',
+            headers: access ? { Authorization: `Bearer ${access}` } : undefined,
+          });
+        } else {
+          // For one-time bills: create occurrence directly in final state
+          const finalState = status === 'active' ? 'pending_approval' : status;
+          const occurrencePayload = {
+            org_id: orgId,
+            bill_id: inserted.id,
+            project_id: projectId,
+            vendor_id: vendorId,
+            sequence: 1,
+            amount_due: amt,
+            due_date: dueDate || new Date().toISOString().split('T')[0],
+            state: finalState,
+          };
+
+          const { error: occError } = await supabase
+            .from('bill_occurrences')
+            .insert(occurrencePayload);
+          if (occError) throw occError;
+        }
       }
 
       // reset
@@ -218,6 +241,7 @@ export default function BillForm({ onCreated }: Props) {
       setFrequency('monthly');
       setNotes('');
       setStatus('active');
+      setAutoApprove(false);
       onCreated?.();
     } catch (err: any) {
       setError(err.message || 'Failed to save bill');
@@ -363,6 +387,24 @@ export default function BillForm({ onCreated }: Props) {
                 className="w-full rounded-xl border border-neutral-200  px-3 py-2 text-sm dark:border-neutral-800"
                 placeholder="End date (optional)"
               />
+            </div>
+          </div>
+        )}
+
+        {/* Auto-approve option for recurring bills */}
+        {isRecurring && (
+          <div className="flex items-center gap-2">
+            <input
+              id="autoApprove"
+              type="checkbox"
+              checked={autoApprove}
+              onChange={(e) => setAutoApprove(e.target.checked)}
+            />
+            <label htmlFor="autoApprove" className="text-sm">
+              Auto-approve when due
+            </label>
+            <div className="text-xs text-neutral-500 ml-1">
+              (Skip manual approval process)
             </div>
           </div>
         )}

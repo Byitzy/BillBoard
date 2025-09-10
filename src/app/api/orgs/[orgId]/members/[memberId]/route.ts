@@ -27,7 +27,7 @@ export async function PATCH(
 ) {
   const { orgId, memberId } = await params;
 
-  const user = await getUserFromRequest(request as any);
+  const user = await getUserFromRequest(request);
   if (!user)
     return NextResponse.json({ error: 'unauthorized' }, { status: 401 });
 
@@ -109,7 +109,7 @@ export async function DELETE(
 ) {
   const { orgId, memberId } = await params;
 
-  const user = await getUserFromRequest(request as any);
+  const user = await getUserFromRequest(request);
   if (!user)
     return NextResponse.json({ error: 'unauthorized' }, { status: 401 });
 

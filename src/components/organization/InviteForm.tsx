@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import SharedSelect from '@/components/ui/SharedSelect';
+import { getSupabaseClient } from '@/lib/supabase/client';
 
 interface InviteFormProps {
   orgId: string;
@@ -38,9 +39,22 @@ export default function InviteForm({ orgId, onInviteSent }: InviteFormProps) {
     setInviteError('');
 
     try {
+      // Get the current session token to include in API request
+      const supabase = getSupabaseClient();
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
+
+      if (!session) {
+        throw new Error('You must be logged in to send invites');
+      }
+
       const response = await fetch(`/api/orgs/${orgId}/invites`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${session.access_token}`,
+        },
         body: JSON.stringify(inviteForm),
       });
 

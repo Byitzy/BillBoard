@@ -84,10 +84,19 @@ export default function OrganizationSettingsPage() {
       setOrgId(id);
       if (!id) return;
 
+      // Get session token for authorization
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
+      const headers: HeadersInit = {};
+      if (session) {
+        headers['Authorization'] = `Bearer ${session.access_token}`;
+      }
+
       // Load members and invites in parallel
       const [membersRes, invitesRes] = await Promise.all([
-        fetch(`/api/orgs/${id}/members`),
-        fetch(`/api/orgs/${id}/invites`),
+        fetch(`/api/orgs/${id}/members`, { headers }),
+        fetch(`/api/orgs/${id}/invites`, { headers }),
       ]);
 
       if (membersRes.ok) {
@@ -110,9 +119,18 @@ export default function OrganizationSettingsPage() {
     if (!orgId) return;
 
     try {
+      // Get session token for authorization
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
+      const headers: HeadersInit = { 'Content-Type': 'application/json' };
+      if (session) {
+        headers['Authorization'] = `Bearer ${session.access_token}`;
+      }
+
       const response = await fetch(`/api/orgs/${orgId}/members/${memberId}`, {
         method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
+        headers,
         body: JSON.stringify({ status: newStatus }),
       });
 
@@ -133,9 +151,18 @@ export default function OrganizationSettingsPage() {
     if (!orgId) return;
 
     try {
+      // Get session token for authorization
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
+      const headers: HeadersInit = { 'Content-Type': 'application/json' };
+      if (session) {
+        headers['Authorization'] = `Bearer ${session.access_token}`;
+      }
+
       const response = await fetch(`/api/orgs/${orgId}/members/${memberId}`, {
         method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
+        headers,
         body: JSON.stringify({ role: newRole }),
       });
 
@@ -157,8 +184,18 @@ export default function OrganizationSettingsPage() {
       return;
 
     try {
+      // Get session token for authorization
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
+      const headers: HeadersInit = {};
+      if (session) {
+        headers['Authorization'] = `Bearer ${session.access_token}`;
+      }
+
       const response = await fetch(`/api/orgs/${orgId}/members/${memberId}`, {
         method: 'DELETE',
+        headers,
       });
 
       if (response.ok) {
