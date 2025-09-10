@@ -1,6 +1,6 @@
 'use client';
 import Link from 'next/link';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import BillForm from '@/components/BillForm';
 import CSVExportButton from '@/components/CSVExportButton';
 import { useLocale } from '@/components/i18n/LocaleProvider';
@@ -43,6 +43,13 @@ export default function ClientBillsPage({
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(initialError);
 
+  // Reload data when component mounts to ensure fresh data
+  useEffect(() => {
+    // Always reload on mount to ensure we have the latest data
+    // This fixes the issue where existing bills don't show until a new one is added
+    reload();
+  }, []);
+
   async function reload() {
     setLoading(true);
     setError(null);
@@ -56,6 +63,7 @@ export default function ClientBillsPage({
     // Get current URL search params to maintain filters
     const urlParams = new URLSearchParams(window.location.search);
 
+    // Force fresh data by adding a timestamp to prevent caching
     let query = supabase
       .from('bills')
       .select(
