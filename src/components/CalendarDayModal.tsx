@@ -9,6 +9,7 @@ type Bill = {
   due_date: string;
   state: string;
   amount_due: number;
+  bill_id: string;
   title?: string;
   vendor_name?: string;
 };
@@ -62,8 +63,8 @@ export default function CalendarDayModal({
     }
   };
 
-  const handleBillClick = (billId: string) => {
-    router.push(`/bills/${billId}`);
+  const handleBillClick = (bill: Bill) => {
+    router.push(`/bills/${bill.bill_id}`);
     onClose();
   };
 
@@ -125,7 +126,7 @@ export default function CalendarDayModal({
                 {bills.map((bill) => (
                   <div
                     key={bill.id}
-                    onClick={() => handleBillClick(bill.id)}
+                    onClick={() => handleBillClick(bill)}
                     className="p-3 border border-gray-200 dark:border-gray-700 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 cursor-pointer transition-colors group"
                   >
                     <div className="flex items-start justify-between">
