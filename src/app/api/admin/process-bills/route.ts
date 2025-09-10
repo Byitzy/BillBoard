@@ -1,30 +1,61 @@
+import { createClient } from '@supabase/supabase-js';
 import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
-import { getServerClient } from '@/lib/supabase/server';
+
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
+const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
+
+const adminClient = createClient(supabaseUrl, serviceKey, {
+  auth: {
+    autoRefreshToken: false,
+    persistSession: false,
+  },
+});
+
+// Helper function to check if user is admin
+async function isAdmin(
+  authHeader: string | null
+): Promise<{ isAdmin: boolean; userId?: string }> {
+  if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    return { isAdmin: false };
+  }
+
+  const token = authHeader.substring(7);
+
+  try {
+    const {
+      data: { user },
+      error,
+    } = await adminClient.auth.getUser(token);
+    if (error || !user) return { isAdmin: false };
+
+    // Check if user is admin in any organization
+    const { data: userProfile } = await adminClient
+      .from('org_members')
+      .select('role, org_id')
+      .eq('user_id', user.id)
+      .eq('status', 'active')
+      .eq('role', 'admin')
+      .single();
+
+    return {
+      isAdmin: !!userProfile,
+      userId: user.id,
+    };
+  } catch (error) {
+    return { isAdmin: false };
+  }
+}
 
 export async function POST(request: NextRequest) {
   try {
-    const supabase = await getServerClient();
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
+    const authHeader = request.headers.get('authorization');
+    const { isAdmin: userIsAdmin, userId } = await isAdmin(authHeader);
 
-    if (!user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
-
-    // Check if user is admin
-    const { data: userProfile } = await supabase
-      .from('org_members')
-      .select('role')
-      .eq('user_id', user.id)
-      .eq('status', 'active')
-      .single();
-
-    if (!userProfile || userProfile.role !== 'admin') {
+    if (!userIsAdmin) {
       return NextResponse.json(
         { error: 'Admin access required' },
-        { status: 403 }
+        { status: 401 }
       );
     }
 
@@ -32,7 +63,7 @@ export async function POST(request: NextRequest) {
     const today = new Date().toISOString().split('T')[0];
 
     // Find all scheduled bills where due_date is today or earlier, including bill auto_approve setting
-    const { data: billsToProcess, error: queryError } = await supabase
+    const { data: billsToProcess, error: queryError } = await adminClient
       .from('bill_occurrences')
       .select(
         `
@@ -82,7 +113,7 @@ export async function POST(request: NextRequest) {
     // Update bills that should be auto-approved
     const updateErrors: any[] = [];
     if (approveNowIds.length > 0) {
-      const { error } = await supabase
+      const { error } = await adminClient
         .from('bill_occurrences')
         .update({ state: 'approved' })
         .in('id', approveNowIds);
@@ -91,7 +122,7 @@ export async function POST(request: NextRequest) {
 
     // Update bills that should go to pending approval
     if (pendingApprovalIds.length > 0) {
-      const { error } = await supabase
+      const { error } = await adminClient
         .from('bill_occurrences')
         .update({ state: 'pending_approval' })
         .in('id', pendingApprovalIds);

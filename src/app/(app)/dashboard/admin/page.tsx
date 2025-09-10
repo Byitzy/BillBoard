@@ -272,10 +272,16 @@ export default function AdminDashboard() {
   const processPendingBills = async () => {
     setProcessingBills(true);
     try {
+      // Get session token for authorization
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
+
       const response = await fetch('/api/admin/process-bills', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          ...(session && { Authorization: `Bearer ${session.access_token}` }),
         },
       });
 
