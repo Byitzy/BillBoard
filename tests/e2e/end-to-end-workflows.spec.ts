@@ -14,54 +14,46 @@ test.describe('End-to-End Workflows', () => {
   // Helper function to login
   async function loginAs(page: any, user: typeof adminUser) {
     await page.goto('/login');
-    await page.click('button:has-text("Email & Password")');
+    // No need to click mode button since password is now default
     await page.fill('input[type="email"]', user.email);
     await page.fill('input[type="password"]', user.password);
     await page.click('button[type="submit"]');
 
-    // Wait for dashboard to load
-    await expect(page.url()).toContain('/dashboard/');
+    // Wait for navigation away from login page first
+    await page.waitForFunction(
+      () => !window.location.pathname.includes('/login'),
+      { timeout: 10000 }
+    );
+
+    // Then verify we're on a dashboard route
+    await page.waitForURL(/\/dashboard\/.*/, { timeout: 10000 });
   }
 
   test('Complete Bill Management Workflow', async ({ page }) => {
     await loginAs(page, adminUser);
 
     // Navigate to bills section
-    await page.click('text=Bills');
+    await page.click('text=Manage Bills');
     await expect(page).toHaveURL(/.*bills.*/);
 
-    // Create new bill
-    const createButton = page
-      .locator(
-        'button:has-text("New"), button:has-text("Create"), button:has-text("Add")'
-      )
-      .first();
-    if (await createButton.isVisible()) {
-      await createButton.click();
+    // Get initial bill count
+    const initialBillRows = await page.locator('table tbody tr').count();
 
-      // Fill bill form (adapt selectors based on your actual form)
-      await page.fill(
-        'input[name="title"], input[placeholder*="title"], input[placeholder*="name"]',
-        'Test Invoice #001'
-      );
-      await page.fill('input[name="amount"], input[type="number"]', '1500.00');
+    // Fill bill form (BillForm is already visible on the page)
+    await page.fill('input[name="amount"], input[type="number"]', '1500.00');
 
-      // Select vendor if dropdown exists
-      const vendorSelect = page
-        .locator('select[name="vendor"], select[name="vendor_id"]')
-        .first();
-      if (await vendorSelect.isVisible()) {
-        await vendorSelect.selectOption({ index: 1 });
-      }
+    // Save bill
+    await page.click('button[type="submit"]');
 
-      // Save bill
-      await page.click(
-        'button[type="submit"], button:has-text("Save"), button:has-text("Create")'
-      );
+    // Wait for form to reset and new bill to appear
+    await page.waitForTimeout(3000);
 
-      // Verify bill was created
-      await expect(page.locator('text=Test Invoice #001')).toBeVisible();
-    }
+    // Verify bill was created by checking that we have one more bill row
+    const finalBillRows = await page.locator('table tbody tr').count();
+    expect(finalBillRows).toBeGreaterThan(initialBillRows);
+
+    // Also verify that 1500.00 appears somewhere in the table
+    await expect(page.locator('text=1500.00')).toBeVisible();
   });
 
   test('Vendor Management Workflow', async ({ page }) => {

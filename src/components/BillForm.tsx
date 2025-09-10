@@ -233,6 +233,9 @@ export default function BillForm({ onCreated }: Props) {
       <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
         <div className="flex gap-2">
           <input
+            name="amount"
+            type="number"
+            step="0.01"
             className="flex-1 rounded-xl border border-neutral-200 px-3 py-2 text-sm dark:border-neutral-800"
             placeholder="Amount"
             inputMode="decimal"
