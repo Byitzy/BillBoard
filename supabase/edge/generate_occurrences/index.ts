@@ -13,7 +13,7 @@ interface Database {
           recurring_rule: any;
           installments_total: number | null;
           status: string;
-        }
+        };
       };
       bill_occurrences: {
         Row: {
@@ -34,10 +34,10 @@ interface Database {
           due_date: string;
           suggested_submission_date: string;
           state: string;
-        }
-      }
-    }
-  }
+        };
+      };
+    };
+  };
 }
 
 function addBusinessDays(date: Date, days: number): Date {
@@ -55,32 +55,42 @@ function addBusinessDays(date: Date, days: number): Date {
 
 function previousBusinessDay(date: Date): Date {
   const result = new Date(date);
-  
+
   // If it's a weekend, move to previous Friday
   while (result.getDay() === 0 || result.getDay() === 6) {
     result.setDate(result.getDate() - 1);
   }
-  
+
   // TODO: Add Quebec holiday checking here
   // For now, just return the business day
   return result;
 }
 
-function generateRecurringDates(startDate: Date, rule: any, horizonMonths: number = 18): Date[] {
+function generateRecurringDates(
+  startDate: Date,
+  rule: any,
+  horizonMonths: number = 18
+): Date[] {
   const dates: Date[] = [];
-  const endDate = rule.end_date ? new Date(rule.end_date) : 
-    new Date(startDate.getFullYear(), startDate.getMonth() + horizonMonths, startDate.getDate());
-  
+  const endDate = rule.end_date
+    ? new Date(rule.end_date)
+    : new Date(
+        startDate.getFullYear(),
+        startDate.getMonth() + horizonMonths,
+        startDate.getDate()
+      );
+
   const current = new Date(startDate);
   const frequency = rule.frequency || 'monthly';
   const interval = rule.interval || 1;
-  
-  while (current <= endDate && dates.length < 200) { // Safety limit
+
+  while (current <= endDate && dates.length < 200) {
+    // Safety limit
     dates.push(new Date(current));
-    
+
     switch (frequency) {
       case 'weekly':
-        current.setDate(current.getDate() + (7 * interval));
+        current.setDate(current.getDate() + 7 * interval);
         break;
       case 'monthly':
         current.setMonth(current.getMonth() + interval);
@@ -92,7 +102,7 @@ function generateRecurringDates(startDate: Date, rule: any, horizonMonths: numbe
         throw new Error(`Unsupported frequency: ${frequency}`);
     }
   }
-  
+
   return dates;
 }
 
@@ -109,12 +119,12 @@ Deno.serve(async (req) => {
     );
 
     const { bill_id } = await req.json();
-    
+
     if (!bill_id) {
-      return new Response(
-        JSON.stringify({ error: 'bill_id is required' }),
-        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
+      return new Response(JSON.stringify({ error: 'bill_id is required' }), {
+        status: 400,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
     }
 
     // Fetch the bill
@@ -125,10 +135,10 @@ Deno.serve(async (req) => {
       .single();
 
     if (billError || !bill) {
-      return new Response(
-        JSON.stringify({ error: 'Bill not found' }),
-        { status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
+      return new Response(JSON.stringify({ error: 'Bill not found' }), {
+        status: 404,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
     }
 
     // Delete existing unpaid occurrences for this bill
@@ -140,25 +150,25 @@ Deno.serve(async (req) => {
 
     // If bill has no recurring rule, no occurrences to generate
     if (!bill.recurring_rule) {
-      return new Response(
-        JSON.stringify({ success: true, generated: 0 }),
-        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
+      return new Response(JSON.stringify({ success: true, generated: 0 }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
     }
 
     const rule = bill.recurring_rule;
     const startDate = new Date(rule.start_date || new Date());
     const dates = generateRecurringDates(startDate, rule);
-    
+
     // Calculate amount per occurrence
     const installments = bill.installments_total || dates.length;
-    const baseAmount = Math.floor((bill.amount_total * 100) / installments) / 100; // Round down to cents
-    const remainder = bill.amount_total - (baseAmount * installments);
-    
+    const baseAmount =
+      Math.floor((bill.amount_total * 100) / installments) / 100; // Round down to cents
+    const remainder = bill.amount_total - baseAmount * installments;
+
     const occurrences = dates.map((date, index) => {
       const amount = index === 0 ? baseAmount + remainder : baseAmount; // Add remainder to first installment
       const suggestedDate = previousBusinessDay(new Date(date));
-      
+
       return {
         bill_id: bill.id,
         org_id: bill.org_id,
@@ -166,7 +176,7 @@ Deno.serve(async (req) => {
         amount_due: amount,
         due_date: date.toISOString().split('T')[0],
         suggested_submission_date: suggestedDate.toISOString().split('T')[0],
-        state: 'scheduled'
+        state: 'scheduled',
       };
     });
 
@@ -179,7 +189,10 @@ Deno.serve(async (req) => {
       console.error('Error inserting occurrences:', insertError);
       return new Response(
         JSON.stringify({ error: 'Failed to generate occurrences' }),
-        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        {
+          status: 500,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        }
       );
     }
 
@@ -187,12 +200,11 @@ Deno.serve(async (req) => {
       JSON.stringify({ success: true, generated: occurrences.length }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
-
   } catch (error) {
     console.error('Error:', error);
-    return new Response(
-      JSON.stringify({ error: 'Internal server error' }),
-      { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-    );
+    return new Response(JSON.stringify({ error: 'Internal server error' }), {
+      status: 500,
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+    });
   }
 });

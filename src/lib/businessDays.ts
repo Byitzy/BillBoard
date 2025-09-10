@@ -115,7 +115,7 @@ export function isQuebecBankHoliday(date: Date): boolean {
 export function getQuebecBankHolidayName(date: Date): string | null {
   const d = startOfDay(date);
   const year = d.getFullYear();
-  
+
   // New Year's Day (Jan 1) observed
   const newYear = observedIfWeekend(new Date(year, 0, 1));
   if (d.getTime() === newYear.getTime()) return "New Year's Day";
@@ -124,7 +124,7 @@ export function getQuebecBankHolidayName(date: Date): string | null {
   const easter = easterSunday(year);
   const goodFriday = new Date(easter);
   goodFriday.setDate(goodFriday.getDate() - 2);
-  if (d.getTime() === startOfDay(goodFriday).getTime()) return "Good Friday";
+  if (d.getTime() === startOfDay(goodFriday).getTime()) return 'Good Friday';
 
   // National Patriots' Day (QC) - Monday preceding May 25
   const patriotsDay = mondayBeforeDate(year, 4, 25);
@@ -132,23 +132,23 @@ export function getQuebecBankHolidayName(date: Date): string | null {
 
   // Saint-Jean-Baptiste Day (Jun 24)
   const stJean = observedIfWeekend(new Date(year, 5, 24));
-  if (d.getTime() === stJean.getTime()) return "Saint-Jean-Baptiste Day";
+  if (d.getTime() === stJean.getTime()) return 'Saint-Jean-Baptiste Day';
 
   // Canada Day (Jul 1) observed
   const canadaDay = observedIfWeekend(new Date(year, 6, 1));
-  if (d.getTime() === canadaDay.getTime()) return "Canada Day";
+  if (d.getTime() === canadaDay.getTime()) return 'Canada Day';
 
   // Labour Day - 1st Monday of September
   const labourDay = nthWeekdayOfMonth(year, 8, 1, 1);
-  if (d.getTime() === labourDay.getTime()) return "Labour Day";
+  if (d.getTime() === labourDay.getTime()) return 'Labour Day';
 
   // Thanksgiving - 2nd Monday of October
   const thanksgiving = nthWeekdayOfMonth(year, 9, 1, 2);
-  if (d.getTime() === thanksgiving.getTime()) return "Thanksgiving";
+  if (d.getTime() === thanksgiving.getTime()) return 'Thanksgiving';
 
   // Christmas Day (Dec 25) observed
   const christmas = observedIfWeekend(new Date(year, 11, 25));
-  if (d.getTime() === christmas.getTime()) return "Christmas Day";
+  if (d.getTime() === christmas.getTime()) return 'Christmas Day';
 
   return null;
 }

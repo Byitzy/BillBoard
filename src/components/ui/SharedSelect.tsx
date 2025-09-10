@@ -1,4 +1,4 @@
-"use client";
+'use client';
 import { useState, useRef, useEffect } from 'react';
 import { useLocale } from '@/components/i18n/LocaleProvider';
 
@@ -32,11 +32,7 @@ export type SimpleSelectProps = SharedSelectPropsBase & {
 export type SharedSelectProps = ComplexSelectProps | SimpleSelectProps;
 
 export default function SharedSelect(props: SharedSelectProps) {
-  const {
-    placeholder = "Select...",
-    className = "",
-    disabled = false,
-  } = props;
+  const { placeholder = 'Select...', className = '', disabled = false } = props;
   const { t } = useLocale();
   const [isOpen, setIsOpen] = useState(false);
   const [query, setQuery] = useState('');
@@ -47,11 +43,11 @@ export default function SharedSelect(props: SharedSelectProps) {
   // Filter options based on query
   useEffect(() => {
     if (props.simple) return;
-    
+
     if (!query.trim()) {
       setFilteredOptions(props.options);
     } else {
-      const filtered = props.options.filter(option =>
+      const filtered = props.options.filter((option) =>
         option.name.toLowerCase().includes(query.toLowerCase())
       );
       setFilteredOptions(filtered);
@@ -61,7 +57,10 @@ export default function SharedSelect(props: SharedSelectProps) {
   // Close dropdown when clicking outside
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
-      if (containerRef.current && !containerRef.current.contains(event.target as Node)) {
+      if (
+        containerRef.current &&
+        !containerRef.current.contains(event.target as Node)
+      ) {
         setIsOpen(false);
         setQuery('');
       }
@@ -108,11 +107,13 @@ export default function SharedSelect(props: SharedSelectProps) {
         onFocus={() => setIsOpen(true)}
         disabled={disabled}
       />
-      
+
       {isOpen && !complexProps.value && query && (
         <ul className="absolute z-10 mt-1 w-full overflow-hidden rounded-xl border border-neutral-200 bg-white text-sm shadow-sm dark:border-neutral-800 dark:bg-neutral-900">
           {filteredOptions.length === 0 ? (
-            <li className="px-3 py-2 text-neutral-500">{t('common.noMatches')}</li>
+            <li className="px-3 py-2 text-neutral-500">
+              {t('common.noMatches')}
+            </li>
           ) : (
             filteredOptions.map((option) => (
               <li key={option.id}>
@@ -130,25 +131,29 @@ export default function SharedSelect(props: SharedSelectProps) {
               </li>
             ))
           )}
-          
-          {complexProps.allowCreate && complexProps.onCreate && query.trim() && (
-            <li>
-              <button
-                type="button"
-                className="w-full px-3 py-2 text-left hover:bg-blue-50 dark:hover:bg-blue-900/20 focus:bg-blue-50 dark:focus:bg-blue-900/20 focus:outline-none"
-                onClick={async () => {
-                  const newOption = await complexProps.onCreate!(query.trim());
-                  if (newOption) {
-                    complexProps.onChange(newOption);
-                    setQuery('');
-                    setIsOpen(false);
-                  }
-                }}
-              >
-                {t('common.create')} &quot;{query}&quot;
-              </button>
-            </li>
-          )}
+
+          {complexProps.allowCreate &&
+            complexProps.onCreate &&
+            query.trim() && (
+              <li>
+                <button
+                  type="button"
+                  className="w-full px-3 py-2 text-left hover:bg-blue-50 dark:hover:bg-blue-900/20 focus:bg-blue-50 dark:focus:bg-blue-900/20 focus:outline-none"
+                  onClick={async () => {
+                    const newOption = await complexProps.onCreate!(
+                      query.trim()
+                    );
+                    if (newOption) {
+                      complexProps.onChange(newOption);
+                      setQuery('');
+                      setIsOpen(false);
+                    }
+                  }}
+                >
+                  {t('common.create')} &quot;{query}&quot;
+                </button>
+              </li>
+            )}
         </ul>
       )}
     </div>

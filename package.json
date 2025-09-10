@@ -28,6 +28,7 @@
     "turbo:test:run": "turbo test:run",
     "turbo:playwright": "turbo playwright",
     "turbo:playwright:setup": "turbo playwright:setup",
+    "turbo:dev:check": "turbo typecheck lint format:check",
     "playwright:ui": "playwright test --ui",
     "playwright:headed": "playwright test --headed",
     "playwright:debug": "playwright test --debug",
