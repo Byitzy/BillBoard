@@ -11,7 +11,7 @@ import {
 } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import MobileSidebar from '@/components/app-shell/MobileSidebar';
 import { useLocale } from '@/components/i18n/LocaleProvider';
 import NotificationCenter from '@/components/NotificationCenter';
@@ -27,6 +27,7 @@ export default function Topbar() {
   const pathname = usePathname();
   const router = useRouter();
   const { t } = useLocale();
+  const menuRef = useRef<HTMLDivElement>(null);
 
   // Get context-aware search placeholder
   const getSearchPlaceholder = () => {
@@ -68,6 +69,23 @@ export default function Topbar() {
     setMobileOpen(false);
     setMenuOpen(false);
   }, [pathname]);
+
+  // Handle click outside to close dropdown menu
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
+        setMenuOpen(false);
+      }
+    }
+
+    if (menuOpen) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [menuOpen]);
   return (
     <header
       className="sticky top-0 z-10 bg-[hsl(var(--surface))]/80 backdrop-blur"
@@ -97,7 +115,7 @@ export default function Topbar() {
           </form>
         </div>
         <div className="flex items-center gap-2">
-          <div className="relative">
+          <div className="relative" ref={menuRef}>
             <button
               aria-haspopup="menu"
               aria-expanded={menuOpen}

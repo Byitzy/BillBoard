@@ -1,9 +1,11 @@
 'use client';
+import Link from 'next/link';
 import RentLine from '@/components/charts/RentLine';
 
 type ChartPoint = { m: string; v: number };
 type Row = {
   id: string;
+  bill_id?: string;
   vendor?: string | null;
   project?: string | null;
   due_date: string;
@@ -35,7 +37,7 @@ export default function DashboardCharts({
           <table className="w-full text-sm" role="table">
             <thead>
               <tr className="text-left" role="row">
-                {['Due', 'Amount', 'State'].map((h) => (
+                {['Vendor', 'Project', 'Due', 'Amount', 'State'].map((h) => (
                   <th
                     key={h}
                     scope="col"
@@ -50,28 +52,54 @@ export default function DashboardCharts({
             <tbody>
               {loading ? (
                 <tr>
-                  <td className="px-3 py-2" colSpan={3}>
+                  <td className="px-3 py-2" colSpan={5}>
                     Loading...
                   </td>
                 </tr>
               ) : rows.length === 0 ? (
                 <tr>
-                  <td className="px-3 py-4 text-neutral-500" colSpan={3}>
+                  <td className="px-3 py-4 text-neutral-500" colSpan={5}>
                     Nothing coming up.
                   </td>
                 </tr>
               ) : (
-                rows.map((r) => (
-                  <tr
-                    key={r.id}
-                    role="row"
-                    className="border-t border-neutral-100 dark:border-neutral-800"
-                  >
-                    <td className="px-3 py-2">{r.due_date}</td>
-                    <td className="px-3 py-2">${r.amount_due.toFixed(2)}</td>
-                    <td className="px-3 py-2">{r.state}</td>
-                  </tr>
-                ))
+                rows.map((r) => {
+                  const billUrl = r.bill_id ? `/bills/${r.bill_id}` : '#';
+                  const isClickable = !!r.bill_id;
+
+                  const rowContent = (
+                    <>
+                      <td className="px-3 py-2">{r.vendor || '—'}</td>
+                      <td className="px-3 py-2">{r.project || '—'}</td>
+                      <td className="px-3 py-2">{r.due_date}</td>
+                      <td className="px-3 py-2">${r.amount_due.toFixed(2)}</td>
+                      <td className="px-3 py-2">{r.state}</td>
+                    </>
+                  );
+
+                  if (isClickable) {
+                    return (
+                      <tr
+                        key={r.id}
+                        role="row"
+                        className="border-t border-neutral-100 dark:border-neutral-800 hover:bg-neutral-50 dark:hover:bg-neutral-800/50 cursor-pointer transition-colors"
+                        onClick={() => (window.location.href = billUrl)}
+                      >
+                        {rowContent}
+                      </tr>
+                    );
+                  } else {
+                    return (
+                      <tr
+                        key={r.id}
+                        role="row"
+                        className="border-t border-neutral-100 dark:border-neutral-800"
+                      >
+                        {rowContent}
+                      </tr>
+                    );
+                  }
+                })
               )}
             </tbody>
           </table>
@@ -80,7 +108,7 @@ export default function DashboardCharts({
       <div className="space-y-3 rounded-2xl border border-neutral-200 p-4 shadow-sm dark:border-neutral-800">
         <div>
           <h2 className="text-base font-semibold">Monthly Totals</h2>
-          <p className="text-xs text-neutral-500">Last 6 months</p>
+          <p className="text-xs text-neutral-500">Past 3 and next 6 months</p>
         </div>
         <RentLine data={chart} />
       </div>

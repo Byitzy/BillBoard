@@ -196,67 +196,6 @@ export default function ApproverDashboard() {
         </div>
       </div>
 
-      {/* Approval Stats */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        <div className="bg-white dark:bg-neutral-900 rounded-xl border border-neutral-200 dark:border-neutral-800 p-4">
-          <div className="flex items-center gap-3">
-            <div className="p-2 bg-orange-100 dark:bg-orange-900/20 rounded-lg">
-              <Clock className="h-5 w-5 text-orange-600" />
-            </div>
-            <div>
-              <p className="text-sm text-neutral-600 dark:text-neutral-400">
-                Pending Approval
-              </p>
-              <p className="text-xl font-semibold">{stats.pendingApprovals}</p>
-            </div>
-          </div>
-        </div>
-
-        <div className="bg-white dark:bg-neutral-900 rounded-xl border border-neutral-200 dark:border-neutral-800 p-4">
-          <div className="flex items-center gap-3">
-            <div className="p-2 bg-green-100 dark:bg-green-900/20 rounded-lg">
-              <CheckSquare className="h-5 w-5 text-green-600" />
-            </div>
-            <div>
-              <p className="text-sm text-neutral-600 dark:text-neutral-400">
-                Approved Today
-              </p>
-              <p className="text-xl font-semibold">{stats.approvedToday}</p>
-            </div>
-          </div>
-        </div>
-
-        <div className="bg-white dark:bg-neutral-900 rounded-xl border border-neutral-200 dark:border-neutral-800 p-4">
-          <div className="flex items-center gap-3">
-            <div className="p-2 bg-red-100 dark:bg-red-900/20 rounded-lg">
-              <AlertCircle className="h-5 w-5 text-red-600" />
-            </div>
-            <div>
-              <p className="text-sm text-neutral-600 dark:text-neutral-400">
-                On Hold
-              </p>
-              <p className="text-xl font-semibold">{stats.onHoldItems}</p>
-            </div>
-          </div>
-        </div>
-
-        <div className="bg-white dark:bg-neutral-900 rounded-xl border border-neutral-200 dark:border-neutral-800 p-4">
-          <div className="flex items-center gap-3">
-            <div className="p-2 bg-blue-100 dark:bg-blue-900/20 rounded-lg">
-              <TrendingUp className="h-5 w-5 text-blue-600" />
-            </div>
-            <div>
-              <p className="text-sm text-neutral-600 dark:text-neutral-400">
-                Total Value
-              </p>
-              <p className="text-xl font-semibold">
-                ${stats.totalValue.toFixed(2)}
-              </p>
-            </div>
-          </div>
-        </div>
-      </div>
-
       {/* Urgent Items Alert */}
       {urgentItems.length > 0 && (
         <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-xl p-4">

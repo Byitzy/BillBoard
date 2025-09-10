@@ -33,7 +33,13 @@
       "Bash(pnpm list:*)",
       "Bash(pnpm update:*)",
       "Bash(npx eslint:*)",
-      "Bash(pnpm install:*)"
+      "Bash(pnpm install:*)",
+      "Bash(pnpm dev:*)",
+      "Bash(pnpm playwright test:*)",
+      "Bash(npx tsx:*)",
+      "Bash(npx playwright test:*)",
+      "Bash(npx supabase:*)",
+      "Bash(pnpm run dev:*)"
     ],
     "deny": [],
     "ask": []

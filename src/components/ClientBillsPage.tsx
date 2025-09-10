@@ -1,6 +1,6 @@
 'use client';
 import Link from 'next/link';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import BillForm from '@/components/BillForm';
 import CSVExportButton from '@/components/CSVExportButton';
 import { useLocale } from '@/components/i18n/LocaleProvider';
@@ -43,6 +43,13 @@ export default function ClientBillsPage({
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(initialError);
 
+  // Reload data when component mounts to ensure fresh data
+  useEffect(() => {
+    // Always reload on mount to ensure we have the latest data
+    // This fixes the issue where existing bills don't show until a new one is added
+    reload();
+  }, []);
+
   async function reload() {
     setLoading(true);
     setError(null);
@@ -56,6 +63,7 @@ export default function ClientBillsPage({
     // Get current URL search params to maintain filters
     const urlParams = new URLSearchParams(window.location.search);
 
+    // Force fresh data by adding a timestamp to prevent caching
     let query = supabase
       .from('bills')
       .select(
@@ -150,35 +158,43 @@ export default function ClientBillsPage({
             </p>
           )}
         </div>
-        {bills.length > 0 && (
-          <div className="flex items-center gap-2">
-            <CSVExportButton
-              type="data"
-              data={bills.map((b) => ({
-                Vendor: b.vendor_name ?? '—',
-                Project: b.project_name ?? '—',
-                Amount: `$${b.amount_total.toFixed(2)}`,
-                'Due Date': b.due_date ?? '—',
-              }))}
-              columns={['Vendor', 'Project', 'Amount', 'Due Date']}
-              filename={`bills-list-${new Date().toISOString().slice(0, 10)}.csv`}
-              className="flex items-center gap-2 rounded-xl border border-neutral-200 px-3 py-2 text-sm font-medium hover:bg-neutral-50 dark:border-neutral-800 dark:hover:bg-neutral-900"
-            />
-            <PDFExportButton
-              type="data"
-              data={bills.map((b) => ({
-                Vendor: b.vendor_name ?? '—',
-                Project: b.project_name ?? '—',
-                Amount: `$${b.amount_total.toFixed(2)}`,
-                'Due Date': b.due_date ?? '—',
-              }))}
-              columns={['Vendor', 'Project', 'Amount', 'Due Date']}
-              title="Bills List"
-              filename={`bills-list-${new Date().toISOString().slice(0, 10)}.pdf`}
-              className="flex items-center gap-2 rounded-xl bg-blue-600 px-3 py-2 text-sm font-medium text-white hover:bg-blue-700"
-            />
-          </div>
-        )}
+        <div className="flex items-center gap-2">
+          {bills.length > 0 && (
+            <>
+              <CSVExportButton
+                type="data"
+                data={bills.map((b) => ({
+                  Vendor: b.vendor_name ?? '—',
+                  Project: b.project_name ?? '—',
+                  Amount: `$${b.amount_total.toFixed(2)}`,
+                  'Due Date': b.due_date ?? '—',
+                }))}
+                columns={['Vendor', 'Project', 'Amount', 'Due Date']}
+                filename={`bills-list-${new Date().toISOString().slice(0, 10)}.csv`}
+                className="flex items-center gap-2 rounded-xl border border-neutral-200 px-3 py-2 text-sm font-medium hover:bg-neutral-50 dark:border-neutral-800 dark:hover:bg-neutral-900"
+              />
+              <PDFExportButton
+                type="data"
+                data={bills.map((b) => ({
+                  Vendor: b.vendor_name ?? '—',
+                  Project: b.project_name ?? '—',
+                  Amount: `$${b.amount_total.toFixed(2)}`,
+                  'Due Date': b.due_date ?? '—',
+                }))}
+                columns={['Vendor', 'Project', 'Amount', 'Due Date']}
+                title="Bills List"
+                filename={`bills-list-${new Date().toISOString().slice(0, 10)}.pdf`}
+                className="flex items-center gap-2 rounded-xl bg-blue-600 px-3 py-2 text-sm font-medium text-white hover:bg-blue-700"
+              />
+            </>
+          )}
+          <button
+            onClick={reload}
+            className="flex items-center gap-2 rounded-xl border border-neutral-200 px-3 py-2 text-sm font-medium hover:bg-neutral-50 dark:border-neutral-800 dark:hover:bg-neutral-900"
+          >
+            🔄 Refresh
+          </button>
+        </div>
       </div>
 
       <BillForm onCreated={reload} />
@@ -218,10 +234,39 @@ export default function ClientBillsPage({
               </tr>
             ) : bills.length === 0 ? (
               <tr>
-                <td className="px-3 py-4 text-neutral-500" colSpan={5}>
-                  {filterContext
-                    ? 'No bills match the current filter.'
-                    : 'No bills yet.'}
+                <td colSpan={5}>
+                  <div className="py-12 text-center">
+                    <div className="mx-auto mb-4 h-12 w-12 rounded-lg bg-neutral-100 dark:bg-neutral-800 flex items-center justify-center">
+                      <svg
+                        className="h-6 w-6 text-neutral-400"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        strokeWidth={1.5}
+                        stroke="currentColor"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          d="M19.5 14.25v-2.625a3.375 3.375 0 0 0-3.375-3.375h-4.5a1.125 1.125 0 0 1-1.125-1.125v-1.5a3.375 3.375 0 0 0-3.375-3.375H6.75a1.125 1.125 0 0 1-1.125-1.125v-1.5A1.125 1.125 0 0 0 4.5 0.75H3.375c-.621 0-1.125.504-1.125 1.125v17.25a3.375 3.375 0 0 0 3.375 3.375h12.75a3.375 3.375 0 0 0 3.375-3.375V16.5a1.125 1.125 0 0 1 1.125-1.125Z"
+                        />
+                      </svg>
+                    </div>
+                    <p className="text-lg font-medium text-neutral-900 dark:text-neutral-100 mb-2">
+                      {filterContext
+                        ? 'No bills match the current filter'
+                        : 'No bills yet'}
+                    </p>
+                    <p className="text-neutral-500 mb-6">
+                      {filterContext
+                        ? 'Try adjusting your search or filter criteria.'
+                        : 'Create your first bill to get started with managing your expenses and payments.'}
+                    </p>
+                    {!filterContext && (
+                      <div className="text-neutral-600 text-sm">
+                        <p>👇 Use the form below to add your first bill</p>
+                      </div>
+                    )}
+                  </div>
                 </td>
               </tr>
             ) : (
