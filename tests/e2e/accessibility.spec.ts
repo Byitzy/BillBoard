@@ -33,6 +33,11 @@ test.describe('Accessibility', () => {
     await emailInput.click();
     await expect(emailInput).toBeFocused();
 
+    // Tab to password input (since we're in password mode by default)
+    await page.keyboard.press('Tab');
+    const passwordInput = page.locator('input[type="password"]');
+    await expect(passwordInput).toBeFocused();
+
     // Tab to submit button
     await page.keyboard.press('Tab');
     const submitButton = page.locator('button[type="submit"]');

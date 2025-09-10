@@ -15,7 +15,7 @@ test.describe('Authentication', () => {
     await expect(page.locator('input[type="email"]')).toBeVisible();
   });
 
-  test('should show login form with magic link mode by default', async ({
+  test('should show login form with password mode by default', async ({
     page,
   }) => {
     await page.goto('/login');
@@ -23,9 +23,10 @@ test.describe('Authentication', () => {
     // Check login form elements - be specific about which h1
     await expect(page.locator('h1:has-text("Sign in")')).toBeVisible();
     await expect(page.locator('input[type="email"]')).toBeVisible();
+    await expect(page.locator('input[type="password"]')).toBeVisible();
     await expect(page.locator('button[type="submit"]')).toBeVisible();
     await expect(page.locator('button[type="submit"]')).toContainText(
-      'Send magic link'
+      'Sign in'
     );
 
     // Should have mode toggle buttons
@@ -37,16 +38,16 @@ test.describe('Authentication', () => {
     ).toBeVisible();
   });
 
-  test('should switch to password mode when clicked', async ({ page }) => {
+  test('should switch to magic link mode when clicked', async ({ page }) => {
     await page.goto('/login');
 
-    // Click on password mode
-    await page.click('button:has-text("Email & Password")');
+    // Click on magic link mode
+    await page.click('button:has-text("Magic Link")');
 
-    // Should show password input
-    await expect(page.locator('input[type="password"]')).toBeVisible();
+    // Should show magic link mode (password input should be hidden)
+    await expect(page.locator('input[type="password"]')).not.toBeVisible();
     await expect(page.locator('button[type="submit"]')).toContainText(
-      'Sign in'
+      'Send magic link'
     );
   });
 

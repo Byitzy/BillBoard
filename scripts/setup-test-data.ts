@@ -261,47 +261,45 @@ async function createTestBills(
   const bills = [
     {
       title: 'Monthly Software License',
-      amount: 299.99,
-      due_date: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000)
-        .toISOString()
-        .split('T')[0], // 7 days from now
+      amount_total: 299.99,
+      due_date: null, // null for recurring bills
+      recurring_rule: { frequency: 'monthly', interval: 1 },
       vendor_id: vendorIds[0],
       project_id: projectIds[0],
       status: 'pending_approval',
-      frequency: 'monthly',
     },
     {
       title: 'Office Supplies Order',
-      amount: 1250.0,
+      amount_total: 1250.0,
       due_date: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000)
         .toISOString()
         .split('T')[0], // 14 days from now
+      recurring_rule: null, // null for one-time bills
       vendor_id: vendorIds[3],
       project_id: projectIds[1],
       status: 'approved',
-      frequency: 'one_time',
     },
     {
       title: 'Consulting Services',
-      amount: 5000.0,
+      amount_total: 5000.0,
       due_date: new Date(Date.now() + 21 * 24 * 60 * 60 * 1000)
         .toISOString()
         .split('T')[0], // 21 days from now
+      recurring_rule: null, // null for one-time bills
       vendor_id: vendorIds[2],
       project_id: projectIds[2],
       status: 'on_hold',
-      frequency: 'one_time',
     },
     {
       title: 'Marketing Campaign Budget',
-      amount: 15000.0,
+      amount_total: 15000.0,
       due_date: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000)
         .toISOString()
         .split('T')[0], // 30 days from now
+      recurring_rule: null, // null for one-time bills
       vendor_id: vendorIds[1],
       project_id: projectIds[3],
       status: 'pending_approval',
-      frequency: 'one_time',
     },
   ];
 
@@ -321,7 +319,7 @@ async function createTestBills(
   }
 
   createdBills.forEach((bill) => {
-    console.log(`✅ Created bill: ${bill.title} - $${bill.amount}`);
+    console.log(`✅ Created bill: ${bill.title} - $${bill.amount_total}`);
   });
 
   return createdBills;
