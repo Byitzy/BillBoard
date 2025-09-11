@@ -44,13 +44,30 @@ export function useBillAttachments(billId: string) {
         .eq('linked_id', billId)
         .order('created_at', { ascending: false });
 
-      if (error) throw error;
+      if (error) {
+        // If table doesn't exist (404), silently return empty array
+        if (
+          error.message?.includes('relation "attachments" does not exist') ||
+          error.message?.includes('404')
+        ) {
+          setAttachments([]);
+          return;
+        }
+        throw error;
+      }
 
       setAttachments((data as BillAttachment[]) || []);
     } catch (err) {
-      setError(
-        err instanceof Error ? err.message : 'Failed to load attachments'
-      );
+      // Only show error for real failures, not missing tables
+      if (
+        err instanceof Error &&
+        !err.message.includes('404') &&
+        !err.message.includes('does not exist')
+      ) {
+        setError(err.message);
+      } else {
+        setAttachments([]);
+      }
     } finally {
       setLoading(false);
     }

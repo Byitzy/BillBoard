@@ -57,11 +57,32 @@ export function useBillComments(billId: string) {
         .eq('bill_id', billId)
         .order('created_at', { ascending: true });
 
-      if (error) throw error;
+      if (error) {
+        // If table doesn't exist (404), silently return empty array
+        if (
+          error.message?.includes(
+            'relation "bill_comments_with_users" does not exist'
+          ) ||
+          error.message?.includes('404')
+        ) {
+          setComments([]);
+          return;
+        }
+        throw error;
+      }
 
       setComments((data as BillComment[]) || []);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to load comments');
+      // Only show error for real failures, not missing tables
+      if (
+        err instanceof Error &&
+        !err.message.includes('404') &&
+        !err.message.includes('does not exist')
+      ) {
+        setError(err.message);
+      } else {
+        setComments([]);
+      }
     } finally {
       setLoading(false);
     }
