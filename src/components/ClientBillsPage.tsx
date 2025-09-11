@@ -5,7 +5,8 @@ import BillForm from '@/components/BillForm';
 import CSVExportButton from '@/components/CSVExportButton';
 import { useLocale } from '@/components/i18n/LocaleProvider';
 import PDFExportButton from '@/components/PDFExportButton';
-import FilterBar from '@/components/ui/FilterBar';
+import AdvancedFilterBar from '@/components/ui/AdvancedFilterBar';
+import SavedSearches from '@/components/ui/SavedSearches';
 import { getDefaultOrgId } from '@/lib/org';
 import { getSupabaseClient } from '@/lib/supabase/client';
 import {
@@ -65,6 +66,16 @@ export default function ClientBillsPage({
     vendorId: urlParams.get('vendorId') || undefined,
     projectId: urlParams.get('projectId') || undefined,
     search: urlParams.get('search') || undefined,
+    dateFrom: urlParams.get('dateFrom') || undefined,
+    dateTo: urlParams.get('dateTo') || undefined,
+    amountMin: urlParams.get('amountMin')
+      ? parseFloat(urlParams.get('amountMin')!)
+      : undefined,
+    amountMax: urlParams.get('amountMax')
+      ? parseFloat(urlParams.get('amountMax')!)
+      : undefined,
+    currency: urlParams.get('currency') || undefined,
+    category: urlParams.get('category') || undefined,
   };
 
   // Use paginated bills hook
@@ -192,6 +203,13 @@ export default function ClientBillsPage({
   const exitSelectMode = () => {
     setIsSelectMode(false);
     setSelectedBills(new Set());
+  };
+
+  // Handle filter changes from saved searches
+  const handleFiltersChange = (newFilters: any) => {
+    // This will be handled by the AdvancedFilterBar component
+    // through URL parameter updates, which will trigger a refresh
+    refresh();
   };
 
   return (
@@ -325,8 +343,15 @@ export default function ClientBillsPage({
 
       <BillForm onCreated={refresh} />
 
-      <FilterBar
-        searchPlaceholder="Search bills by title, vendor, or project..."
+      {/* Saved searches */}
+      <SavedSearches
+        currentFilters={filters}
+        onApplySearch={handleFiltersChange}
+        className="mb-4"
+      />
+
+      {/* Advanced filtering */}
+      <AdvancedFilterBar
         vendorOptions={vendorOptions}
         projectOptions={projectOptions}
         statusOptions={[
@@ -336,7 +361,9 @@ export default function ClientBillsPage({
           { value: 'paid', label: 'Paid' },
           { value: 'on_hold', label: 'On Hold' },
         ]}
-        className="my-4"
+        showAdvanced={true}
+        onFiltersChange={handleFiltersChange}
+        className="mb-4"
       />
 
       {/* Select All Bar */}

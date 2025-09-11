@@ -31,6 +31,15 @@ export interface BillFilters {
   vendorId?: string;
   projectId?: string;
   search?: string;
+  // Date range filters
+  dateFrom?: string; // ISO date string
+  dateTo?: string; // ISO date string
+  // Amount range filters
+  amountMin?: number;
+  amountMax?: number;
+  // Additional filters
+  currency?: string;
+  category?: string;
 }
 
 export function usePaginatedBills(filters: BillFilters = {}) {
@@ -80,6 +89,24 @@ export function usePaginatedBills(filters: BillFilters = {}) {
       }
       if (filters.projectId) {
         query = query.eq('project_id', filters.projectId);
+      }
+      if (filters.currency) {
+        query = query.eq('currency', filters.currency);
+      }
+      if (filters.category) {
+        query = query.ilike('category', `%${filters.category}%`);
+      }
+      if (filters.dateFrom) {
+        query = query.gte('due_date', filters.dateFrom);
+      }
+      if (filters.dateTo) {
+        query = query.lte('due_date', filters.dateTo);
+      }
+      if (filters.amountMin !== undefined) {
+        query = query.gte('amount_total', filters.amountMin);
+      }
+      if (filters.amountMax !== undefined) {
+        query = query.lte('amount_total', filters.amountMax);
       }
 
       const { data, error, count } = await query;
@@ -205,6 +232,30 @@ export function usePaginatedBills(filters: BillFilters = {}) {
     }
     if (filters.projectId) {
       parts.push('Filtered by project');
+    }
+    if (filters.currency) {
+      parts.push(`Currency: ${filters.currency}`);
+    }
+    if (filters.category) {
+      parts.push(`Category: ${filters.category}`);
+    }
+    if (filters.dateFrom || filters.dateTo) {
+      const dateRange = [
+        filters.dateFrom && `from ${filters.dateFrom}`,
+        filters.dateTo && `to ${filters.dateTo}`,
+      ]
+        .filter(Boolean)
+        .join(' ');
+      parts.push(`Date ${dateRange}`);
+    }
+    if (filters.amountMin !== undefined || filters.amountMax !== undefined) {
+      const amountRange = [
+        filters.amountMin !== undefined && `min $${filters.amountMin}`,
+        filters.amountMax !== undefined && `max $${filters.amountMax}`,
+      ]
+        .filter(Boolean)
+        .join(' ');
+      parts.push(`Amount ${amountRange}`);
     }
 
     return parts.join(' & ') || '';
