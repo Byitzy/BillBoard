@@ -129,6 +129,13 @@ export default async function BillsPage({ searchParams }: BillsPageProps) {
   // Filter by effective status (occurrence state OR bill status)
   bills = bills.filter((bill) => {
     const effectiveStatus = occurrenceStateMap.get(bill.id) || bill.status;
+
+    // If no specific status filter, show all EXCEPT canceled bills
+    if (status === 'active' && !resolvedSearchParams.status) {
+      return effectiveStatus !== 'canceled';
+    }
+
+    // Otherwise filter by the specific status
     return effectiveStatus === status;
   });
 

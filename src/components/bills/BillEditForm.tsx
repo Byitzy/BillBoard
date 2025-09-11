@@ -84,7 +84,6 @@ export default function BillEditForm({
         category: category.trim() || null,
         vendor_id: vendor?.id || null,
         project_id: project?.id || null,
-        updated_at: new Date().toISOString(),
       };
 
       const { error: updateError } = await supabase

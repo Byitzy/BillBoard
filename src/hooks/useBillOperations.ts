@@ -18,6 +18,7 @@ export interface BillOperationsResult {
   loadApproverInfo: () => Promise<void>;
   updateStatus: (newStatus: BillStatus) => Promise<void>;
   markAsPaid: () => Promise<void>;
+  deleteBill: () => Promise<boolean>;
 }
 
 export function useBillOperations(
@@ -183,6 +184,37 @@ export function useBillOperations(
     supabase,
   ]);
 
+  /**
+   * Permanently delete a bill and all related data
+   */
+  const deleteBill = useCallback(async (): Promise<boolean> => {
+    setLoading(true);
+    try {
+      // Get organization ID for security
+      const orgData = await supabase.auth.getUser();
+      if (!orgData.data.user) throw new Error('User not authenticated');
+
+      // Delete in order: comments, attachments, occurrences, then bill
+      // Comments and attachments will cascade delete with bill due to foreign key constraints
+
+      // Delete bill occurrences first
+      await supabase.from('bill_occurrences').delete().eq('bill_id', billId);
+
+      // Delete the bill itself (this will cascade delete comments and attachments)
+      const { error } = await supabase.from('bills').delete().eq('id', billId);
+
+      if (error) throw error;
+
+      onUpdate?.(); // Trigger refresh of the bills list
+      return true;
+    } catch (error) {
+      console.error('Failed to delete bill:', error);
+      return false;
+    } finally {
+      setLoading(false);
+    }
+  }, [billId, supabase, onUpdate]);
+
   return {
     loading,
     billOccurrenceState,
@@ -192,5 +224,6 @@ export function useBillOperations(
     loadApproverInfo,
     updateStatus,
     markAsPaid,
+    deleteBill,
   };
 }
