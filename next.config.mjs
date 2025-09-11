@@ -1,6 +1,6 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  reactStrictMode: true,
+  reactStrictMode: false, // Temporarily disabled to reduce Fast Refresh rebuilds
   typedRoutes: true,
   eslint: {
     // Note: Allow warnings during builds, only stop on errors

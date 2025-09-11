@@ -2,6 +2,8 @@
 
 import { useState } from 'react';
 import { getSupabaseClient } from '@/lib/supabase/client';
+import { getStatusInfo } from '@/lib/bills/status';
+import { CheckCircle, Pause, CreditCard, Edit } from 'lucide-react';
 
 interface Occurrence {
   id: string;
@@ -89,48 +91,7 @@ function OccurrenceEditor({
   const [saving, setSaving] = useState(false);
   const [err, setErr] = useState<string | null>(null);
 
-  // Helper function to get status color and icon
-  function getStatusInfo(status: string) {
-    switch (status) {
-      case 'pending_approval':
-        return {
-          color:
-            'text-amber-600 bg-amber-50 border-amber-200 dark:bg-amber-950 dark:border-amber-800',
-          icon: '⏳',
-          label: 'Pending Approval',
-        };
-      case 'approved':
-        return {
-          color:
-            'text-green-600 bg-green-50 border-green-200 dark:bg-green-950 dark:border-green-800',
-          icon: '✅',
-          label: 'Approved',
-        };
-      case 'paid':
-        return {
-          color:
-            'text-blue-600 bg-blue-50 border-blue-200 dark:bg-blue-950 dark:border-blue-800',
-          icon: '💳',
-          label: 'Paid',
-        };
-      case 'on_hold':
-        return {
-          color:
-            'text-red-600 bg-red-50 border-red-200 dark:bg-red-950 dark:border-red-800',
-          icon: '⏸️',
-          label: 'On Hold',
-        };
-      default:
-        return {
-          color:
-            'text-neutral-600 bg-neutral-50 border-neutral-200 dark:bg-neutral-950 dark:border-neutral-800',
-          icon: '📄',
-          label: status.charAt(0).toUpperCase() + status.slice(1),
-        };
-    }
-  }
-
-  const statusInfo = getStatusInfo(occ.state);
+  const statusInfo = getStatusInfo(occ.state as any);
 
   return (
     <div className="border border-neutral-200 dark:border-neutral-800 rounded-lg p-4 bg-neutral-50 dark:bg-neutral-800/50">
@@ -145,7 +106,7 @@ function OccurrenceEditor({
                 <span
                   className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium border ${statusInfo.color}`}
                 >
-                  <span>{statusInfo.icon}</span>
+                  <statusInfo.icon className="h-4 w-4" />
                   {statusInfo.label}
                 </span>
               </div>
@@ -198,7 +159,8 @@ function OccurrenceEditor({
                       }
                     }}
                   >
-                    ✅ Approve
+                    <CheckCircle className="h-4 w-4" />
+                    Approve
                   </button>
                   <button
                     disabled={saving}
@@ -228,7 +190,8 @@ function OccurrenceEditor({
                       }
                     }}
                   >
-                    ⏸️ Hold
+                    <Pause className="h-4 w-4" />
+                    Hold
                   </button>
                 </>
               )}
@@ -253,7 +216,8 @@ function OccurrenceEditor({
                     }
                   }}
                 >
-                  💳 Mark as Paid
+                  <CreditCard className="h-4 w-4" />
+                  Mark as Paid
                 </button>
               )}
 
@@ -261,7 +225,8 @@ function OccurrenceEditor({
                 className="px-3 py-1.5 text-xs font-medium text-neutral-700 dark:text-neutral-300 bg-neutral-100 dark:bg-neutral-800 hover:bg-neutral-200 dark:hover:bg-neutral-700 rounded-lg"
                 onClick={() => setEditing(true)}
               >
-                ✏️ Edit
+                <Edit className="h-4 w-4" />
+                Edit
               </button>
             </div>
           </div>

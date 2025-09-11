@@ -2,6 +2,7 @@
 import { useEffect } from 'react';
 import { getStatusInfo } from '@/lib/bills/status';
 import { useBillOperations } from '@/hooks/useBillOperations';
+import { RotateCcw, CheckCircle } from 'lucide-react';
 
 interface Bill {
   id: string;
@@ -80,12 +81,13 @@ export default function BillHeader({ bill, error }: BillHeaderProps) {
               <span
                 className={`inline-flex items-center gap-1 px-3 py-1 rounded-full text-sm font-medium border ${statusInfo.color}`}
               >
-                <span>{statusInfo.icon}</span>
+                <statusInfo.icon className="h-4 w-4" />
                 {statusInfo.label}
               </span>
               {isRecurring && (
                 <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-sm font-medium border text-purple-600 bg-purple-50 border-purple-200 dark:bg-purple-950 dark:border-purple-800">
-                  🔄 Recurring
+                  <RotateCcw className="h-4 w-4" />
+                  Recurring
                 </span>
               )}
             </div>
@@ -98,7 +100,8 @@ export default function BillHeader({ bill, error }: BillHeaderProps) {
 
             {effectiveStatus === 'approved' && approver && (
               <div className="mb-4 text-sm text-green-600 dark:text-green-400">
-                ✅ Approved by {approver}
+                <CheckCircle className="h-4 w-4" />
+                Approved by {approver}
               </div>
             )}
           </div>

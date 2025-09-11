@@ -6,6 +6,17 @@
  * - Bills WITH occurrences (use occurrence.state)
  */
 
+import {
+  FileText,
+  Calendar,
+  Clock,
+  CheckCircle,
+  CreditCard,
+  Pause,
+  X,
+  AlertTriangle,
+} from 'lucide-react';
+
 // All possible status values across bills and occurrences
 export type BillStatus =
   | 'active' // Bill created but not submitted
@@ -20,7 +31,7 @@ export type BillStatus =
 // Status display information
 export interface StatusInfo {
   color: string;
-  icon: string;
+  icon: React.ComponentType<{ className?: string }>;
   label: string;
   description: string;
 }
@@ -61,56 +72,56 @@ export function getStatusInfo(status: BillStatus): StatusInfo {
     active: {
       color:
         'text-gray-600 bg-gray-50 border-gray-200 dark:bg-gray-950 dark:border-gray-800',
-      icon: '📄',
+      icon: FileText,
       label: 'Draft',
       description: 'Bill created but not yet submitted for approval',
     },
     scheduled: {
       color:
         'text-purple-600 bg-purple-50 border-purple-200 dark:bg-purple-950 dark:border-purple-800',
-      icon: '📅',
+      icon: Calendar,
       label: 'Scheduled',
       description: 'Occurrence scheduled for future processing',
     },
     pending_approval: {
       color:
         'text-amber-600 bg-amber-50 border-amber-200 dark:bg-amber-950 dark:border-amber-800',
-      icon: '⏳',
+      icon: Clock,
       label: 'Pending Approval',
       description: 'Waiting for approver review',
     },
     approved: {
       color:
         'text-green-600 bg-green-50 border-green-200 dark:bg-green-950 dark:border-green-800',
-      icon: '✅',
+      icon: CheckCircle,
       label: 'Approved',
       description: 'Approved and ready for payment',
     },
     paid: {
       color:
         'text-blue-600 bg-blue-50 border-blue-200 dark:bg-blue-950 dark:border-blue-800',
-      icon: '💳',
+      icon: CreditCard,
       label: 'Paid',
       description: 'Payment completed successfully',
     },
     on_hold: {
       color:
         'text-red-600 bg-red-50 border-red-200 dark:bg-red-950 dark:border-red-800',
-      icon: '⏸️',
+      icon: Pause,
       label: 'On Hold',
       description: 'Temporarily paused or requires attention',
     },
     canceled: {
       color:
         'text-gray-600 bg-gray-50 border-gray-200 dark:bg-gray-950 dark:border-gray-800',
-      icon: '❌',
+      icon: X,
       label: 'Canceled',
       description: 'Cancelled or rejected',
     },
     failed: {
       color:
         'text-red-600 bg-red-50 border-red-200 dark:bg-red-950 dark:border-red-800',
-      icon: '⚠️',
+      icon: AlertTriangle,
       label: 'Failed',
       description: 'Payment attempt failed',
     },

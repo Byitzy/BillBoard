@@ -8,6 +8,7 @@ import {
   Clock,
   XCircle,
   Eye,
+  FileText,
   Calendar,
   DollarSign,
 } from 'lucide-react';
@@ -324,7 +325,8 @@ export default function ApprovalsPage() {
                               href="/bills"
                               className="inline-flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-xl hover:bg-blue-700"
                             >
-                              📝 Create Bills
+                              <FileText className="h-4 w-4" />
+                              Create Bills
                             </Link>
                             <p className="text-sm text-neutral-600">
                               Bills with due dates will automatically create

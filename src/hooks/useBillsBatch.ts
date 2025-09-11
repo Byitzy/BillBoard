@@ -47,32 +47,39 @@ export function useBillsBatch() {
     async (billIds: string[]): Promise<Map<string, string>> => {
       if (billIds.length === 0) return new Map();
 
-      const { data } = await supabase
-        .from('bill_occurrences')
-        .select(
-          `
-        bill_id,
-        approvals!inner(
-          approver:profiles!approver_id(
-            full_name,
-            email
-          )
-        )
-      `
-        )
-        .in('bill_id', billIds)
-        .eq('state', 'approved')
-        .order('created_at', { ascending: false });
-
+      // Temporarily disable this complex query to prevent 400 errors
+      // TODO: Fix the approvals join query once schema is confirmed
       const approverMap = new Map<string, string>();
-      data?.forEach((occ: any) => {
-        if (!approverMap.has(occ.bill_id) && occ.approvals?.[0]?.approver) {
-          const approver = occ.approvals[0].approver;
-          approverMap.set(occ.bill_id, approver.full_name || approver.email);
-        }
-      });
-
       return approverMap;
+
+      // const { data } = await supabase
+      //   .from('bill_occurrences')
+      //   .select(
+      //     `
+      //   bill_id,
+      //   approvals(
+      //     approver_id,
+      //     profiles!approvals_approver_id_fkey(
+      //       full_name,
+      //       email
+      //     )
+      //   )
+      // `
+      //   )
+      //   .in('bill_id', billIds)
+      //   .eq('state', 'approved')
+      //   .order('created_at', { ascending: false });
+
+      // Commented out until query is fixed
+      // const approverMap = new Map<string, string>();
+      // data?.forEach((occ: any) => {
+      //   if (!approverMap.has(occ.bill_id) && occ.approvals?.[0]?.profiles) {
+      //     const approver = occ.approvals[0].profiles;
+      //     approverMap.set(occ.bill_id, approver.full_name || approver.email);
+      //   }
+      // });
+
+      // return approverMap;
     },
     [supabase]
   );

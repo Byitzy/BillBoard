@@ -1,7 +1,7 @@
 'use client';
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { X, ExternalLink } from 'lucide-react';
+import { X, ExternalLink, PartyPopper } from 'lucide-react';
 import { useLocale } from '@/components/i18n/LocaleProvider';
 
 type Bill = {
@@ -85,7 +85,8 @@ export default function CalendarDayModal({
             </h2>
             {holidayName && (
               <p className="text-sm text-amber-600 dark:text-amber-400 mt-1">
-                🎉 {holidayName}
+                <PartyPopper className="h-4 w-4" />
+                {holidayName}
               </p>
             )}
           </div>

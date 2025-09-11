@@ -4,6 +4,8 @@ import { useState, useEffect } from 'react';
 import { getSupabaseClient } from '@/lib/supabase/client';
 import { getDefaultOrgId } from '@/lib/org';
 import SharedSelect, { type SelectOption } from '@/components/ui/SharedSelect';
+import BillAttachments from './BillAttachments';
+import BillComments from './BillComments';
 
 interface Bill {
   id: string;
@@ -304,6 +306,16 @@ export default function BillEditForm({
           </p>
         </div>
       )}
+
+      {/* Attachments section */}
+      <div className="border-t border-neutral-200 dark:border-neutral-800 pt-6">
+        <BillAttachments billId={bill.id} />
+      </div>
+
+      {/* Comments section */}
+      <div className="border-t border-neutral-200 dark:border-neutral-800 pt-6">
+        <BillComments billId={bill.id} />
+      </div>
     </form>
   );
 }

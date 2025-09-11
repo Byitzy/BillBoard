@@ -4,6 +4,15 @@ import { useState, useEffect } from 'react';
 import { getSupabaseClient } from '@/lib/supabase/client';
 import { getPossibleTransitions } from '@/lib/bills/status';
 import { useBillOperations } from '@/hooks/useBillOperations';
+import {
+  FileText,
+  CheckCircle,
+  CreditCard,
+  Pause,
+  X,
+  RotateCcw,
+  DollarSign,
+} from 'lucide-react';
 
 interface Bill {
   id: string;
@@ -93,7 +102,7 @@ function QuickActions({ bill, onSaved }: { bill: Bill; onSaved: () => void }) {
                 disabled={loading}
                 className="w-full px-4 py-2 text-sm font-medium text-white bg-amber-600 hover:bg-amber-700 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
               >
-                <span>📋</span>
+                <FileText className="h-4 w-4" />
                 {loading ? 'Submitting...' : 'Submit for Approval'}
               </button>
             )}
@@ -105,7 +114,7 @@ function QuickActions({ bill, onSaved }: { bill: Bill; onSaved: () => void }) {
                 disabled={loading}
                 className="w-full px-4 py-2 text-sm font-medium text-white bg-green-600 hover:bg-green-700 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
               >
-                <span>✅</span>
+                <CheckCircle className="h-4 w-4" />
                 {loading ? 'Approving...' : 'Approve Bill'}
               </button>
             )}
@@ -117,7 +126,7 @@ function QuickActions({ bill, onSaved }: { bill: Bill; onSaved: () => void }) {
                 disabled={loading}
                 className="w-full px-4 py-2 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
               >
-                <span>💳</span>
+                <CreditCard className="h-4 w-4" />
                 {loading ? 'Marking as Paid...' : 'Mark as Paid'}
               </button>
             )}
@@ -129,7 +138,7 @@ function QuickActions({ bill, onSaved }: { bill: Bill; onSaved: () => void }) {
                 disabled={loading}
                 className="w-full px-4 py-2 text-sm font-medium text-neutral-700 dark:text-neutral-300 bg-neutral-100 dark:bg-neutral-800 hover:bg-neutral-200 dark:hover:bg-neutral-700 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
               >
-                <span>⏸️</span>
+                <Pause className="h-4 w-4" />
                 Put on Hold
               </button>
             )}
@@ -141,7 +150,7 @@ function QuickActions({ bill, onSaved }: { bill: Bill; onSaved: () => void }) {
                 disabled={loading}
                 className="w-full px-4 py-2 text-sm font-medium text-neutral-700 dark:text-neutral-300 bg-neutral-100 dark:bg-neutral-800 hover:bg-neutral-200 dark:hover:bg-neutral-700 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
               >
-                <span>❌</span>
+                <X className="h-4 w-4" />
                 Cancel Bill
               </button>
             )}
@@ -152,7 +161,7 @@ function QuickActions({ bill, onSaved }: { bill: Bill; onSaved: () => void }) {
       {isRecurring && (
         <div className="text-sm text-neutral-600 dark:text-neutral-400 p-3 bg-neutral-50 dark:bg-neutral-800 rounded-lg">
           <div className="flex items-center gap-2 mb-2">
-            <span>🔄</span>
+            <RotateCcw className="h-4 w-4" />
             <span className="font-medium">Recurring Bill</span>
           </div>
           <p>
@@ -166,7 +175,7 @@ function QuickActions({ bill, onSaved }: { bill: Bill; onSaved: () => void }) {
       {effectiveStatus === 'paid' && !isRecurring && (
         <div className="text-sm text-blue-600 dark:text-blue-400 p-3 bg-blue-50 dark:bg-blue-950 rounded-lg">
           <div className="flex items-center gap-2 mb-2">
-            <span>💳</span>
+            <DollarSign className="h-4 w-4" />
             <span className="font-medium">Bill Paid</span>
           </div>
           <p>
@@ -179,7 +188,7 @@ function QuickActions({ bill, onSaved }: { bill: Bill; onSaved: () => void }) {
       {!hasOccurrences && !isRecurring && effectiveStatus !== 'paid' && (
         <div className="text-sm text-neutral-600 dark:text-neutral-400 p-3 bg-neutral-50 dark:bg-neutral-800 rounded-lg">
           <div className="flex items-center gap-2 mb-2">
-            <span>📄</span>
+            <FileText className="h-4 w-4" />
             <span className="font-medium">Simple Bill</span>
           </div>
           <p>

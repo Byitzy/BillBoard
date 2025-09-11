@@ -74,24 +74,29 @@ export function useBillOperations(
     if (!billId || !hasOccurrences) return;
 
     try {
-      const { data } = await supabase
-        .from('bill_occurrences')
-        .select(
-          `
-          id,
-          approvals!inner(
-            approver_id,
-            decided_at
-          )
-        `
-        )
-        .eq('bill_id', billId)
-        .eq('state', 'approved')
-        .limit(1);
+      // Temporarily disabled to prevent 400 errors
+      // TODO: Fix approvals query once schema is confirmed
+      setApprover(null);
+      return;
 
-      if (data?.[0]?.approvals?.[0]) {
-        setApprover('Admin'); // Simplified for now
-      }
+      // const { data } = await supabase
+      //   .from('bill_occurrences')
+      //   .select(
+      //     `
+      //     id,
+      //     approvals(
+      //       approver_id,
+      //       decided_at
+      //     )
+      //   `
+      //   )
+      //   .eq('bill_id', billId)
+      //   .eq('state', 'approved')
+      //   .limit(1);
+
+      // if (data?.[0]?.approvals?.[0]) {
+      //   setApprover('Admin'); // Simplified for now
+      // }
     } catch (error) {
       console.error('Failed to load approver info:', error);
     }
