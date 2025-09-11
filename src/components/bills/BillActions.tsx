@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { getSupabaseClient } from '@/lib/supabase/client';
 
 interface Bill {
@@ -10,6 +10,12 @@ interface Bill {
   currency?: string;
   due_date: string | null;
   recurring_rule?: any | null;
+  status: string;
+  description: string | null;
+  category: string | null;
+  vendor_name: string | null;
+  project_name: string | null;
+  created_at: string;
 }
 
 interface BillActionsProps {
@@ -19,18 +25,185 @@ interface BillActionsProps {
 
 export default function BillActions({ bill, onSaved }: BillActionsProps) {
   return (
-    <div className="space-y-3">
-      <div className="rounded-2xl border border-neutral-200 p-4 shadow-sm dark:border-neutral-800 card-surface">
-        <h2 className="text-sm font-semibold mb-2">Edit Schedule</h2>
+    <div className="space-y-4">
+      {/* Quick Actions */}
+      <div className="bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-xl shadow-sm p-4">
+        <h2 className="text-sm font-semibold mb-3 text-neutral-900 dark:text-neutral-100">
+          Quick Actions
+        </h2>
+        {bill ? (
+          <QuickActions bill={bill} onSaved={onSaved} />
+        ) : (
+          <div className="text-sm text-neutral-500">Loading…</div>
+        )}
+      </div>
+
+      {/* Edit Schedule */}
+      <div className="bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-xl shadow-sm p-4">
+        <h2 className="text-sm font-semibold mb-3 text-neutral-900 dark:text-neutral-100">
+          Edit Schedule
+        </h2>
         {bill ? (
           <EditSchedule bill={bill} onSaved={onSaved} />
         ) : (
           <div className="text-sm text-neutral-500">Loading…</div>
         )}
       </div>
-      <div className="rounded-2xl border border-neutral-200 p-4 shadow-sm dark:border-neutral-800 card-surface">
-        Approval Panel
-      </div>
+    </div>
+  );
+}
+
+function QuickActions({ bill, onSaved }: { bill: Bill; onSaved: () => void }) {
+  const supabase = getSupabaseClient();
+  const [loading, setLoading] = useState(false);
+  const [billOccurrenceState, setBillOccurrenceState] = useState<string | null>(
+    null
+  );
+
+  const isRecurring = !!bill.recurring_rule;
+
+  // For non-recurring bills, show the actual occurrence state, otherwise show bill status
+  const displayStatus =
+    !isRecurring && billOccurrenceState ? billOccurrenceState : bill.status;
+
+  // Load bill occurrence state for non-recurring bills
+  useEffect(() => {
+    if (!isRecurring) {
+      loadBillOccurrenceState();
+    }
+  }, [bill.id, isRecurring]);
+
+  async function loadBillOccurrenceState() {
+    const { data } = await supabase
+      .from('bill_occurrences')
+      .select('state')
+      .eq('bill_id', bill.id)
+      .limit(1);
+
+    if (data?.[0]) {
+      setBillOccurrenceState(data[0].state);
+    }
+  }
+
+  async function markAsPaid() {
+    if (isRecurring) return;
+
+    setLoading(true);
+    try {
+      // For one-time bills, update all bill occurrences to paid
+      await supabase
+        .from('bill_occurrences')
+        .update({ state: 'paid' })
+        .eq('bill_id', bill.id);
+
+      onSaved();
+    } catch (error) {
+      console.error('Failed to mark as paid:', error);
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function updateStatus(
+    newStatus:
+      | 'active'
+      | 'pending_approval'
+      | 'approved'
+      | 'on_hold'
+      | 'canceled'
+  ) {
+    setLoading(true);
+    try {
+      await supabase
+        .from('bills')
+        .update({ status: newStatus })
+        .eq('id', bill.id);
+
+      onSaved();
+    } catch (error) {
+      console.error('Failed to update status:', error);
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  return (
+    <div className="space-y-3">
+      {/* Status actions for non-recurring bills */}
+      {!isRecurring && displayStatus !== 'paid' && (
+        <div className="space-y-2">
+          {displayStatus === 'approved' && (
+            <button
+              onClick={markAsPaid}
+              disabled={loading}
+              className="w-full px-4 py-2 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+            >
+              <span>💳</span>
+              {loading ? 'Marking as Paid...' : 'Mark as Paid'}
+            </button>
+          )}
+
+          {displayStatus === 'pending_approval' && (
+            <button
+              onClick={() => updateStatus('approved')}
+              disabled={loading}
+              className="w-full px-4 py-2 text-sm font-medium text-white bg-green-600 hover:bg-green-700 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+            >
+              <span>✅</span>
+              {loading ? 'Approving...' : 'Approve Bill'}
+            </button>
+          )}
+
+          {displayStatus === 'approved' && (
+            <button
+              onClick={() => updateStatus('on_hold')}
+              disabled={loading}
+              className="w-full px-4 py-2 text-sm font-medium text-neutral-700 dark:text-neutral-300 bg-neutral-100 dark:bg-neutral-800 hover:bg-neutral-200 dark:hover:bg-neutral-700 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+            >
+              <span>⏸️</span>
+              Put on Hold
+            </button>
+          )}
+
+          {displayStatus === 'on_hold' && (
+            <button
+              onClick={() => updateStatus('pending_approval')}
+              disabled={loading}
+              className="w-full px-4 py-2 text-sm font-medium text-white bg-amber-600 hover:bg-amber-700 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+            >
+              <span>⏳</span>
+              Resume Processing
+            </button>
+          )}
+        </div>
+      )}
+
+      {/* For recurring bills, show helpful info */}
+      {isRecurring && (
+        <div className="text-sm text-neutral-600 dark:text-neutral-400 p-3 bg-neutral-50 dark:bg-neutral-800 rounded-lg">
+          <div className="flex items-center gap-2 mb-2">
+            <span>🔄</span>
+            <span className="font-medium">Recurring Bill</span>
+          </div>
+          <p>
+            Individual occurrences can be managed in the occurrences list below.
+            Use the schedule editor to modify the recurring pattern.
+          </p>
+        </div>
+      )}
+
+      {/* Paid status display */}
+      {displayStatus === 'paid' && !isRecurring && (
+        <div className="text-sm text-blue-600 dark:text-blue-400 p-3 bg-blue-50 dark:bg-blue-950 rounded-lg">
+          <div className="flex items-center gap-2 mb-2">
+            <span>💳</span>
+            <span className="font-medium">Bill Paid</span>
+          </div>
+          <p>
+            This bill has been marked as paid and requires no further action.
+          </p>
+        </div>
+      )}
     </div>
   );
 }
