@@ -3,6 +3,8 @@ import { useEffect, useState } from 'react';
 import BillActions from '@/components/bills/BillActions';
 import BillHeader from '@/components/bills/BillHeader';
 import OccurrenceList from '@/components/bills/OccurrenceList';
+import BillAttachments from '@/components/bills/BillAttachments';
+import BillComments from '@/components/bills/BillComments';
 import { getSupabaseClient } from '@/lib/supabase/client';
 
 type Props = { params: Promise<{ id: string }> };
@@ -119,57 +121,11 @@ export default function BillDetailPage({ params }: Props) {
           />
 
           <div className="bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-xl shadow-sm p-6">
-            <h3 className="text-lg font-semibold text-neutral-900 dark:text-neutral-100 mb-4">
-              Attachments
-            </h3>
-            <div className="text-center py-8">
-              <div className="mx-auto mb-4 h-12 w-12 rounded-lg bg-neutral-100 dark:bg-neutral-800 flex items-center justify-center">
-                <svg
-                  className="h-6 w-6 text-neutral-400"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  strokeWidth={1.5}
-                  stroke="currentColor"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    d="M18.375 12.739l-7.693 7.693a4.5 4.5 0 01-6.364-6.364l10.94-10.94A3 3 0 1119.5 7.372L8.552 18.32m.009-.01l-.01.01m5.699-9.941l-7.81 7.81a1.5 1.5 0 002.112 2.13"
-                  />
-                </svg>
-              </div>
-              <p className="text-sm text-neutral-500 dark:text-neutral-400">
-                No attachments yet. Upload receipts, invoices, or supporting
-                documents.
-              </p>
-            </div>
+            <BillAttachments billId={resolvedParams?.id || ''} />
           </div>
 
           <div className="bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-xl shadow-sm p-6">
-            <h3 className="text-lg font-semibold text-neutral-900 dark:text-neutral-100 mb-4">
-              Comments & Notes
-            </h3>
-            <div className="text-center py-8">
-              <div className="mx-auto mb-4 h-12 w-12 rounded-lg bg-neutral-100 dark:bg-neutral-800 flex items-center justify-center">
-                <svg
-                  className="h-6 w-6 text-neutral-400"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  strokeWidth={1.5}
-                  stroke="currentColor"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    d="M7.5 8.25h9m-9 3H12m-9.75 1.51c0 1.691 1.327 3.06 2.963 3.06c.928 0 1.68-.574 1.884-1.384l.01-.044c.031-.142.043-.296.043-.453c0-.69-.56-1.25-1.25-1.25H1.5zM21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-                  />
-                </svg>
-              </div>
-              <p className="text-sm text-neutral-500 dark:text-neutral-400">
-                No comments yet. Add notes about this bill, approval reasons, or
-                payment details.
-              </p>
-            </div>
+            <BillComments billId={resolvedParams?.id || ''} />
           </div>
         </div>
 

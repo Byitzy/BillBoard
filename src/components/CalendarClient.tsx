@@ -1,6 +1,7 @@
 'use client';
 import { useEffect, useMemo, useState } from 'react';
 import { useLocale } from '@/components/i18n/LocaleProvider';
+import { PartyPopper } from 'lucide-react';
 import {
   isQuebecBankHoliday,
   getQuebecBankHolidayName,
@@ -169,7 +170,8 @@ export default function CalendarClient() {
                 <div className="mt-1">
                   <div className="rounded-lg px-2 py-1 text-center bg-amber-100 dark:bg-amber-900/30 border border-amber-200 dark:border-amber-700">
                     <div className="text-xs font-medium text-amber-800 dark:text-amber-300">
-                      🎉 Holiday
+                      <PartyPopper className="h-3 w-3" />
+                      Holiday
                     </div>
                   </div>
                 </div>
@@ -187,7 +189,8 @@ export default function CalendarClient() {
 
                 {holiday && (
                   <div className="mb-2 rounded-lg bg-amber-100 px-2 py-1 text-amber-800 dark:bg-amber-900/30 dark:text-amber-300">
-                    <strong>🎉 Holiday:</strong> {holiday}
+                    <PartyPopper className="h-4 w-4 inline" />
+                    <strong> Holiday:</strong> {holiday}
                   </div>
                 )}
 

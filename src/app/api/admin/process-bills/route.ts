@@ -6,7 +6,7 @@ const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
 const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
 if (!supabaseUrl || !serviceKey) {
-  console.error('❌ Missing environment variables:', {
+  console.error('[ERROR] Missing environment variables:', {
     supabaseUrl: !!supabaseUrl,
     serviceKey: !!serviceKey,
   });
@@ -24,7 +24,7 @@ async function isAdmin(
   authHeader: string | null
 ): Promise<{ isAdmin: boolean; userId?: string }> {
   if (!authHeader || !authHeader.startsWith('Bearer ')) {
-    console.log('❌ No valid auth header');
+    console.log('[ERROR] No valid auth header');
     return { isAdmin: false };
   }
 
@@ -37,16 +37,16 @@ async function isAdmin(
     } = await adminClient.auth.getUser(token);
 
     if (error) {
-      console.error('❌ Auth error:', error);
+      console.error('[ERROR] Auth error:', error);
       return { isAdmin: false };
     }
 
     if (!user) {
-      console.log('❌ No user found from token');
+      console.log('[ERROR] No user found from token');
       return { isAdmin: false };
     }
 
-    console.log('✅ User authenticated:', user.id);
+    console.log('[SUCCESS] User authenticated:', user.id);
 
     // Check if user is admin in any organization
     const { data: userProfile, error: profileError } = await adminClient
@@ -58,18 +58,18 @@ async function isAdmin(
       .single();
 
     if (profileError) {
-      console.error('❌ Profile query error:', profileError);
+      console.error('[ERROR] Profile query error:', profileError);
       return { isAdmin: false };
     }
 
-    console.log('👤 User profile:', userProfile);
+    console.log('[INFO] User profile:', userProfile);
 
     return {
       isAdmin: !!userProfile,
       userId: user.id,
     };
   } catch (error) {
-    console.error('❌ Unexpected auth error:', error);
+    console.error('[ERROR] Unexpected auth error:', error);
     return { isAdmin: false };
   }
 }

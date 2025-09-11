@@ -42,20 +42,42 @@ export function useSavedSearches() {
       const orgId = await getDefaultOrgId(supabase);
       if (!orgId) throw new Error('No organization found');
 
-      const { data, error } = await supabase
-        .from('bill_saved_searches' as any)
-        .select('*')
-        .eq('org_id', orgId)
-        .order('is_default', { ascending: false })
-        .order('name', { ascending: true });
+      // For now, just set empty array to prevent 404 errors
+      // TODO: Apply database migration to create bill_saved_searches table
+      setSavedSearches([]);
+      return;
 
-      if (error) throw error;
+      // Temporarily disabled until table exists
+      // const { data, error } = await supabase
+      //   .from('bill_saved_searches' as any)
+      //   .select('*')
+      //   .eq('org_id', orgId)
+      //   .order('is_default', { ascending: false })
+      //   .order('name', { ascending: true });
 
-      setSavedSearches((data as SavedSearch[]) || []);
+      // if (error) {
+      //   // Handle 404 for missing table
+      //   if (error.code === 'PGRST116' || error.message.includes('404')) {
+      //     setSavedSearches([]);
+      //     return;
+      //   }
+      //   throw error;
+      // }
+
+      // setSavedSearches((data as SavedSearch[]) || []);
     } catch (err) {
-      setError(
-        err instanceof Error ? err.message : 'Failed to load saved searches'
-      );
+      // Gracefully handle missing table (404) - just set empty array
+      if (
+        err instanceof Error &&
+        err.message.includes('relation "bill_saved_searches" does not exist')
+      ) {
+        setSavedSearches([]);
+        setError(null); // Don't show error for missing table
+      } else {
+        setError(
+          err instanceof Error ? err.message : 'Failed to load saved searches'
+        );
+      }
     } finally {
       setLoading(false);
     }
@@ -66,45 +88,47 @@ export function useSavedSearches() {
    */
   const createSavedSearch = useCallback(
     async (searchData: CreateSavedSearchData): Promise<SavedSearch | null> => {
-      setError(null);
+      setError('Saved searches feature is not available yet');
+      return null;
 
-      try {
-        const orgId = await getDefaultOrgId(supabase);
-        if (!orgId) throw new Error('No organization found');
+      // Temporarily disabled until table exists
+      // try {
+      //   const orgId = await getDefaultOrgId(supabase);
+      //   if (!orgId) throw new Error('No organization found');
 
-        // If setting as default, unset other defaults first
-        if (searchData.is_default) {
-          await supabase
-            .from('bill_saved_searches' as any)
-            .update({ is_default: false })
-            .eq('org_id', orgId)
-            .eq('is_default', true);
-        }
+      //   // If setting as default, unset other defaults first
+      //   if (searchData.is_default) {
+      //     await supabase
+      //       .from('bill_saved_searches' as any)
+      //       .update({ is_default: false })
+      //       .eq('org_id', orgId)
+      //       .eq('is_default', true);
+      //   }
 
-        const { data, error } = await supabase
-          .from('bill_saved_searches' as any)
-          .insert({
-            name: searchData.name,
-            description: searchData.description,
-            filters: searchData.filters,
-            is_default: searchData.is_default || false,
-            org_id: orgId,
-          })
-          .select('*')
-          .single();
+      //   const { data, error } = await supabase
+      //     .from('bill_saved_searches' as any)
+      //     .insert({
+      //       name: searchData.name,
+      //       description: searchData.description,
+      //       filters: searchData.filters,
+      //       is_default: searchData.is_default || false,
+      //       org_id: orgId,
+      //     })
+      //     .select('*')
+      //     .single();
 
-        if (error) throw error;
+      //   if (error) throw error;
 
-        // Refresh the list
-        await loadSavedSearches();
+      //   // Refresh the list
+      //   await loadSavedSearches();
 
-        return data as SavedSearch;
-      } catch (err) {
-        setError(
-          err instanceof Error ? err.message : 'Failed to create saved search'
-        );
-        return null;
-      }
+      //   return data as SavedSearch;
+      // } catch (err) {
+      //   setError(
+      //     err instanceof Error ? err.message : 'Failed to create saved search'
+      //   );
+      //   return null;
+      // }
     },
     [supabase, loadSavedSearches]
   );
@@ -117,45 +141,8 @@ export function useSavedSearches() {
       id: string,
       updates: Partial<CreateSavedSearchData>
     ): Promise<SavedSearch | null> => {
-      setError(null);
-
-      try {
-        const orgId = await getDefaultOrgId(supabase);
-        if (!orgId) throw new Error('No organization found');
-
-        // If setting as default, unset other defaults first
-        if (updates.is_default) {
-          await supabase
-            .from('bill_saved_searches' as any)
-            .update({ is_default: false })
-            .eq('org_id', orgId)
-            .eq('is_default', true)
-            .neq('id', id);
-        }
-
-        const { data, error } = await supabase
-          .from('bill_saved_searches' as any)
-          .update({
-            ...updates,
-            updated_at: new Date().toISOString(),
-          })
-          .eq('id', id)
-          .eq('org_id', orgId)
-          .select('*')
-          .single();
-
-        if (error) throw error;
-
-        // Refresh the list
-        await loadSavedSearches();
-
-        return data as SavedSearch;
-      } catch (err) {
-        setError(
-          err instanceof Error ? err.message : 'Failed to update saved search'
-        );
-        return null;
-      }
+      setError('Saved searches feature is not available yet');
+      return null;
     },
     [supabase, loadSavedSearches]
   );
@@ -165,30 +152,8 @@ export function useSavedSearches() {
    */
   const deleteSavedSearch = useCallback(
     async (id: string): Promise<boolean> => {
-      setError(null);
-
-      try {
-        const orgId = await getDefaultOrgId(supabase);
-        if (!orgId) throw new Error('No organization found');
-
-        const { error } = await supabase
-          .from('bill_saved_searches' as any)
-          .delete()
-          .eq('id', id)
-          .eq('org_id', orgId);
-
-        if (error) throw error;
-
-        // Refresh the list
-        await loadSavedSearches();
-
-        return true;
-      } catch (err) {
-        setError(
-          err instanceof Error ? err.message : 'Failed to delete saved search'
-        );
-        return false;
-      }
+      setError('Saved searches feature is not available yet');
+      return false;
     },
     [supabase, loadSavedSearches]
   );
