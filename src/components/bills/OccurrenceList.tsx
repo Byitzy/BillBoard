@@ -137,7 +137,31 @@ function OccurrenceEditor({
               Submit by {occ.suggested_submission_date}
             </div>
           )}
-          <div className="text-xs text-neutral-500">State: {occ.state}</div>
+          <div className="flex items-center gap-2">
+            <div className="text-xs text-neutral-500">State: {occ.state}</div>
+            {occ.state === 'approved' && (
+              <button
+                className="rounded-lg border px-2 py-1 text-xs hover:bg-neutral-100 dark:border-neutral-800 dark:hover:bg-neutral-900"
+                onClick={async () => {
+                  setSaving(true);
+                  setErr(null);
+                  try {
+                    await supabase
+                      .from('bill_occurrences')
+                      .update({ state: 'paid' })
+                      .eq('id', occ.id);
+                    onSaved();
+                  } catch (e: any) {
+                    setErr(e.message || 'Failed to mark as paid');
+                  } finally {
+                    setSaving(false);
+                  }
+                }}
+              >
+                Mark as Paid
+              </button>
+            )}
+          </div>
           {err && <div className="text-xs text-red-600">{err}</div>}
         </div>
       ) : (
