@@ -1,5 +1,5 @@
 'use client';
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useMemo } from 'react';
 import { useLocale } from '@/components/i18n/LocaleProvider';
 
 export type SelectOption = {
@@ -39,20 +39,36 @@ export default function SharedSelect(props: SharedSelectProps) {
   const [filteredOptions, setFilteredOptions] = useState<SelectOption[]>([]);
   const inputRef = useRef<HTMLInputElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
+  const optionsRef = useRef<SelectOption[]>([]);
 
-  // Filter options based on query
+  // Filter options effect
   useEffect(() => {
     if (props.simple) return;
 
+    const complexProps = props as ComplexSelectProps;
+    const currentOptions = complexProps.options;
+
+    // Check if options actually changed by comparing length and first few items
+    const optionsChanged =
+      optionsRef.current.length !== currentOptions.length ||
+      optionsRef.current[0]?.id !== currentOptions[0]?.id ||
+      optionsRef.current[0]?.name !== currentOptions[0]?.name;
+
+    // Update ref if options changed
+    if (optionsChanged) {
+      optionsRef.current = currentOptions;
+    }
+
+    // Filter the current options
     if (!query.trim()) {
-      setFilteredOptions(props.options);
+      setFilteredOptions(currentOptions);
     } else {
-      const filtered = props.options.filter((option) =>
+      const filtered = currentOptions.filter((option) =>
         option.name.toLowerCase().includes(query.toLowerCase())
       );
       setFilteredOptions(filtered);
     }
-  }, [props, query]);
+  }, [query, props.simple]); // Only query and simple flag as dependencies
 
   // Close dropdown when clicking outside
   useEffect(() => {

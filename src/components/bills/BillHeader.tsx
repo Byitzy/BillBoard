@@ -1,6 +1,7 @@
 'use client';
-import { useState, useEffect } from 'react';
-import { getSupabaseClient } from '@/lib/supabase/client';
+import { useEffect } from 'react';
+import { getStatusInfo } from '@/lib/bills/status';
+import { useBillOperations } from '@/hooks/useBillOperations';
 
 interface Bill {
   id: string;
@@ -22,124 +23,30 @@ interface BillHeaderProps {
   error: string | null;
 }
 
-// Helper function to get status color and icon (reused from ClientBillsPage)
-function getStatusInfo(status: string) {
-  switch (status) {
-    case 'pending_approval':
-      return {
-        color:
-          'text-amber-600 bg-amber-50 border-amber-200 dark:bg-amber-950 dark:border-amber-800',
-        icon: '⏳',
-        label: 'Pending Approval',
-      };
-    case 'approved':
-      return {
-        color:
-          'text-green-600 bg-green-50 border-green-200 dark:bg-green-950 dark:border-green-800',
-        icon: '✅',
-        label: 'Approved',
-      };
-    case 'paid':
-      return {
-        color:
-          'text-blue-600 bg-blue-50 border-blue-200 dark:bg-blue-950 dark:border-blue-800',
-        icon: '💳',
-        label: 'Paid',
-      };
-    case 'on_hold':
-      return {
-        color:
-          'text-red-600 bg-red-50 border-red-200 dark:bg-red-950 dark:border-red-800',
-        icon: '⏸️',
-        label: 'On Hold',
-      };
-    default:
-      return {
-        color:
-          'text-neutral-600 bg-neutral-50 border-neutral-200 dark:bg-neutral-950 dark:border-neutral-800',
-        icon: '📄',
-        label: status.charAt(0).toUpperCase() + status.slice(1),
-      };
-  }
-}
-
 export default function BillHeader({ bill, error }: BillHeaderProps) {
-  const supabase = getSupabaseClient();
-  const [billOccurrenceState, setBillOccurrenceState] = useState<string | null>(
-    null
-  );
-  const [approver, setApprover] = useState<string | null>(null);
-
   const isRecurring = bill ? !!bill.recurring_rule : false;
 
-  // For non-recurring bills, show the actual occurrence state, otherwise show bill status
-  const displayStatus =
-    bill && !isRecurring && billOccurrenceState
-      ? billOccurrenceState
-      : bill?.status || 'active';
-  const statusInfo = getStatusInfo(displayStatus);
+  // Use shared bill operations hook
+  const {
+    effectiveStatus,
+    approver,
+    loadBillOccurrenceState,
+    loadApproverInfo,
+  } = useBillOperations(bill?.id || '', bill?.status || 'active', isRecurring);
+
+  const statusInfo = getStatusInfo(effectiveStatus);
 
   useEffect(() => {
-    if (bill && !isRecurring) {
+    if (bill) {
       loadBillOccurrenceState();
     }
-  }, [bill?.id, isRecurring]);
+  }, [bill?.id, loadBillOccurrenceState]);
 
   useEffect(() => {
-    if (bill && displayStatus === 'approved' && !isRecurring) {
+    if (bill && effectiveStatus === 'approved') {
       loadApproverInfo();
     }
-  }, [bill?.id, displayStatus, isRecurring]);
-
-  async function loadBillOccurrenceState() {
-    if (!bill) return;
-
-    try {
-      const { data, error } = await supabase
-        .from('bill_occurrences')
-        .select('state')
-        .eq('bill_id', bill.id)
-        .order('created_at', { ascending: false })
-        .limit(1);
-
-      if (error) {
-        console.error('Error loading bill occurrence state:', error);
-        return;
-      }
-
-      if (data?.[0]) {
-        console.log(`Bill ${bill.id} occurrence state:`, data[0].state);
-        setBillOccurrenceState(data[0].state);
-      } else {
-        console.log(`No bill occurrence found for bill ${bill.id}`);
-      }
-    } catch (error) {
-      console.error('Failed to load bill occurrence state:', error);
-    }
-  }
-
-  async function loadApproverInfo() {
-    if (!bill) return;
-
-    const { data } = await supabase
-      .from('bill_occurrences')
-      .select(
-        `
-        id,
-        approvals!inner(
-          approver_id,
-          decided_at
-        )
-      `
-      )
-      .eq('bill_id', bill.id)
-      .eq('state', 'approved')
-      .limit(1);
-
-    if (data?.[0]?.approvals?.[0]) {
-      setApprover('Admin'); // Simplified for now
-    }
-  }
+  }, [bill?.id, effectiveStatus, loadApproverInfo]);
 
   if (error) {
     return (
@@ -189,7 +96,7 @@ export default function BillHeader({ bill, error }: BillHeaderProps) {
               </p>
             )}
 
-            {displayStatus === 'approved' && approver && !isRecurring && (
+            {effectiveStatus === 'approved' && approver && (
               <div className="mb-4 text-sm text-green-600 dark:text-green-400">
                 ✅ Approved by {approver}
               </div>

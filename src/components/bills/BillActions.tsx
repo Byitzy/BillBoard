@@ -2,6 +2,8 @@
 
 import { useState, useEffect } from 'react';
 import { getSupabaseClient } from '@/lib/supabase/client';
+import { getPossibleTransitions } from '@/lib/bills/status';
+import { useBillOperations } from '@/hooks/useBillOperations';
 
 interface Bill {
   id: string;
@@ -54,142 +56,97 @@ export default function BillActions({ bill, onSaved }: BillActionsProps) {
 }
 
 function QuickActions({ bill, onSaved }: { bill: Bill; onSaved: () => void }) {
-  const supabase = getSupabaseClient();
-  const [loading, setLoading] = useState(false);
-  const [billOccurrenceState, setBillOccurrenceState] = useState<string | null>(
-    null
-  );
-
   const isRecurring = !!bill.recurring_rule;
 
-  // For non-recurring bills, show the actual occurrence state, otherwise show bill status
-  const displayStatus =
-    !isRecurring && billOccurrenceState ? billOccurrenceState : bill.status;
+  // Use shared bill operations hook
+  const {
+    loading,
+    billOccurrenceState,
+    effectiveStatus,
+    loadBillOccurrenceState,
+    updateStatus,
+    markAsPaid,
+  } = useBillOperations(bill.id, bill.status, isRecurring, onSaved);
 
-  // Load bill occurrence state for non-recurring bills
+  const hasOccurrences = !!billOccurrenceState;
+  const possibleTransitions = getPossibleTransitions(
+    effectiveStatus,
+    hasOccurrences
+  );
+
+  // Load bill occurrence state on mount
   useEffect(() => {
-    if (!isRecurring) {
-      loadBillOccurrenceState();
-    }
-  }, [bill.id, isRecurring]);
-
-  async function loadBillOccurrenceState() {
-    try {
-      const { data, error } = await supabase
-        .from('bill_occurrences')
-        .select('state')
-        .eq('bill_id', bill.id)
-        .order('created_at', { ascending: false })
-        .limit(1);
-
-      if (error) {
-        console.error('Error loading bill occurrence state:', error);
-        return;
-      }
-
-      if (data?.[0]) {
-        console.log(`Bill ${bill.id} occurrence state:`, data[0].state);
-        setBillOccurrenceState(data[0].state);
-      } else {
-        console.log(`No bill occurrence found for bill ${bill.id}`);
-      }
-    } catch (error) {
-      console.error('Failed to load bill occurrence state:', error);
-    }
-  }
-
-  async function markAsPaid() {
-    if (isRecurring) return;
-
-    setLoading(true);
-    try {
-      // For one-time bills, update all bill occurrences to paid
-      await supabase
-        .from('bill_occurrences')
-        .update({ state: 'paid' })
-        .eq('bill_id', bill.id);
-
-      onSaved();
-    } catch (error) {
-      console.error('Failed to mark as paid:', error);
-    } finally {
-      setLoading(false);
-    }
-  }
-
-  async function updateStatus(
-    newStatus:
-      | 'active'
-      | 'pending_approval'
-      | 'approved'
-      | 'on_hold'
-      | 'canceled'
-  ) {
-    setLoading(true);
-    try {
-      await supabase
-        .from('bills')
-        .update({ status: newStatus })
-        .eq('id', bill.id);
-
-      onSaved();
-    } catch (error) {
-      console.error('Failed to update status:', error);
-    } finally {
-      setLoading(false);
-    }
-  }
+    loadBillOccurrenceState();
+  }, [loadBillOccurrenceState]);
 
   return (
     <div className="space-y-3">
-      {/* Status actions for non-recurring bills */}
-      {!isRecurring && displayStatus !== 'paid' && (
-        <div className="space-y-2">
-          {displayStatus === 'approved' && (
-            <button
-              onClick={markAsPaid}
-              disabled={loading}
-              className="w-full px-4 py-2 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
-            >
-              <span>💳</span>
-              {loading ? 'Marking as Paid...' : 'Mark as Paid'}
-            </button>
-          )}
+      {/* Dynamic status actions based on possible transitions */}
+      {!isRecurring &&
+        effectiveStatus !== 'paid' &&
+        possibleTransitions.length > 0 && (
+          <div className="space-y-2">
+            {/* Submit for Approval */}
+            {possibleTransitions.includes('pending_approval') && (
+              <button
+                onClick={() => updateStatus('pending_approval')}
+                disabled={loading}
+                className="w-full px-4 py-2 text-sm font-medium text-white bg-amber-600 hover:bg-amber-700 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+              >
+                <span>📋</span>
+                {loading ? 'Submitting...' : 'Submit for Approval'}
+              </button>
+            )}
 
-          {displayStatus === 'pending_approval' && (
-            <button
-              onClick={() => updateStatus('approved')}
-              disabled={loading}
-              className="w-full px-4 py-2 text-sm font-medium text-white bg-green-600 hover:bg-green-700 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
-            >
-              <span>✅</span>
-              {loading ? 'Approving...' : 'Approve Bill'}
-            </button>
-          )}
+            {/* Approve */}
+            {possibleTransitions.includes('approved') && (
+              <button
+                onClick={() => updateStatus('approved')}
+                disabled={loading}
+                className="w-full px-4 py-2 text-sm font-medium text-white bg-green-600 hover:bg-green-700 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+              >
+                <span>✅</span>
+                {loading ? 'Approving...' : 'Approve Bill'}
+              </button>
+            )}
 
-          {displayStatus === 'approved' && (
-            <button
-              onClick={() => updateStatus('on_hold')}
-              disabled={loading}
-              className="w-full px-4 py-2 text-sm font-medium text-neutral-700 dark:text-neutral-300 bg-neutral-100 dark:bg-neutral-800 hover:bg-neutral-200 dark:hover:bg-neutral-700 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
-            >
-              <span>⏸️</span>
-              Put on Hold
-            </button>
-          )}
+            {/* Mark as Paid */}
+            {possibleTransitions.includes('paid') && (
+              <button
+                onClick={markAsPaid}
+                disabled={loading}
+                className="w-full px-4 py-2 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+              >
+                <span>💳</span>
+                {loading ? 'Marking as Paid...' : 'Mark as Paid'}
+              </button>
+            )}
 
-          {displayStatus === 'on_hold' && (
-            <button
-              onClick={() => updateStatus('pending_approval')}
-              disabled={loading}
-              className="w-full px-4 py-2 text-sm font-medium text-white bg-amber-600 hover:bg-amber-700 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
-            >
-              <span>⏳</span>
-              Resume Processing
-            </button>
-          )}
-        </div>
-      )}
+            {/* Put on Hold */}
+            {possibleTransitions.includes('on_hold') && (
+              <button
+                onClick={() => updateStatus('on_hold')}
+                disabled={loading}
+                className="w-full px-4 py-2 text-sm font-medium text-neutral-700 dark:text-neutral-300 bg-neutral-100 dark:bg-neutral-800 hover:bg-neutral-200 dark:hover:bg-neutral-700 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+              >
+                <span>⏸️</span>
+                Put on Hold
+              </button>
+            )}
+
+            {/* Cancel */}
+            {possibleTransitions.includes('canceled') && (
+              <button
+                onClick={() => updateStatus('canceled')}
+                disabled={loading}
+                className="w-full px-4 py-2 text-sm font-medium text-neutral-700 dark:text-neutral-300 bg-neutral-100 dark:bg-neutral-800 hover:bg-neutral-200 dark:hover:bg-neutral-700 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+              >
+                <span>❌</span>
+                Cancel Bill
+              </button>
+            )}
+          </div>
+        )}
 
       {/* For recurring bills, show helpful info */}
       {isRecurring && (
@@ -206,7 +163,7 @@ function QuickActions({ bill, onSaved }: { bill: Bill; onSaved: () => void }) {
       )}
 
       {/* Paid status display */}
-      {displayStatus === 'paid' && !isRecurring && (
+      {effectiveStatus === 'paid' && !isRecurring && (
         <div className="text-sm text-blue-600 dark:text-blue-400 p-3 bg-blue-50 dark:bg-blue-950 rounded-lg">
           <div className="flex items-center gap-2 mb-2">
             <span>💳</span>
@@ -214,6 +171,20 @@ function QuickActions({ bill, onSaved }: { bill: Bill; onSaved: () => void }) {
           </div>
           <p>
             This bill has been marked as paid and requires no further action.
+          </p>
+        </div>
+      )}
+
+      {/* Info for bills without occurrences */}
+      {!hasOccurrences && !isRecurring && effectiveStatus !== 'paid' && (
+        <div className="text-sm text-neutral-600 dark:text-neutral-400 p-3 bg-neutral-50 dark:bg-neutral-800 rounded-lg">
+          <div className="flex items-center gap-2 mb-2">
+            <span>📄</span>
+            <span className="font-medium">Simple Bill</span>
+          </div>
+          <p>
+            This bill doesn&apos;t use occurrence tracking. Status changes
+            update the bill directly.
           </p>
         </div>
       )}

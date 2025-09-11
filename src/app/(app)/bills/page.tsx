@@ -46,7 +46,7 @@ export default async function BillsPage({ searchParams }: BillsPageProps) {
           initialBills={[]}
           initialNextDue={{}}
           initialError={null}
-          filterContext=""
+          initialFilterContext=""
           vendorOptions={[]}
           projectOptions={[]}
         />
@@ -85,9 +85,8 @@ export default async function BillsPage({ searchParams }: BillsPageProps) {
   if (resolvedSearchParams.projectId) {
     query = query.eq('project_id', resolvedSearchParams.projectId);
   }
-  // Apply status filter - default to 'active' if no status specified
+  // Get all bills first - we'll filter by effective status after loading occurrences
   const status = resolvedSearchParams.status || 'active';
-  query = query.eq('status', status);
 
   const { data, error } = await query.order('created_at', { ascending: false });
 
@@ -118,6 +117,30 @@ export default async function BillsPage({ searchParams }: BillsPageProps) {
           bill.project_name.toLowerCase().includes(searchLower))
     );
   }
+
+  // Get occurrence states for all bills to determine effective status
+  const billIds = bills.map((bill) => bill.id);
+  let occurrenceStateMap = new Map();
+
+  if (billIds.length > 0) {
+    const { data: occurrenceData } = await supabase
+      .from('bill_occurrences')
+      .select('bill_id, state')
+      .in('bill_id', billIds)
+      .order('created_at', { ascending: false });
+
+    occurrenceData?.forEach((occ) => {
+      if (!occurrenceStateMap.has(occ.bill_id)) {
+        occurrenceStateMap.set(occ.bill_id, occ.state);
+      }
+    });
+  }
+
+  // Filter by effective status (occurrence state OR bill status)
+  bills = bills.filter((bill) => {
+    const effectiveStatus = occurrenceStateMap.get(bill.id) || bill.status;
+    return effectiveStatus === status;
+  });
 
   // Get next due dates for recurring bills
   const recurringBills = bills.filter((b) => !b.due_date);
@@ -191,7 +214,7 @@ export default async function BillsPage({ searchParams }: BillsPageProps) {
         initialBills={bills}
         initialNextDue={nextDue}
         initialError={error?.message || null}
-        filterContext={filterContext}
+        initialFilterContext={filterContext}
         vendorOptions={vendorOptions}
         projectOptions={projectOptions}
       />
