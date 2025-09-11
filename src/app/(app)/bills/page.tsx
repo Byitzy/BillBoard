@@ -3,25 +3,11 @@ import ClientBillsPage from '@/components/ClientBillsPage';
 import RequireOrg from '@/components/RequireOrg';
 import { getDefaultOrgId } from '@/lib/org';
 import { getServerClient } from '@/lib/supabase/server';
+import { type BillRow } from '@/hooks/usePaginatedBills';
 
 // Disable caching for this page to ensure fresh data
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
-
-type BillRow = {
-  id: string;
-  title: string;
-  amount_total: number;
-  due_date: string | null;
-  vendor_name: string | null;
-  project_name: string | null;
-  status: string;
-  recurring_rule: any | null;
-  created_at: string;
-  currency: string;
-  description: string | null;
-  category: string | null;
-};
 
 type BillsPageProps = {
   searchParams: Promise<{
@@ -72,6 +58,8 @@ export default async function BillsPage({ searchParams }: BillsPageProps) {
       currency,
       description,
       category,
+      vendor_id,
+      project_id,
       vendors(name),
       projects(name)
     `
@@ -97,6 +85,8 @@ export default async function BillsPage({ searchParams }: BillsPageProps) {
     due_date: row.due_date,
     vendor_name: row.vendors?.name || null,
     project_name: row.projects?.name || null,
+    vendor_id: row.vendor_id,
+    project_id: row.project_id,
     status: row.status,
     recurring_rule: row.recurring_rule,
     created_at: row.created_at,

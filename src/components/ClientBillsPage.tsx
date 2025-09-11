@@ -15,23 +15,14 @@ import {
   type BillStatus,
 } from '@/lib/bills/status';
 import { useBillOperations } from '@/hooks/useBillOperations';
-import { usePaginatedBills, type BillFilters } from '@/hooks/usePaginatedBills';
+import {
+  usePaginatedBills,
+  type BillFilters,
+  type BillRow,
+} from '@/hooks/usePaginatedBills';
 import { useBillsBatch, type BillBatchData } from '@/hooks/useBillsBatch';
-
-type BillRow = {
-  id: string;
-  title: string;
-  amount_total: number;
-  due_date: string | null;
-  vendor_name: string | null;
-  project_name: string | null;
-  status: string;
-  recurring_rule: any | null;
-  created_at: string;
-  currency: string;
-  description: string | null;
-  category: string | null;
-};
+import { useBulkBillOperations } from '@/hooks/useBulkBillOperations';
+import BillEditForm from '@/components/bills/BillEditForm';
 
 type ClientBillsPageProps = {
   initialBills: BillRow[];
@@ -59,6 +50,10 @@ export default function ClientBillsPage({
     approverInfo: new Map(),
     nextDueDates: {},
   });
+
+  // Bulk selection state
+  const [selectedBills, setSelectedBills] = useState<Set<string>>(new Set());
+  const [isSelectMode, setIsSelectMode] = useState(false);
 
   // Extract filters from URL params
   const urlParams =
@@ -89,6 +84,14 @@ export default function ClientBillsPage({
   // Use batch operations hook for optimized queries
   const { loadBillsBatchData } = useBillsBatch();
 
+  // Use bulk operations hook
+  const {
+    loading: bulkLoading,
+    bulkUpdateStatus,
+    bulkMarkAsPaid,
+    bulkArchiveBills,
+  } = useBulkBillOperations();
+
   // Memoize bill IDs to prevent unnecessary re-renders
   const billIds = useMemo(() => bills.map((b) => b.id), [bills]);
 
@@ -98,6 +101,7 @@ export default function ClientBillsPage({
     if (bills.length === 0 && !loading) {
       refresh();
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []); // Empty dependency array for mount-only effect
 
   useEffect(() => {
@@ -122,11 +126,89 @@ export default function ClientBillsPage({
     }
   }, [billIds, loadBillsBatchData]); // Use memoized billIds
 
+  // Bulk selection handlers
+  const handleSelectAll = () => {
+    if (selectedBills.size === bills.length) {
+      setSelectedBills(new Set());
+    } else {
+      setSelectedBills(new Set(bills.map((b) => b.id)));
+    }
+  };
+
+  const handleSelectBill = (billId: string) => {
+    const newSelected = new Set(selectedBills);
+    if (newSelected.has(billId)) {
+      newSelected.delete(billId);
+    } else {
+      newSelected.add(billId);
+    }
+    setSelectedBills(newSelected);
+  };
+
+  const handleBulkAction = async (action: string) => {
+    if (selectedBills.size === 0) return;
+
+    const billIds = Array.from(selectedBills);
+    let result;
+
+    try {
+      switch (action) {
+        case 'approve':
+          result = await bulkUpdateStatus(billIds, 'approved');
+          break;
+        case 'paid':
+          result = await bulkMarkAsPaid(billIds);
+          break;
+        case 'hold':
+          result = await bulkUpdateStatus(billIds, 'on_hold');
+          break;
+        case 'archive':
+          result = await bulkArchiveBills(billIds);
+          break;
+        default:
+          console.warn('Unknown bulk action:', action);
+          return;
+      }
+
+      // Show success/error feedback
+      if (result.success > 0) {
+        console.log(`Successfully ${action}ed ${result.success} bills`);
+      }
+      if (result.failed > 0) {
+        console.error(
+          `Failed to ${action} ${result.failed} bills:`,
+          result.errors
+        );
+      }
+
+      // Clear selection and refresh data
+      setSelectedBills(new Set());
+      refresh();
+    } catch (error) {
+      console.error(`Bulk ${action} failed:`, error);
+    }
+  };
+
+  const exitSelectMode = () => {
+    setIsSelectMode(false);
+    setSelectedBills(new Set());
+  };
+
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-xl font-semibold">{t('bills.title')}</h1>
+          <div className="flex items-center gap-3">
+            <h1 className="text-xl font-semibold">{t('bills.title')}</h1>
+            {bills.length > 0 && (
+              <button
+                onClick={() => setIsSelectMode(!isSelectMode)}
+                className="px-3 py-1.5 text-sm font-medium text-neutral-700 dark:text-neutral-300 bg-neutral-100 dark:bg-neutral-800 hover:bg-neutral-200 dark:hover:bg-neutral-700 rounded-lg"
+              >
+                {isSelectMode ? 'Cancel' : 'Select'}
+              </button>
+            )}
+          </div>
           {filterContext && (
             <p className="text-sm text-neutral-500 mt-1">
               {filterContext} •{' '}
@@ -135,8 +217,48 @@ export default function ClientBillsPage({
               </Link>
             </p>
           )}
+          {isSelectMode && (
+            <p className="text-sm text-neutral-600 dark:text-neutral-400 mt-1">
+              {selectedBills.size} of {bills.length} bills selected
+            </p>
+          )}
         </div>
         <div className="flex items-center gap-2">
+          {/* Bulk Actions Bar */}
+          {isSelectMode && selectedBills.size > 0 && (
+            <div className="flex items-center gap-2 mr-3 p-2 bg-blue-50 dark:bg-blue-950 rounded-lg border border-blue-200 dark:border-blue-800">
+              <button
+                onClick={() => handleBulkAction('approve')}
+                disabled={bulkLoading}
+                className="px-3 py-1.5 text-sm font-medium text-white bg-green-600 hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed rounded-md"
+              >
+                {bulkLoading
+                  ? 'Processing...'
+                  : `Approve ${selectedBills.size}`}
+              </button>
+              <button
+                onClick={() => handleBulkAction('paid')}
+                disabled={bulkLoading}
+                className="px-3 py-1.5 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed rounded-md"
+              >
+                {bulkLoading ? 'Processing...' : 'Mark Paid'}
+              </button>
+              <button
+                onClick={() => handleBulkAction('hold')}
+                disabled={bulkLoading}
+                className="px-3 py-1.5 text-sm font-medium text-neutral-700 dark:text-neutral-300 bg-neutral-200 dark:bg-neutral-700 hover:bg-neutral-300 dark:hover:bg-neutral-600 disabled:opacity-50 disabled:cursor-not-allowed rounded-md"
+              >
+                {bulkLoading ? 'Processing...' : 'Put on Hold'}
+              </button>
+              <button
+                onClick={() => handleBulkAction('archive')}
+                disabled={bulkLoading}
+                className="px-3 py-1.5 text-sm font-medium text-white bg-red-600 hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed rounded-md"
+              >
+                {bulkLoading ? 'Processing...' : 'Archive'}
+              </button>
+            </div>
+          )}
           {bills.length > 0 && (
             <>
               <CSVExportButton
@@ -217,6 +339,31 @@ export default function ClientBillsPage({
         className="my-4"
       />
 
+      {/* Select All Bar */}
+      {isSelectMode && bills.length > 0 && (
+        <div className="flex items-center gap-3 p-3 bg-neutral-50 dark:bg-neutral-900 rounded-lg border border-neutral-200 dark:border-neutral-800 mb-4">
+          <label className="flex items-center gap-2 cursor-pointer">
+            <input
+              type="checkbox"
+              checked={selectedBills.size === bills.length && bills.length > 0}
+              onChange={handleSelectAll}
+              className="w-4 h-4 text-blue-600 bg-white border-neutral-300 rounded focus:ring-blue-500"
+            />
+            <span className="text-sm font-medium text-neutral-700 dark:text-neutral-300">
+              Select all {bills.length} bills
+            </span>
+          </label>
+          {selectedBills.size > 0 && (
+            <button
+              onClick={exitSelectMode}
+              className="ml-auto text-sm text-neutral-500 hover:text-neutral-700"
+            >
+              Clear selection
+            </button>
+          )}
+        </div>
+      )}
+
       {error && <div className="text-sm text-red-600">{error}</div>}
 
       {loading ? (
@@ -267,6 +414,11 @@ export default function ClientBillsPage({
               nextDue={nextDue[bill.id]}
               onRefresh={refresh}
               batchData={batchData}
+              isSelectMode={isSelectMode}
+              isSelected={selectedBills.has(bill.id)}
+              onSelect={() => handleSelectBill(bill.id)}
+              vendorOptions={vendorOptions}
+              projectOptions={projectOptions}
               ref={index === bills.length - 1 ? lastElementRef : null}
             />
           ))}
@@ -309,16 +461,32 @@ interface BillCardProps {
   nextDue?: string;
   onRefresh: () => void;
   batchData: BillBatchData;
+  isSelectMode?: boolean;
+  isSelected?: boolean;
+  onSelect?: () => void;
+  vendorOptions: { id: string; name: string }[];
+  projectOptions: { id: string; name: string }[];
 }
 
 const BillCard = forwardRef<HTMLDivElement, BillCardProps>(function BillCard(
-  { bill, nextDue, onRefresh, batchData },
+  {
+    bill,
+    nextDue,
+    onRefresh,
+    batchData,
+    isSelectMode,
+    isSelected,
+    onSelect,
+    vendorOptions,
+    projectOptions,
+  },
   ref
 ) {
   const supabase = getSupabaseClient();
   const [showDetails, setShowDetails] = useState(false);
   const [occurrences, setOccurrences] = useState<any[]>([]);
   const [occurrencesLoading, setOccurrencesLoading] = useState(false);
+  const [isEditing, setIsEditing] = useState(false);
 
   const isRecurring = !!bill.recurring_rule;
   const dueDate = bill.due_date || nextDue;
@@ -377,6 +545,16 @@ const BillCard = forwardRef<HTMLDivElement, BillCardProps>(function BillCard(
         <div className="flex items-start justify-between">
           <div className="flex-1">
             <div className="flex items-center gap-3 mb-2">
+              {/* Selection Checkbox */}
+              {isSelectMode && (
+                <input
+                  type="checkbox"
+                  checked={isSelected || false}
+                  onChange={onSelect}
+                  className="w-4 h-4 text-blue-600 bg-white border-neutral-300 rounded focus:ring-blue-500"
+                  onClick={(e) => e.stopPropagation()}
+                />
+              )}
               <h3 className="text-lg font-semibold text-neutral-900 dark:text-neutral-100">
                 {bill.title}
               </h3>
@@ -482,25 +660,36 @@ const BillCard = forwardRef<HTMLDivElement, BillCardProps>(function BillCard(
               </>
             )}
 
-            {/* View/Details toggle */}
-            {isRecurring ? (
+            {/* Edit button (only show if not in select mode) */}
+            {!isSelectMode && (
               <button
-                onClick={() => {
-                  if (!showDetails) loadOccurrences();
-                  setShowDetails(!showDetails);
-                }}
+                onClick={() => setIsEditing(true)}
                 className="px-3 py-1.5 text-sm font-medium text-neutral-700 dark:text-neutral-300 bg-neutral-100 dark:bg-neutral-800 hover:bg-neutral-200 dark:hover:bg-neutral-700 rounded-lg"
               >
-                {showDetails ? 'Hide Details' : 'View Occurrences'}
+                Edit
               </button>
-            ) : (
-              <Link
-                href={`/bills/${bill.id}`}
-                className="px-3 py-1.5 text-sm font-medium text-neutral-700 dark:text-neutral-300 bg-neutral-100 dark:bg-neutral-800 hover:bg-neutral-200 dark:hover:bg-neutral-700 rounded-lg"
-              >
-                View Details
-              </Link>
             )}
+
+            {/* View/Details toggle */}
+            {!isSelectMode &&
+              (isRecurring ? (
+                <button
+                  onClick={() => {
+                    if (!showDetails) loadOccurrences();
+                    setShowDetails(!showDetails);
+                  }}
+                  className="px-3 py-1.5 text-sm font-medium text-neutral-700 dark:text-neutral-300 bg-neutral-100 dark:bg-neutral-800 hover:bg-neutral-200 dark:hover:bg-neutral-700 rounded-lg"
+                >
+                  {showDetails ? 'Hide Details' : 'View Occurrences'}
+                </button>
+              ) : (
+                <Link
+                  href={`/bills/${bill.id}`}
+                  className="px-3 py-1.5 text-sm font-medium text-neutral-700 dark:text-neutral-300 bg-neutral-100 dark:bg-neutral-800 hover:bg-neutral-200 dark:hover:bg-neutral-700 rounded-lg"
+                >
+                  View Details
+                </Link>
+              ))}
           </div>
         </div>
       </div>
@@ -579,6 +768,35 @@ const BillCard = forwardRef<HTMLDivElement, BillCardProps>(function BillCard(
               )}
             </div>
           )}
+        </div>
+      )}
+
+      {/* Edit form */}
+      {isEditing && (
+        <div className="border-t border-neutral-200 dark:border-neutral-800">
+          <BillEditForm
+            bill={{
+              id: bill.id,
+              title: bill.title,
+              amount_total: bill.amount_total,
+              currency: bill.currency,
+              due_date: bill.due_date,
+              vendor_name: bill.vendor_name,
+              project_name: bill.project_name,
+              description: bill.description,
+              category: bill.category,
+              recurring_rule: bill.recurring_rule,
+              vendor_id: bill.vendor_id,
+              project_id: bill.project_id,
+            }}
+            vendorOptions={vendorOptions}
+            projectOptions={projectOptions}
+            onSaved={() => {
+              setIsEditing(false);
+              onRefresh();
+            }}
+            onCancel={() => setIsEditing(false)}
+          />
         </div>
       )}
     </div>

@@ -16,6 +16,8 @@ export interface BillRow {
   due_date: string | null;
   vendor_name: string | null;
   project_name: string | null;
+  vendor_id: string | null;
+  project_id: string | null;
   status: string;
   recurring_rule: any | null;
   created_at: string;
@@ -61,6 +63,8 @@ export function usePaginatedBills(filters: BillFilters = {}) {
         currency,
         description,
         category,
+        vendor_id,
+        project_id,
         vendors(name),
         projects(name)
       `,
@@ -90,6 +94,8 @@ export function usePaginatedBills(filters: BillFilters = {}) {
         due_date: row.due_date,
         vendor_name: row.vendors?.name || null,
         project_name: row.projects?.name || null,
+        vendor_id: row.vendor_id,
+        project_id: row.project_id,
         status: row.status,
         recurring_rule: row.recurring_rule,
         created_at: row.created_at,
