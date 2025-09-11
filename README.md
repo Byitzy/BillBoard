@@ -67,6 +67,7 @@ pnpm install
   - `SUPABASE_SERVICE_ROLE_KEY`
   - `NEXT_PUBLIC_APP_NAME` (optional, defaults BillBoard)
   - `NEXT_PUBLIC_DEFAULT_LOCALE` (default `en-CA`)
+  - Optional: `NEXT_PUBLIC_MARKERIO_PROJECT_ID` (enables Marker.io widget)
 
 Auth (Email Magic Link)
 
@@ -95,6 +96,12 @@ pnpm dev
 ```
 
 App runs at `http://localhost:3000`.
+
+### Optional: In-app Feedback (Marker.io)
+
+- Set `NEXT_PUBLIC_MARKERIO_PROJECT_ID` in `.env.local` to your Marker.io project ID.
+- The widget loads on authenticated app pages via `src/components/integrations/MarkerWidget.tsx`.
+- To disable, remove the env value or the component import in `src/app/(app)/layout.tsx`.
 
 ### Theme
 

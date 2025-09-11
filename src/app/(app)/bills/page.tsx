@@ -15,6 +15,12 @@ type BillRow = {
   due_date: string | null;
   vendor_name: string | null;
   project_name: string | null;
+  status: string;
+  recurring_rule: any | null;
+  created_at: string;
+  currency: string;
+  description: string | null;
+  category: string | null;
 };
 
 type BillsPageProps = {
@@ -60,6 +66,12 @@ export default async function BillsPage({ searchParams }: BillsPageProps) {
       title,
       amount_total,
       due_date,
+      status,
+      recurring_rule,
+      created_at,
+      currency,
+      description,
+      category,
       vendors(name),
       projects(name)
     `
@@ -86,6 +98,12 @@ export default async function BillsPage({ searchParams }: BillsPageProps) {
     due_date: row.due_date,
     vendor_name: row.vendors?.name || null,
     project_name: row.projects?.name || null,
+    status: row.status,
+    recurring_rule: row.recurring_rule,
+    created_at: row.created_at,
+    currency: row.currency,
+    description: row.description,
+    category: row.category,
   })) as BillRow[];
 
   // Apply client-side search filter (since we need to search across multiple fields)
