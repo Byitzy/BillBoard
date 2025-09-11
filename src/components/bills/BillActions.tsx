@@ -74,14 +74,27 @@ function QuickActions({ bill, onSaved }: { bill: Bill; onSaved: () => void }) {
   }, [bill.id, isRecurring]);
 
   async function loadBillOccurrenceState() {
-    const { data } = await supabase
-      .from('bill_occurrences')
-      .select('state')
-      .eq('bill_id', bill.id)
-      .limit(1);
+    try {
+      const { data, error } = await supabase
+        .from('bill_occurrences')
+        .select('state')
+        .eq('bill_id', bill.id)
+        .order('created_at', { ascending: false })
+        .limit(1);
 
-    if (data?.[0]) {
-      setBillOccurrenceState(data[0].state);
+      if (error) {
+        console.error('Error loading bill occurrence state:', error);
+        return;
+      }
+
+      if (data?.[0]) {
+        console.log(`Bill ${bill.id} occurrence state:`, data[0].state);
+        setBillOccurrenceState(data[0].state);
+      } else {
+        console.log(`No bill occurrence found for bill ${bill.id}`);
+      }
+    } catch (error) {
+      console.error('Failed to load bill occurrence state:', error);
     }
   }
 
