@@ -1,34 +1,35 @@
 'use client';
 import Link from 'next/link';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, forwardRef, useMemo } from 'react';
 import BillForm from '@/components/BillForm';
 import CSVExportButton from '@/components/CSVExportButton';
 import { useLocale } from '@/components/i18n/LocaleProvider';
 import PDFExportButton from '@/components/PDFExportButton';
-import FilterBar from '@/components/ui/FilterBar';
+import AdvancedFilterBar from '@/components/ui/AdvancedFilterBar';
+import SavedSearches from '@/components/ui/SavedSearches';
 import { getDefaultOrgId } from '@/lib/org';
 import { getSupabaseClient } from '@/lib/supabase/client';
-
-type BillRow = {
-  id: string;
-  title: string;
-  amount_total: number;
-  due_date: string | null;
-  vendor_name: string | null;
-  project_name: string | null;
-  status: string;
-  recurring_rule: any | null;
-  created_at: string;
-  currency: string;
-  description: string | null;
-  category: string | null;
-};
+import {
+  getStatusInfo,
+  getEffectiveStatus,
+  getAllStatuses,
+  type BillStatus,
+} from '@/lib/bills/status';
+import { useBillOperations } from '@/hooks/useBillOperations';
+import {
+  usePaginatedBills,
+  type BillFilters,
+  type BillRow,
+} from '@/hooks/usePaginatedBills';
+import { useBillsBatch, type BillBatchData } from '@/hooks/useBillsBatch';
+import { useBulkBillOperations } from '@/hooks/useBulkBillOperations';
+import BillEditForm from '@/components/bills/BillEditForm';
 
 type ClientBillsPageProps = {
   initialBills: BillRow[];
   initialNextDue: Record<string, string | undefined>;
   initialError: string | null;
-  filterContext: string;
+  initialFilterContext: string;
   vendorOptions: { id: string; name: string }[];
   projectOptions: { id: string; name: string }[];
 };
@@ -37,136 +38,195 @@ export default function ClientBillsPage({
   initialBills,
   initialNextDue,
   initialError,
-  filterContext,
+  initialFilterContext,
   vendorOptions,
   projectOptions,
 }: ClientBillsPageProps) {
-  const supabase = getSupabaseClient();
   const { t } = useLocale();
-  const [bills, setBills] = useState<BillRow[]>(initialBills);
-  const [nextDue, setNextDue] =
-    useState<Record<string, string | undefined>>(initialNextDue);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(initialError);
+  const [nextDue, setNextDue] = useState<Record<string, string | undefined>>(
+    {}
+  );
+  const [batchData, setBatchData] = useState<BillBatchData>({
+    occurrenceStates: new Map(),
+    approverInfo: new Map(),
+    nextDueDates: {},
+  });
 
-  // Reload data when component mounts to ensure fresh data
+  // Bulk selection state
+  const [selectedBills, setSelectedBills] = useState<Set<string>>(new Set());
+  const [isSelectMode, setIsSelectMode] = useState(false);
+
+  // Extract filters from URL params
+  const urlParams =
+    typeof window !== 'undefined'
+      ? new URLSearchParams(window.location.search)
+      : new URLSearchParams();
+  const filters: BillFilters = {
+    status: (urlParams.get('status') as BillStatus) || undefined,
+    vendorId: urlParams.get('vendorId') || undefined,
+    projectId: urlParams.get('projectId') || undefined,
+    search: urlParams.get('search') || undefined,
+    dateFrom: urlParams.get('dateFrom') || undefined,
+    dateTo: urlParams.get('dateTo') || undefined,
+    amountMin: urlParams.get('amountMin')
+      ? parseFloat(urlParams.get('amountMin')!)
+      : undefined,
+    amountMax: urlParams.get('amountMax')
+      ? parseFloat(urlParams.get('amountMax')!)
+      : undefined,
+    currency: urlParams.get('currency') || undefined,
+    category: urlParams.get('category') || undefined,
+  };
+
+  // Use paginated bills hook
+  const {
+    items: bills,
+    loading,
+    error,
+    hasMore,
+    lastElementRef,
+    refresh,
+    getNextDueDates,
+    filterContext,
+    isEmpty,
+    isFiltered,
+  } = usePaginatedBills(filters);
+
+  // Use batch operations hook for optimized queries
+  const { loadBillsBatchData } = useBillsBatch();
+
+  // Use bulk operations hook
+  const {
+    loading: bulkLoading,
+    bulkUpdateStatus,
+    bulkMarkAsPaid,
+    bulkArchiveBills,
+  } = useBulkBillOperations();
+
+  // Memoize bill IDs to prevent unnecessary re-renders
+  const billIds = useMemo(() => bills.map((b) => b.id), [bills]);
+
+  // Initial load on mount only (no dependencies to prevent infinite loop)
   useEffect(() => {
-    // Always reload on mount to ensure we have the latest data
-    // This fixes the issue where existing bills don't show until a new one is added
-    reload();
-  }, []);
-
-  async function reload() {
-    setLoading(true);
-    setError(null);
-    const orgId = await getDefaultOrgId(supabase);
-    if (!orgId) {
-      setError('No organization found.');
-      setLoading(false);
-      return;
+    // Only refresh if we don't have any bills yet
+    if (bills.length === 0 && !loading) {
+      refresh();
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // Empty dependency array for mount-only effect
 
-    // Get current URL search params to maintain filters
-    const urlParams = new URLSearchParams(window.location.search);
-
-    // Force fresh data by adding a timestamp to prevent caching
-    let query = supabase
-      .from('bills')
-      .select(
-        `
-        id,
-        title,
-        amount_total,
-        due_date,
-        status,
-        recurring_rule,
-        created_at,
-        currency,
-        description,
-        category,
-        vendors(name),
-        projects(name)
-      `
-      )
-      .eq('org_id', orgId);
-
-    // Apply same filters as server-side
-    const vendorId = urlParams.get('vendorId');
-    if (vendorId) {
-      query = query.eq('vendor_id', vendorId);
+  useEffect(() => {
+    // Load batch data for all bills to avoid N+1 queries
+    if (billIds.length > 0) {
+      loadBillsBatchData(billIds)
+        .then((data) => {
+          setBatchData(data);
+          setNextDue(data.nextDueDates);
+        })
+        .catch((err) => {
+          console.error('Failed to load batch data:', err);
+        });
+    } else {
+      // Clear batch data when no bills
+      setBatchData({
+        occurrenceStates: new Map(),
+        approverInfo: new Map(),
+        nextDueDates: {},
+      });
+      setNextDue({});
     }
-    const projectId = urlParams.get('projectId');
-    if (projectId) {
-      query = query.eq('project_id', projectId);
+  }, [billIds, loadBillsBatchData]); // Use memoized billIds
+
+  // Bulk selection handlers
+  const handleSelectAll = () => {
+    if (selectedBills.size === bills.length) {
+      setSelectedBills(new Set());
+    } else {
+      setSelectedBills(new Set(bills.map((b) => b.id)));
     }
-    // Apply status filter - default to 'active' if no status specified
-    const status = urlParams.get('status') || 'active';
-    query = query.eq('status', status);
+  };
 
-    const { data, error } = await query.order('created_at', {
-      ascending: false,
-    });
+  const handleSelectBill = (billId: string) => {
+    const newSelected = new Set(selectedBills);
+    if (newSelected.has(billId)) {
+      newSelected.delete(billId);
+    } else {
+      newSelected.add(billId);
+    }
+    setSelectedBills(newSelected);
+  };
 
-    if (error) setError(error.message);
-    else {
-      const rows = (data ?? []).map((row: any) => ({
-        id: row.id,
-        title: row.title,
-        amount_total: row.amount_total,
-        due_date: row.due_date,
-        vendor_name: row.vendors?.name || null,
-        project_name: row.projects?.name || null,
-        status: row.status,
-        recurring_rule: row.recurring_rule,
-        created_at: row.created_at,
-        currency: row.currency,
-        description: row.description,
-        category: row.category,
-      })) as BillRow[];
-      // Apply client-side search filter (same as server-side)
-      let filteredRows = rows;
-      if (urlParams.get('search')) {
-        const searchLower = urlParams.get('search')!.toLowerCase();
-        filteredRows = rows.filter(
-          (bill) =>
-            bill.title.toLowerCase().includes(searchLower) ||
-            (bill.vendor_name &&
-              bill.vendor_name.toLowerCase().includes(searchLower)) ||
-            (bill.project_name &&
-              bill.project_name.toLowerCase().includes(searchLower))
+  const handleBulkAction = async (action: string) => {
+    if (selectedBills.size === 0) return;
+
+    const billIds = Array.from(selectedBills);
+    let result;
+
+    try {
+      switch (action) {
+        case 'approve':
+          result = await bulkUpdateStatus(billIds, 'approved');
+          break;
+        case 'paid':
+          result = await bulkMarkAsPaid(billIds);
+          break;
+        case 'hold':
+          result = await bulkUpdateStatus(billIds, 'on_hold');
+          break;
+        case 'archive':
+          result = await bulkArchiveBills(billIds);
+          break;
+        default:
+          console.warn('Unknown bulk action:', action);
+          return;
+      }
+
+      // Show success/error feedback
+      if (result.success > 0) {
+        console.log(`Successfully ${action}ed ${result.success} bills`);
+      }
+      if (result.failed > 0) {
+        console.error(
+          `Failed to ${action} ${result.failed} bills:`,
+          result.errors
         );
       }
 
-      setBills(filteredRows);
-
-      // compute next due for recurring bills
-      const ids = rows.filter((b) => !b.due_date).map((b) => b.id);
-      if (ids.length > 0) {
-        const today = new Date();
-        const iso = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
-        const { data: occ } = await supabase
-          .from('bill_occurrences')
-          .select('bill_id,due_date')
-          .in('bill_id', ids)
-          .gte('due_date', iso)
-          .order('due_date', { ascending: true });
-        const map: Record<string, string> = {};
-        occ?.forEach((o: any) => {
-          if (!map[o.bill_id]) map[o.bill_id] = o.due_date;
-        });
-        setNextDue(map);
-      } else {
-        setNextDue({});
-      }
+      // Clear selection and refresh data
+      setSelectedBills(new Set());
+      refresh();
+    } catch (error) {
+      console.error(`Bulk ${action} failed:`, error);
     }
-    setLoading(false);
-  }
+  };
+
+  const exitSelectMode = () => {
+    setIsSelectMode(false);
+    setSelectedBills(new Set());
+  };
+
+  // Handle filter changes from saved searches
+  const handleFiltersChange = (newFilters: any) => {
+    // This will be handled by the AdvancedFilterBar component
+    // through URL parameter updates, which will trigger a refresh
+    refresh();
+  };
 
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-xl font-semibold">{t('bills.title')}</h1>
+          <div className="flex items-center gap-3">
+            <h1 className="text-xl font-semibold">{t('bills.title')}</h1>
+            {bills.length > 0 && (
+              <button
+                onClick={() => setIsSelectMode(!isSelectMode)}
+                className="px-3 py-1.5 text-sm font-medium text-neutral-700 dark:text-neutral-300 bg-neutral-100 dark:bg-neutral-800 hover:bg-neutral-200 dark:hover:bg-neutral-700 rounded-lg"
+              >
+                {isSelectMode ? 'Cancel' : 'Select'}
+              </button>
+            )}
+          </div>
           {filterContext && (
             <p className="text-sm text-neutral-500 mt-1">
               {filterContext} •{' '}
@@ -175,8 +235,48 @@ export default function ClientBillsPage({
               </Link>
             </p>
           )}
+          {isSelectMode && (
+            <p className="text-sm text-neutral-600 dark:text-neutral-400 mt-1">
+              {selectedBills.size} of {bills.length} bills selected
+            </p>
+          )}
         </div>
         <div className="flex items-center gap-2">
+          {/* Bulk Actions Bar */}
+          {isSelectMode && selectedBills.size > 0 && (
+            <div className="flex items-center gap-2 mr-3 p-2 bg-blue-50 dark:bg-blue-950 rounded-lg border border-blue-200 dark:border-blue-800">
+              <button
+                onClick={() => handleBulkAction('approve')}
+                disabled={bulkLoading}
+                className="px-3 py-1.5 text-sm font-medium text-white bg-green-600 hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed rounded-md"
+              >
+                {bulkLoading
+                  ? 'Processing...'
+                  : `Approve ${selectedBills.size}`}
+              </button>
+              <button
+                onClick={() => handleBulkAction('paid')}
+                disabled={bulkLoading}
+                className="px-3 py-1.5 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed rounded-md"
+              >
+                {bulkLoading ? 'Processing...' : 'Mark Paid'}
+              </button>
+              <button
+                onClick={() => handleBulkAction('hold')}
+                disabled={bulkLoading}
+                className="px-3 py-1.5 text-sm font-medium text-neutral-700 dark:text-neutral-300 bg-neutral-200 dark:bg-neutral-700 hover:bg-neutral-300 dark:hover:bg-neutral-600 disabled:opacity-50 disabled:cursor-not-allowed rounded-md"
+              >
+                {bulkLoading ? 'Processing...' : 'Put on Hold'}
+              </button>
+              <button
+                onClick={() => handleBulkAction('archive')}
+                disabled={bulkLoading}
+                className="px-3 py-1.5 text-sm font-medium text-white bg-red-600 hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed rounded-md"
+              >
+                {bulkLoading ? 'Processing...' : 'Archive'}
+              </button>
+            </div>
+          )}
           {bills.length > 0 && (
             <>
               <CSVExportButton
@@ -187,7 +287,7 @@ export default function ClientBillsPage({
                   Project: b.project_name ?? '—',
                   Amount: `${b.currency} $${b.amount_total.toFixed(2)}`,
                   'Due Date': b.due_date ?? nextDue[b.id] ?? '—',
-                  Status: getStatusInfo(b.status).label,
+                  Status: getStatusInfo(b.status as BillStatus).label,
                   Type: b.recurring_rule ? 'Recurring' : 'One-time',
                   Category: b.category ?? '—',
                 }))}
@@ -212,7 +312,7 @@ export default function ClientBillsPage({
                   Project: b.project_name ?? '—',
                   Amount: `${b.currency} $${b.amount_total.toFixed(2)}`,
                   'Due Date': b.due_date ?? nextDue[b.id] ?? '—',
-                  Status: getStatusInfo(b.status).label,
+                  Status: getStatusInfo(b.status as BillStatus).label,
                   Type: b.recurring_rule ? 'Recurring' : 'One-time',
                   Category: b.category ?? '—',
                 }))}
@@ -233,7 +333,7 @@ export default function ClientBillsPage({
             </>
           )}
           <button
-            onClick={reload}
+            onClick={refresh}
             className="flex items-center gap-2 rounded-xl border border-neutral-200 px-3 py-2 text-sm font-medium hover:bg-neutral-50 dark:border-neutral-800 dark:hover:bg-neutral-900"
           >
             🔄 Refresh
@@ -241,10 +341,17 @@ export default function ClientBillsPage({
         </div>
       </div>
 
-      <BillForm onCreated={reload} />
+      <BillForm onCreated={refresh} />
 
-      <FilterBar
-        searchPlaceholder="Search bills by title, vendor, or project..."
+      {/* Saved searches */}
+      <SavedSearches
+        currentFilters={filters}
+        onApplySearch={handleFiltersChange}
+        className="mb-4"
+      />
+
+      {/* Advanced filtering */}
+      <AdvancedFilterBar
         vendorOptions={vendorOptions}
         projectOptions={projectOptions}
         statusOptions={[
@@ -254,8 +361,35 @@ export default function ClientBillsPage({
           { value: 'paid', label: 'Paid' },
           { value: 'on_hold', label: 'On Hold' },
         ]}
-        className="my-4"
+        showAdvanced={true}
+        onFiltersChange={handleFiltersChange}
+        className="mb-4"
       />
+
+      {/* Select All Bar */}
+      {isSelectMode && bills.length > 0 && (
+        <div className="flex items-center gap-3 p-3 bg-neutral-50 dark:bg-neutral-900 rounded-lg border border-neutral-200 dark:border-neutral-800 mb-4">
+          <label className="flex items-center gap-2 cursor-pointer">
+            <input
+              type="checkbox"
+              checked={selectedBills.size === bills.length && bills.length > 0}
+              onChange={handleSelectAll}
+              className="w-4 h-4 text-blue-600 bg-white border-neutral-300 rounded focus:ring-blue-500"
+            />
+            <span className="text-sm font-medium text-neutral-700 dark:text-neutral-300">
+              Select all {bills.length} bills
+            </span>
+          </label>
+          {selectedBills.size > 0 && (
+            <button
+              onClick={exitSelectMode}
+              className="ml-auto text-sm text-neutral-500 hover:text-neutral-700"
+            >
+              Clear selection
+            </button>
+          )}
+        </div>
+      )}
 
       {error && <div className="text-sm text-red-600">{error}</div>}
 
@@ -300,151 +434,111 @@ export default function ClientBillsPage({
         </div>
       ) : (
         <div className="space-y-4">
-          {bills.map((bill) => (
+          {bills.map((bill, index) => (
             <BillCard
               key={bill.id}
               bill={bill}
               nextDue={nextDue[bill.id]}
-              onRefresh={reload}
+              onRefresh={refresh}
+              batchData={batchData}
+              isSelectMode={isSelectMode}
+              isSelected={selectedBills.has(bill.id)}
+              onSelect={() => handleSelectBill(bill.id)}
+              vendorOptions={vendorOptions}
+              projectOptions={projectOptions}
+              ref={index === bills.length - 1 ? lastElementRef : null}
             />
           ))}
+
+          {/* Loading indicator for infinite scroll */}
+          {loading && bills.length > 0 && (
+            <div className="flex justify-center py-4">
+              <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600"></div>
+            </div>
+          )}
+
+          {/* End of results indicator */}
+          {!hasMore && bills.length > 0 && (
+            <div className="text-center py-4 text-sm text-neutral-500">
+              All bills loaded ({bills.length} total)
+            </div>
+          )}
+
+          {/* Empty state */}
+          {isEmpty && !loading && (
+            <div className="text-center py-12">
+              <h3 className="text-lg font-medium text-neutral-900 dark:text-neutral-100 mb-2">
+                {isFiltered ? 'No bills match your filters' : 'No bills yet'}
+              </h3>
+              <p className="text-neutral-600 dark:text-neutral-400">
+                {isFiltered
+                  ? 'Try adjusting your filters or clear them to see all bills.'
+                  : 'Create your first bill to get started.'}
+              </p>
+            </div>
+          )}
         </div>
       )}
     </div>
   );
 }
 
-// Helper function to get status color and icon
-function getStatusInfo(status: string) {
-  switch (status) {
-    case 'pending_approval':
-      return {
-        color:
-          'text-amber-600 bg-amber-50 border-amber-200 dark:bg-amber-950 dark:border-amber-800',
-        icon: '⏳',
-        label: 'Pending Approval',
-      };
-    case 'approved':
-      return {
-        color:
-          'text-green-600 bg-green-50 border-green-200 dark:bg-green-950 dark:border-green-800',
-        icon: '✅',
-        label: 'Approved',
-      };
-    case 'paid':
-      return {
-        color:
-          'text-blue-600 bg-blue-50 border-blue-200 dark:bg-blue-950 dark:border-blue-800',
-        icon: '💳',
-        label: 'Paid',
-      };
-    case 'on_hold':
-      return {
-        color:
-          'text-red-600 bg-red-50 border-red-200 dark:bg-red-950 dark:border-red-800',
-        icon: '⏸️',
-        label: 'On Hold',
-      };
-    default:
-      return {
-        color:
-          'text-neutral-600 bg-neutral-50 border-neutral-200 dark:bg-neutral-950 dark:border-neutral-800',
-        icon: '📄',
-        label: status.charAt(0).toUpperCase() + status.slice(1),
-      };
-  }
-}
-
 interface BillCardProps {
   bill: BillRow;
   nextDue?: string;
   onRefresh: () => void;
+  batchData: BillBatchData;
+  isSelectMode?: boolean;
+  isSelected?: boolean;
+  onSelect?: () => void;
+  vendorOptions: { id: string; name: string }[];
+  projectOptions: { id: string; name: string }[];
 }
 
-function BillCard({ bill, nextDue, onRefresh }: BillCardProps) {
+const BillCard = forwardRef<HTMLDivElement, BillCardProps>(function BillCard(
+  {
+    bill,
+    nextDue,
+    onRefresh,
+    batchData,
+    isSelectMode,
+    isSelected,
+    onSelect,
+    vendorOptions,
+    projectOptions,
+  },
+  ref
+) {
   const supabase = getSupabaseClient();
   const [showDetails, setShowDetails] = useState(false);
-  const [loading, setLoading] = useState(false);
-  const [approver, setApprover] = useState<string | null>(null);
   const [occurrences, setOccurrences] = useState<any[]>([]);
-  const [billOccurrenceState, setBillOccurrenceState] = useState<string | null>(
-    null
-  );
+  const [occurrencesLoading, setOccurrencesLoading] = useState(false);
+  const [isEditing, setIsEditing] = useState(false);
 
   const isRecurring = !!bill.recurring_rule;
   const dueDate = bill.due_date || nextDue;
 
-  // For non-recurring bills, show the actual occurrence state, otherwise show bill status
-  const displayStatus =
-    !isRecurring && billOccurrenceState ? billOccurrenceState : bill.status;
-  const statusInfo = getStatusInfo(displayStatus);
+  // Get data from batch instead of individual API calls
+  const occurrenceState = batchData.occurrenceStates.get(bill.id);
+  const approverFromBatch = batchData.approverInfo.get(bill.id);
+  const effectiveStatus = getEffectiveStatus(
+    bill.status,
+    occurrenceState || null
+  );
+  const statusInfo = getStatusInfo(effectiveStatus);
 
-  // Load bill occurrence state for non-recurring bills
-  useEffect(() => {
-    if (!isRecurring) {
-      loadBillOccurrenceState();
-    }
-  }, [bill.id, isRecurring]);
-
-  // Load approver info for approved bills
-  useEffect(() => {
-    if (displayStatus === 'approved' && !isRecurring) {
-      loadApproverInfo();
-    }
-  }, [displayStatus, bill.id, isRecurring]);
-
-  async function loadBillOccurrenceState() {
-    try {
-      const { data, error } = await supabase
-        .from('bill_occurrences')
-        .select('state')
-        .eq('bill_id', bill.id)
-        .order('created_at', { ascending: false })
-        .limit(1);
-
-      if (error) {
-        console.error('Error loading bill occurrence state:', error);
-        return;
-      }
-
-      if (data?.[0]) {
-        console.log(`Bill ${bill.id} occurrence state:`, data[0].state);
-        setBillOccurrenceState(data[0].state);
-      } else {
-        console.log(`No bill occurrence found for bill ${bill.id}`);
-      }
-    } catch (error) {
-      console.error('Failed to load bill occurrence state:', error);
-    }
-  }
-
-  async function loadApproverInfo() {
-    const { data } = await supabase
-      .from('bill_occurrences')
-      .select(
-        `
-        id,
-        approvals!inner(
-          approver_id,
-          decided_at
-        )
-      `
-      )
-      .eq('bill_id', bill.id)
-      .eq('state', 'approved')
-      .limit(1);
-
-    if (data?.[0]?.approvals?.[0]) {
-      // For now, just show that it was approved
-      // In production, you'd want to join with a users table that's accessible
-      setApprover('Admin');
-    }
-  }
+  // Use shared bill operations hook (but don't load data individually)
+  const { loading, updateStatus, markAsPaid } = useBillOperations(
+    bill.id,
+    bill.status,
+    isRecurring,
+    onRefresh
+  );
 
   async function loadOccurrences() {
     if (!isRecurring) return;
 
-    setLoading(true);
+    setOccurrencesLoading(true);
     const { data } = await supabase
       .from('bill_occurrences')
       .select(
@@ -465,58 +559,29 @@ function BillCard({ bill, nextDue, onRefresh }: BillCardProps) {
       .limit(10);
 
     setOccurrences(data || []);
-    setLoading(false);
-  }
-
-  async function markAsPaid() {
-    if (isRecurring) return;
-
-    setLoading(true);
-    try {
-      // For one-time bills, update all bill occurrences to paid
-      await supabase
-        .from('bill_occurrences')
-        .update({ state: 'paid' })
-        .eq('bill_id', bill.id);
-
-      onRefresh();
-    } catch (error) {
-      console.error('Failed to mark as paid:', error);
-    } finally {
-      setLoading(false);
-    }
-  }
-
-  async function updateStatus(
-    newStatus:
-      | 'active'
-      | 'pending_approval'
-      | 'approved'
-      | 'on_hold'
-      | 'canceled'
-  ) {
-    setLoading(true);
-    try {
-      await supabase
-        .from('bills')
-        .update({ status: newStatus })
-        .eq('id', bill.id);
-
-      onRefresh();
-    } catch (error) {
-      console.error('Failed to update status:', error);
-    } finally {
-      setLoading(false);
-    }
+    setOccurrencesLoading(false);
   }
 
   return (
-    <div className="bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-xl shadow-sm hover:shadow-md transition-shadow">
+    <div
+      ref={ref}
+      className="bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-xl shadow-sm hover:shadow-md transition-shadow"
+    >
       {/* Header */}
       <div className="p-6 border-b border-neutral-100 dark:border-neutral-800">
         <div className="flex items-start justify-between">
           <div className="flex-1">
             <div className="flex items-center gap-3 mb-2">
+              {/* Selection Checkbox */}
+              {isSelectMode && (
+                <input
+                  type="checkbox"
+                  checked={isSelected || false}
+                  onChange={onSelect}
+                  className="w-4 h-4 text-blue-600 bg-white border-neutral-300 rounded focus:ring-blue-500"
+                  onClick={(e) => e.stopPropagation()}
+                />
+              )}
               <h3 className="text-lg font-semibold text-neutral-900 dark:text-neutral-100">
                 {bill.title}
               </h3>
@@ -577,18 +642,30 @@ function BillCard({ bill, nextDue, onRefresh }: BillCardProps) {
               </div>
             )}
 
-            {displayStatus === 'approved' && approver && !isRecurring && (
-              <div className="mt-3 text-sm text-green-600 dark:text-green-400">
-                ✅ Approved by {approver}
-              </div>
-            )}
+            {effectiveStatus === 'approved' &&
+              approverFromBatch &&
+              !isRecurring && (
+                <div className="mt-3 text-sm text-green-600 dark:text-green-400">
+                  ✅ Approved by {approverFromBatch}
+                </div>
+              )}
           </div>
 
           <div className="ml-6 flex items-center gap-2">
             {/* Status actions for non-recurring bills */}
-            {!isRecurring && displayStatus !== 'paid' && (
+            {!isRecurring && effectiveStatus !== 'paid' && (
               <>
-                {displayStatus === 'approved' && (
+                {effectiveStatus === 'active' && (
+                  <button
+                    onClick={() => updateStatus('pending_approval')}
+                    disabled={loading}
+                    className="px-3 py-1.5 text-sm font-medium text-white bg-amber-600 hover:bg-amber-700 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    📋 Submit
+                  </button>
+                )}
+
+                {effectiveStatus === 'approved' && (
                   <button
                     onClick={markAsPaid}
                     disabled={loading}
@@ -598,7 +675,7 @@ function BillCard({ bill, nextDue, onRefresh }: BillCardProps) {
                   </button>
                 )}
 
-                {displayStatus === 'pending_approval' && (
+                {effectiveStatus === 'pending_approval' && (
                   <button
                     onClick={() => updateStatus('approved')}
                     disabled={loading}
@@ -610,25 +687,36 @@ function BillCard({ bill, nextDue, onRefresh }: BillCardProps) {
               </>
             )}
 
-            {/* View/Details toggle */}
-            {isRecurring ? (
+            {/* Edit button (only show if not in select mode) */}
+            {!isSelectMode && (
               <button
-                onClick={() => {
-                  if (!showDetails) loadOccurrences();
-                  setShowDetails(!showDetails);
-                }}
+                onClick={() => setIsEditing(true)}
                 className="px-3 py-1.5 text-sm font-medium text-neutral-700 dark:text-neutral-300 bg-neutral-100 dark:bg-neutral-800 hover:bg-neutral-200 dark:hover:bg-neutral-700 rounded-lg"
               >
-                {showDetails ? 'Hide Details' : 'View Occurrences'}
+                Edit
               </button>
-            ) : (
-              <Link
-                href={`/bills/${bill.id}`}
-                className="px-3 py-1.5 text-sm font-medium text-neutral-700 dark:text-neutral-300 bg-neutral-100 dark:bg-neutral-800 hover:bg-neutral-200 dark:hover:bg-neutral-700 rounded-lg"
-              >
-                View Details
-              </Link>
             )}
+
+            {/* View/Details toggle */}
+            {!isSelectMode &&
+              (isRecurring ? (
+                <button
+                  onClick={() => {
+                    if (!showDetails) loadOccurrences();
+                    setShowDetails(!showDetails);
+                  }}
+                  className="px-3 py-1.5 text-sm font-medium text-neutral-700 dark:text-neutral-300 bg-neutral-100 dark:bg-neutral-800 hover:bg-neutral-200 dark:hover:bg-neutral-700 rounded-lg"
+                >
+                  {showDetails ? 'Hide Details' : 'View Occurrences'}
+                </button>
+              ) : (
+                <Link
+                  href={`/bills/${bill.id}`}
+                  className="px-3 py-1.5 text-sm font-medium text-neutral-700 dark:text-neutral-300 bg-neutral-100 dark:bg-neutral-800 hover:bg-neutral-200 dark:hover:bg-neutral-700 rounded-lg"
+                >
+                  View Details
+                </Link>
+              ))}
           </div>
         </div>
       </div>
@@ -709,6 +797,35 @@ function BillCard({ bill, nextDue, onRefresh }: BillCardProps) {
           )}
         </div>
       )}
+
+      {/* Edit form */}
+      {isEditing && (
+        <div className="border-t border-neutral-200 dark:border-neutral-800">
+          <BillEditForm
+            bill={{
+              id: bill.id,
+              title: bill.title,
+              amount_total: bill.amount_total,
+              currency: bill.currency,
+              due_date: bill.due_date,
+              vendor_name: bill.vendor_name,
+              project_name: bill.project_name,
+              description: bill.description,
+              category: bill.category,
+              recurring_rule: bill.recurring_rule,
+              vendor_id: bill.vendor_id,
+              project_id: bill.project_id,
+            }}
+            vendorOptions={vendorOptions}
+            projectOptions={projectOptions}
+            onSaved={() => {
+              setIsEditing(false);
+              onRefresh();
+            }}
+            onCancel={() => setIsEditing(false)}
+          />
+        </div>
+      )}
     </div>
   );
-}
+});
