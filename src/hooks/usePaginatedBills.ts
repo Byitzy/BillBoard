@@ -125,6 +125,14 @@ async function fetchBills(
     query = query.lte('amount_total', filters.amountMax);
   }
 
+  // Server-side search using OR conditions for better performance
+  if (filters.search) {
+    const searchTerm = `%${filters.search}%`;
+    query = query.or(
+      `title.ilike.${searchTerm},description.ilike.${searchTerm},category.ilike.${searchTerm}`
+    );
+  }
+
   const { data, error, count } = await query;
 
   if (error) throw error;
@@ -147,21 +155,8 @@ async function fetchBills(
     category: row.category,
   })) as BillRow[];
 
-  // Apply client-side search filter
-  if (filters.search) {
-    const searchLower = filters.search.toLowerCase();
-    bills = bills.filter(
-      (bill) =>
-        bill.title.toLowerCase().includes(searchLower) ||
-        (bill.vendor_name &&
-          bill.vendor_name.toLowerCase().includes(searchLower)) ||
-        (bill.project_name &&
-          bill.project_name.toLowerCase().includes(searchLower)) ||
-        (bill.description &&
-          bill.description.toLowerCase().includes(searchLower)) ||
-        (bill.category && bill.category.toLowerCase().includes(searchLower))
-    );
-  }
+  // Server-side search is now handled in the main query
+  // No expensive client-side filtering needed
 
   // Handle status filtering with effective status
   if (filters.status) {
@@ -223,8 +218,11 @@ export function usePaginatedBills(filters: BillFilters = {}) {
       );
       return totalLoaded < lastPage.totalCount ? pages.length + 1 : undefined;
     },
-    staleTime: 5 * 60 * 1000, // 5 minutes
-    gcTime: 30 * 60 * 1000, // 30 minutes
+    staleTime: 0, // Don't cache - always fetch fresh
+    gcTime: 0, // Don't keep in memory
+    refetchOnWindowFocus: false, // Don't refetch on focus
+    refetchOnMount: false, // Don't refetch on mount if data exists
+    retry: false, // Don't retry failed requests
   });
 
   // Flatten the data from all pages

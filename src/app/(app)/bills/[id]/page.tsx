@@ -44,7 +44,14 @@ export default function BillDetailPage({ params }: Props) {
   );
 
   useEffect(() => {
-    params.then(setResolvedParams);
+    params.then((p) => {
+      // Handle the "create" case - redirect to proper create route
+      if (p.id === 'create') {
+        window.location.href = '/bills/create';
+        return;
+      }
+      setResolvedParams(p);
+    });
   }, [params]);
 
   async function load() {
