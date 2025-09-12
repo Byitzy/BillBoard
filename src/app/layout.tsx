@@ -1,7 +1,8 @@
+import { LocaleProvider } from '@/components/i18n/LocaleProvider';
+import { QueryProvider } from '@/components/providers/QueryProvider';
+import { ThemeProvider, ThemeScript } from '@/components/theme/ThemeProvider';
 import type { Metadata } from 'next';
 import './globals.css';
-import { LocaleProvider } from '@/components/i18n/LocaleProvider';
-import { ThemeProvider, ThemeScript } from '@/components/theme/ThemeProvider';
 
 // Disable static pre-render; rely on runtime (auth-driven app)
 export const dynamic = 'force-dynamic';
@@ -37,9 +38,11 @@ export default function RootLayout({
         <ThemeScript />
       </head>
       <body className="min-h-screen">
-        <ThemeProvider>
-          <LocaleProvider>{children}</LocaleProvider>
-        </ThemeProvider>
+        <QueryProvider>
+          <ThemeProvider>
+            <LocaleProvider>{children}</LocaleProvider>
+          </ThemeProvider>
+        </QueryProvider>
       </body>
     </html>
   );

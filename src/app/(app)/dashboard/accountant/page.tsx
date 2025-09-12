@@ -56,7 +56,7 @@ export default function AccountantDashboard() {
 
   useEffect(() => {
     loadAccountantDashboard();
-  }, [supabase]);
+  }, []);
 
   async function loadAccountantDashboard() {
     setLoading(true);

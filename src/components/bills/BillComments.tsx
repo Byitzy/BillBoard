@@ -1,5 +1,15 @@
 'use client';
 import { useState, useRef, useEffect } from 'react';
+import {
+  MessageSquare,
+  Clock,
+  Edit2,
+  Trash2,
+  Send,
+  X,
+  CheckCircle2,
+  AlertCircle,
+} from 'lucide-react';
 import { useBillComments, type BillComment } from '@/hooks/useBillComments';
 
 interface BillCommentsProps {
@@ -76,10 +86,19 @@ export default function BillComments({
     }
   };
 
-  const handleDelete = async (commentId: string) => {
-    if (!confirm('Are you sure you want to delete this comment?')) return;
+  const [deletingId, setDeletingId] = useState<string | null>(null);
 
-    await deleteComment(commentId);
+  const handleDelete = async (commentId: string) => {
+    if (deletingId) return; // Prevent multiple deletes
+
+    setDeletingId(commentId);
+    const success = await deleteComment(commentId);
+
+    if (!success) {
+      // Reset if delete failed
+      setDeletingId(null);
+    }
+    // If successful, the comment will be removed from state by the hook
   };
 
   const startEdit = (comment: BillComment) => {
@@ -141,117 +160,124 @@ export default function BillComments({
         <h3 className="text-lg font-semibold text-neutral-900 dark:text-neutral-100">
           Comments & Notes
         </h3>
-        <div className="flex items-center gap-1">
+        <div className="flex items-center gap-1 bg-neutral-100 dark:bg-neutral-800 p-1 rounded-lg">
           <button
             onClick={() => setActiveTab('all')}
-            className={`px-3 py-1.5 text-sm font-medium rounded-lg transition-colors ${
+            className={`px-3 py-1.5 text-sm font-medium rounded-md transition-all duration-200 flex items-center gap-2 ${
               activeTab === 'all'
-                ? 'bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300'
-                : 'text-neutral-600 dark:text-neutral-400 hover:bg-neutral-100 dark:hover:bg-neutral-800'
+                ? 'bg-white dark:bg-neutral-700 text-blue-700 dark:text-blue-300 shadow-sm'
+                : 'text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-neutral-200'
             }`}
           >
+            <MessageSquare className="w-4 h-4" />
             All ({comments.length})
           </button>
           <button
             onClick={() => setActiveTab('history')}
-            className={`px-3 py-1.5 text-sm font-medium rounded-lg transition-colors ${
+            className={`px-3 py-1.5 text-sm font-medium rounded-md transition-all duration-200 flex items-center gap-2 ${
               activeTab === 'history'
-                ? 'bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300'
-                : 'text-neutral-600 dark:text-neutral-400 hover:bg-neutral-100 dark:hover:bg-neutral-800'
+                ? 'bg-white dark:bg-neutral-700 text-blue-700 dark:text-blue-300 shadow-sm'
+                : 'text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-neutral-200'
             }`}
           >
+            <Clock className="w-4 h-4" />
             History ({approvalHistory.length})
           </button>
         </div>
       </div>
 
       {error && (
-        <div className="p-3 bg-red-50 dark:bg-red-950 border border-red-200 dark:border-red-800 rounded-lg">
+        <div className="p-3 bg-red-50 dark:bg-red-950 border border-red-200 dark:border-red-800 rounded-xl flex items-center gap-2">
+          <AlertCircle className="w-4 h-4 text-red-600 dark:text-red-400 flex-shrink-0" />
           <p className="text-sm text-red-600 dark:text-red-400">{error}</p>
         </div>
       )}
 
       {/* New Comment Form */}
-      {!readonly &&
-        activeTab === 'all' &&
-        ['admin', 'approver', 'accountant', 'data_entry'].includes(
-          userRole
-        ) && (
-          <form onSubmit={handleSubmit} className="space-y-3">
-            <div className="flex items-center gap-4">
-              <div className="flex items-center gap-2">
-                <input
-                  type="radio"
-                  id="comment"
-                  name="commentType"
-                  value="comment"
-                  checked={commentType === 'comment'}
-                  onChange={() => setCommentType('comment')}
-                  className="w-4 h-4 text-blue-600 bg-white border-neutral-300 focus:ring-blue-500"
-                />
-                <label
-                  htmlFor="comment"
-                  className="text-sm text-neutral-700 dark:text-neutral-300"
-                >
-                  Comment
-                </label>
-              </div>
-              <div className="flex items-center gap-2">
-                <input
-                  type="radio"
-                  id="note"
-                  name="commentType"
-                  value="note"
-                  checked={commentType === 'note'}
-                  onChange={() => setCommentType('note')}
-                  className="w-4 h-4 text-blue-600 bg-white border-neutral-300 focus:ring-blue-500"
-                />
-                <label
-                  htmlFor="note"
-                  className="text-sm text-neutral-700 dark:text-neutral-300"
-                >
-                  Internal Note
-                </label>
-              </div>
-              {commentType === 'comment' && (
-                <div className="flex items-center gap-2">
-                  <input
-                    type="checkbox"
-                    id="internal"
-                    checked={isInternal}
-                    onChange={(e) => setIsInternal(e.target.checked)}
-                    className="w-4 h-4 text-blue-600 bg-white border-neutral-300 rounded focus:ring-blue-500"
-                  />
-                  <label
-                    htmlFor="internal"
-                    className="text-sm text-neutral-700 dark:text-neutral-300"
-                  >
-                    Internal only
-                  </label>
-                </div>
-              )}
-            </div>
-
-            <div className="relative">
-              <textarea
-                ref={textareaRef}
-                value={newComment}
-                onChange={handleTextareaChange}
-                placeholder={`Add a ${commentType}...`}
-                rows={3}
-                className="w-full px-3 py-2 border border-neutral-300 dark:border-neutral-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-neutral-800 text-neutral-900 dark:text-neutral-100 resize-none"
-                disabled={submitting}
+      {!readonly && activeTab === 'all' && (
+        <div className="space-y-3">
+          <div className="flex items-center gap-4">
+            <div className="flex items-center gap-2">
+              <input
+                type="radio"
+                id="comment"
+                name="commentType"
+                value="comment"
+                checked={commentType === 'comment'}
+                onChange={() => setCommentType('comment')}
+                className="w-4 h-4 text-blue-600 bg-white border-neutral-300 focus:ring-blue-500"
               />
-              <button
-                type="submit"
-                disabled={!newComment.trim() || submitting}
-                className="absolute bottom-2 right-2 px-3 py-1.5 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed rounded-lg"
+              <label
+                htmlFor="comment"
+                className="text-sm text-neutral-700 dark:text-neutral-300"
               >
-                {submitting ? 'Posting...' : 'Post'}
-              </button>
+                Comment
+              </label>
             </div>
-          </form>
-        )}
+            <div className="flex items-center gap-2">
+              <input
+                type="radio"
+                id="note"
+                name="commentType"
+                value="note"
+                checked={commentType === 'note'}
+                onChange={() => setCommentType('note')}
+                className="w-4 h-4 text-blue-600 bg-white border-neutral-300 focus:ring-blue-500"
+              />
+              <label
+                htmlFor="note"
+                className="text-sm text-neutral-700 dark:text-neutral-300"
+              >
+                Internal Note
+              </label>
+            </div>
+            {commentType === 'comment' && (
+              <div className="flex items-center gap-2">
+                <input
+                  type="checkbox"
+                  id="internal"
+                  checked={isInternal}
+                  onChange={(e) => setIsInternal(e.target.checked)}
+                  className="w-4 h-4 text-blue-600 bg-white border-neutral-300 rounded focus:ring-blue-500"
+                />
+                <label
+                  htmlFor="internal"
+                  className="text-sm text-neutral-700 dark:text-neutral-300"
+                >
+                  Internal only
+                </label>
+              </div>
+            )}
+          </div>
+
+          <div className="relative">
+            <textarea
+              ref={textareaRef}
+              value={newComment}
+              onChange={handleTextareaChange}
+              placeholder={`Add a ${commentType}...`}
+              rows={3}
+              className="w-full px-4 py-3 pr-20 border border-neutral-300 dark:border-neutral-600 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-neutral-800 text-neutral-900 dark:text-neutral-100 resize-none transition-all duration-200"
+              disabled={submitting}
+            />
+            <button
+              type="button"
+              onClick={(e) => {
+                e.preventDefault();
+                handleSubmit(e as any);
+              }}
+              disabled={!newComment.trim() || submitting}
+              className="absolute bottom-3 right-3 p-2 text-white bg-blue-600 hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed rounded-lg transition-all duration-200 flex items-center gap-2"
+            >
+              {submitting ? (
+                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white" />
+              ) : (
+                <Send className="w-4 h-4" />
+              )}
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* Comments List */}
       <div className="space-y-4">
@@ -292,21 +318,28 @@ export default function BillComments({
 
                 {!readonly &&
                   ['comment', 'note'].includes(comment.comment_type) && (
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-1">
                       {canEditComment(comment, userRole) && (
                         <button
                           onClick={() => startEdit(comment)}
-                          className="text-xs text-neutral-600 dark:text-neutral-400 hover:text-blue-600 dark:hover:text-blue-400"
+                          className="p-1.5 text-neutral-500 dark:text-neutral-400 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-md transition-all duration-200"
+                          title="Edit comment"
                         >
-                          Edit
+                          <Edit2 className="w-3.5 h-3.5" />
                         </button>
                       )}
                       {canDeleteComment(comment, userRole) && (
                         <button
                           onClick={() => handleDelete(comment.id)}
-                          className="text-xs text-neutral-600 dark:text-neutral-400 hover:text-red-600 dark:hover:text-red-400"
+                          disabled={deletingId === comment.id}
+                          className="p-1.5 text-neutral-500 dark:text-neutral-400 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-md transition-all duration-200 disabled:opacity-50"
+                          title="Delete comment"
                         >
-                          Delete
+                          {deletingId === comment.id ? (
+                            <div className="animate-spin rounded-full h-3.5 w-3.5 border border-red-600 border-t-transparent" />
+                          ) : (
+                            <Trash2 className="w-3.5 h-3.5" />
+                          )}
                         </button>
                       )}
                     </div>
@@ -314,30 +347,34 @@ export default function BillComments({
               </div>
 
               {editingId === comment.id ? (
-                <div className="space-y-2">
+                <div className="space-y-3 p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800">
                   <textarea
                     value={editContent}
                     onChange={(e) => setEditContent(e.target.value)}
                     rows={3}
-                    className="w-full px-3 py-2 text-sm border border-neutral-300 dark:border-neutral-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-neutral-800 text-neutral-900 dark:text-neutral-100"
+                    className="w-full px-3 py-2 text-sm border border-blue-300 dark:border-blue-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-neutral-800 text-neutral-900 dark:text-neutral-100 transition-all duration-200"
+                    placeholder="Edit your comment..."
                   />
                   <div className="flex items-center gap-2">
                     <button
                       onClick={() => handleEdit(comment.id)}
-                      className="px-3 py-1.5 text-xs font-medium text-white bg-blue-600 hover:bg-blue-700 rounded"
+                      disabled={!editContent.trim()}
+                      className="px-3 py-1.5 text-xs font-medium text-white bg-blue-600 hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed rounded-md transition-all duration-200 flex items-center gap-1.5"
                     >
+                      <CheckCircle2 className="w-3.5 h-3.5" />
                       Save
                     </button>
                     <button
                       onClick={cancelEdit}
-                      className="px-3 py-1.5 text-xs font-medium text-neutral-700 dark:text-neutral-300 bg-neutral-100 dark:bg-neutral-800 hover:bg-neutral-200 dark:hover:bg-neutral-700 rounded"
+                      className="px-3 py-1.5 text-xs font-medium text-neutral-700 dark:text-neutral-300 bg-white dark:bg-neutral-700 hover:bg-neutral-100 dark:hover:bg-neutral-600 border border-neutral-300 dark:border-neutral-600 rounded-md transition-all duration-200 flex items-center gap-1.5"
                     >
+                      <X className="w-3.5 h-3.5" />
                       Cancel
                     </button>
                   </div>
                 </div>
               ) : (
-                <div className="text-sm text-neutral-700 dark:text-neutral-300 whitespace-pre-wrap">
+                <div className="text-sm text-neutral-700 dark:text-neutral-300 whitespace-pre-wrap leading-relaxed">
                   {comment.content}
                 </div>
               )}
@@ -358,28 +395,20 @@ export default function BillComments({
             </div>
           ))
         ) : (
-          <div className="text-center py-8 text-neutral-500 dark:text-neutral-400">
-            <div className="text-4xl mb-2">
-              <svg
-                className="w-16 h-16 mx-auto text-neutral-400"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={1.5}
-                  d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"
-                />
-              </svg>
+          <div className="text-center py-12 text-neutral-500 dark:text-neutral-400">
+            <div className="mb-4">
+              {activeTab === 'history' ? (
+                <Clock className="w-16 h-16 mx-auto text-neutral-300 dark:text-neutral-600" />
+              ) : (
+                <MessageSquare className="w-16 h-16 mx-auto text-neutral-300 dark:text-neutral-600" />
+              )}
             </div>
-            <p className="text-sm">
+            <p className="text-base font-medium mb-2">
               {activeTab === 'history'
                 ? 'No approval history yet'
                 : 'No comments yet'}
             </p>
-            <p className="text-xs">
+            <p className="text-sm">
               {activeTab === 'history'
                 ? 'Status changes and approvals will appear here'
                 : 'Start a conversation about this bill'}

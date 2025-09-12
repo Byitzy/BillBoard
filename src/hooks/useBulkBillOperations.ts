@@ -3,10 +3,10 @@
  * Provides functionality for batch status updates and other bulk actions
  */
 
-import { useState, useCallback } from 'react';
-import { getSupabaseClient } from '@/lib/supabase/client';
-import { getDefaultOrgId } from '@/lib/org';
 import { type BillStatus } from '@/lib/bills/status';
+import { getDefaultOrgId } from '@/lib/org';
+import { getSupabaseClient } from '@/lib/supabase/client';
+import { useCallback, useState } from 'react';
 
 export interface BulkOperationResult {
   success: number;
@@ -19,7 +19,7 @@ export function useBulkBillOperations() {
   const supabase = getSupabaseClient();
 
   /**
-   * Update status for multiple bills
+   * Update status for multiple bills (optimized with batching)
    */
   const bulkUpdateStatus = useCallback(
     async (
@@ -33,74 +33,86 @@ export function useBulkBillOperations() {
         const orgId = await getDefaultOrgId(supabase);
         if (!orgId) throw new Error('No organization found');
 
-        // For each bill, we need to check if it's recurring and update accordingly
-        for (const billId of billIds) {
-          try {
-            // Get bill info to determine if it's recurring
-            const { data: bill } = await supabase
+        if (billIds.length === 0) {
+          return result;
+        }
+
+        // Batch query: Get all bill info in one query
+        const { data: bills, error: billsError } = await supabase
+          .from('bills')
+          .select('id, recurring_rule, status')
+          .in('id', billIds)
+          .eq('org_id', orgId);
+
+        if (billsError) {
+          throw billsError;
+        }
+
+        if (!bills || bills.length === 0) {
+          result.failed = billIds.length;
+          result.errors.push('No bills found');
+          return result;
+        }
+
+        // Separate recurring and non-recurring bills
+        const recurringBills = bills.filter((b) => !!b.recurring_rule);
+        const nonRecurringBills = bills.filter((b) => !b.recurring_rule);
+
+        // Execute updates in parallel
+        const updatePromises = [];
+
+        // Update recurring bills (occurrences)
+        if (recurringBills.length > 0) {
+          const occurrenceState =
+            newStatus === 'active' ? 'scheduled' : newStatus;
+          updatePromises.push(
+            supabase
+              .from('bill_occurrences')
+              .update({ state: occurrenceState as any })
+              .in(
+                'bill_id',
+                recurringBills.map((b) => b.id)
+              )
+              .order('created_at', { ascending: false })
+          );
+        }
+
+        // Update non-recurring bills
+        if (nonRecurringBills.length > 0) {
+          const billStatus =
+            newStatus === 'scheduled' || newStatus === 'failed'
+              ? 'active'
+              : newStatus;
+          updatePromises.push(
+            supabase
               .from('bills')
-              .select('recurring_rule, status')
-              .eq('id', billId)
+              .update({ status: billStatus as any })
+              .in(
+                'id',
+                nonRecurringBills.map((b) => b.id)
+              )
               .eq('org_id', orgId)
-              .single();
+          );
+        }
 
-            if (!bill) {
-              result.failed++;
-              result.errors.push(`Bill ${billId} not found`);
-              continue;
-            }
+        // Wait for all updates to complete
+        const updateResults = await Promise.allSettled(updatePromises);
 
-            const isRecurring = !!bill.recurring_rule;
-
-            if (isRecurring) {
-              // For recurring bills, update the latest bill occurrence
-              // Map bill status to occurrence state
-              const occurrenceState =
-                newStatus === 'active' ? 'scheduled' : newStatus;
-              const { error } = await supabase
-                .from('bill_occurrences')
-                .update({ state: occurrenceState as any })
-                .eq('bill_id', billId)
-                .order('created_at', { ascending: false })
-                .limit(1);
-
-              if (error) {
-                result.failed++;
-                result.errors.push(
-                  `Failed to update occurrences for bill ${billId}: ${error.message}`
-                );
-              } else {
-                result.success++;
-              }
-            } else {
-              // For non-recurring bills, update the bill status directly
-              // Ensure we only use valid bill statuses
-              const billStatus =
-                newStatus === 'scheduled' || newStatus === 'failed'
-                  ? 'active'
-                  : newStatus;
-              const { error } = await supabase
-                .from('bills')
-                .update({ status: billStatus as any })
-                .eq('id', billId)
-                .eq('org_id', orgId);
-
-              if (error) {
-                result.failed++;
-                result.errors.push(
-                  `Failed to update bill ${billId}: ${error.message}`
-                );
-              } else {
-                result.success++;
-              }
-            }
-          } catch (err) {
-            result.failed++;
+        // Count successes and failures
+        updateResults.forEach((updateResult, index) => {
+          if (updateResult.status === 'fulfilled') {
+            const affectedCount =
+              index === 0 ? recurringBills.length : nonRecurringBills.length;
+            result.success += affectedCount;
+          } else {
+            const affectedCount =
+              index === 0 ? recurringBills.length : nonRecurringBills.length;
+            result.failed += affectedCount;
             result.errors.push(
-              `Error processing bill ${billId}: ${err instanceof Error ? err.message : 'Unknown error'}`
+              `Update failed: ${updateResult.reason?.message || 'Unknown error'}`
             );
           }
-        }
+        });
       } catch (error) {
         result.failed = billIds.length;
         result.errors.push(
@@ -118,7 +130,7 @@ export function useBulkBillOperations() {
   );
 
   /**
-   * Mark multiple bills as paid
+   * Mark multiple bills as paid (optimized with batching)
    */
   const bulkMarkAsPaid = useCallback(
     async (billIds: string[]): Promise<BulkOperationResult> => {
@@ -129,65 +141,80 @@ export function useBulkBillOperations() {
         const orgId = await getDefaultOrgId(supabase);
         if (!orgId) throw new Error('No organization found');
 
-        for (const billId of billIds) {
-          try {
-            // Get bill info
-            const { data: bill } = await supabase
+        if (billIds.length === 0) {
+          return result;
+        }
+
+        // Batch query: Get all bill info in one query
+        const { data: bills, error: billsError } = await supabase
+          .from('bills')
+          .select('id, recurring_rule, status')
+          .in('id', billIds)
+          .eq('org_id', orgId);
+
+        if (billsError) {
+          throw billsError;
+        }
+
+        if (!bills || bills.length === 0) {
+          result.failed = billIds.length;
+          result.errors.push('No bills found');
+          return result;
+        }
+
+        // Separate recurring and non-recurring bills
+        const recurringBills = bills.filter((b) => !!b.recurring_rule);
+        const nonRecurringBills = bills.filter((b) => !b.recurring_rule);
+
+        // Execute updates in parallel
+        const updatePromises = [];
+
+        // Update recurring bills (occurrences)
+        if (recurringBills.length > 0) {
+          updatePromises.push(
+            supabase
+              .from('bill_occurrences')
+              .update({ state: 'paid' as any })
+              .in(
+                'bill_id',
+                recurringBills.map((b) => b.id)
+              )
+              .order('created_at', { ascending: false })
+          );
+        }
+
+        // Update non-recurring bills
+        if (nonRecurringBills.length > 0) {
+          updatePromises.push(
+            supabase
               .from('bills')
-              .select('recurring_rule, status')
-              .eq('id', billId)
+              .update({ status: 'paid' as any })
+              .in(
+                'id',
+                nonRecurringBills.map((b) => b.id)
+              )
               .eq('org_id', orgId)
-              .single();
+          );
+        }
 
-            if (!bill) {
-              result.failed++;
-              result.errors.push(`Bill ${billId} not found`);
-              continue;
-            }
+        // Wait for all updates to complete
+        const updateResults = await Promise.allSettled(updatePromises);
 
-            const isRecurring = !!bill.recurring_rule;
-
-            if (isRecurring) {
-              // For recurring bills, mark the latest occurrence as paid
-              const { error } = await supabase
-                .from('bill_occurrences')
-                .update({ state: 'paid' as any })
-                .eq('bill_id', billId)
-                .order('created_at', { ascending: false })
-                .limit(1);
-
-              if (error) {
-                result.failed++;
-                result.errors.push(
-                  `Failed to mark occurrence as paid for bill ${billId}: ${error.message}`
-                );
-              } else {
-                result.success++;
-              }
-            } else {
-              // For non-recurring bills, mark the bill as paid
-              const { error } = await supabase
-                .from('bills')
-                .update({ status: 'paid' as any })
-                .eq('id', billId)
-                .eq('org_id', orgId);
-
-              if (error) {
-                result.failed++;
-                result.errors.push(
-                  `Failed to mark bill ${billId} as paid: ${error.message}`
-                );
-              } else {
-                result.success++;
-              }
-            }
-          } catch (err) {
-            result.failed++;
+        // Count successes and failures
+        updateResults.forEach((updateResult, index) => {
+          if (updateResult.status === 'fulfilled') {
+            const affectedCount =
+              index === 0 ? recurringBills.length : nonRecurringBills.length;
+            result.success += affectedCount;
+          } else {
+            const affectedCount =
+              index === 0 ? recurringBills.length : nonRecurringBills.length;
+            result.failed += affectedCount;
             result.errors.push(
-              `Error processing bill ${billId}: ${err instanceof Error ? err.message : 'Unknown error'}`
+              `Update failed: ${updateResult.reason?.message || 'Unknown error'}`
             );
           }
-        }
+        });
       } catch (error) {
         result.failed = billIds.length;
         result.errors.push(
@@ -205,7 +232,7 @@ export function useBulkBillOperations() {
   );
 
   /**
-   * Bulk delete bills (soft delete by setting archived status)
+   * Bulk archive bills (soft delete by setting canceled status)
    */
   const bulkArchiveBills = useCallback(
     async (billIds: string[]): Promise<BulkOperationResult> => {
@@ -216,17 +243,28 @@ export function useBulkBillOperations() {
         const orgId = await getDefaultOrgId(supabase);
         if (!orgId) throw new Error('No organization found');
 
-        const { error } = await supabase
+        if (billIds.length === 0) {
+          return result;
+        }
+
+        // Single batch update for all bills
+        const { data, error } = await supabase
           .from('bills')
-          .update({ status: 'canceled' }) // Use canceled as archived status
+          .update({ status: 'canceled' as any })
           .in('id', billIds)
-          .eq('org_id', orgId);
+          .eq('org_id', orgId)
+          .select('id'); // Get affected rows count
 
         if (error) {
           result.failed = billIds.length;
           result.errors.push(`Failed to archive bills: ${error.message}`);
         } else {
-          result.success = billIds.length;
+          const affectedCount = data?.length || 0;
+          result.success = affectedCount;
+          result.failed = billIds.length - affectedCount;
+          if (result.failed > 0) {
+            result.errors.push(`${result.failed} bills could not be archived`);
+          }
         }
       } catch (error) {
         result.failed = billIds.length;

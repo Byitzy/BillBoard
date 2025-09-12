@@ -1,6 +1,7 @@
 'use client';
 import { X } from 'lucide-react';
 import type { Route } from 'next';
+import Image from 'next/image';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { cn } from '@/lib/utils';
@@ -44,9 +45,11 @@ export default function MobileSidebar({
       >
         <div className="mb-4 flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <img
+            <Image
               src="https://aytzgpwkjmdgznxxtrdd.supabase.co/storage/v1/object/public/brand/BillBoard_icon.jpg"
               alt="BillBoard"
+              width={28}
+              height={28}
               className="h-7 w-7 rounded-md object-cover"
             />
             <div className="text-sm font-semibold">BillBoard</div>

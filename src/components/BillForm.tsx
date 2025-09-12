@@ -253,54 +253,70 @@ export default function BillForm({ onCreated }: Props) {
   const CURRENCIES = ['CAD', 'USD', 'EUR', 'GBP'];
 
   return (
-    <form onSubmit={onSubmit} className="space-y-3">
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-        <div className="flex gap-2">
-          <input
-            name="amount"
-            type="number"
-            step="0.01"
-            className="flex-1 rounded-xl border border-neutral-200 px-3 py-2 text-sm dark:border-neutral-800"
-            placeholder="Amount"
-            inputMode="decimal"
-            value={amount}
-            onChange={(e) => setAmount(e.target.value)}
-            required
-          />
-          <select
-            className="w-28 rounded-xl border border-neutral-200  px-3 py-2 text-sm dark:border-neutral-800"
-            value={currency}
-            onChange={(e) => setCurrency(e.target.value)}
-          >
-            {CURRENCIES.map((c) => (
-              <option key={c} value={c}>
-                {c}
-              </option>
-            ))}
-          </select>
+    <form onSubmit={onSubmit} className="space-y-6">
+      {/* Amount and Status Row */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+        <div className="lg:col-span-1">
+          <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-2">
+            Amount & Currency
+          </label>
+          <div className="flex gap-2">
+            <div className="relative flex-1">
+              <input
+                name="amount"
+                type="number"
+                step="0.01"
+                className="w-full rounded-lg border border-neutral-300 dark:border-neutral-600 px-4 py-3 text-sm bg-white dark:bg-neutral-800 text-neutral-900 dark:text-neutral-100 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+                placeholder="0.00"
+                inputMode="decimal"
+                value={amount}
+                onChange={(e) => setAmount(e.target.value)}
+                required
+              />
+            </div>
+            <select
+              className="w-20 rounded-lg border border-neutral-300 dark:border-neutral-600 px-3 py-3 text-sm bg-white dark:bg-neutral-800 text-neutral-900 dark:text-neutral-100 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+              value={currency}
+              onChange={(e) => setCurrency(e.target.value)}
+            >
+              {CURRENCIES.map((c) => (
+                <option key={c} value={c}>
+                  {c}
+                </option>
+              ))}
+            </select>
+          </div>
         </div>
-        <SharedSelect
-          simple
-          simpleValue={status}
-          onSimpleChange={(value) => setStatus(value as any)}
-          simpleOptions={[
-            { value: 'active', label: 'Active' },
-            { value: 'pending_approval', label: 'Pending' },
-            { value: 'approved', label: 'Approved' },
-            { value: 'on_hold', label: 'On Hold' },
-          ]}
-        />
+        <div className="lg:col-span-1">
+          <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-2">
+            Initial Status
+          </label>
+          <SharedSelect
+            simple
+            simpleValue={status}
+            onSimpleChange={(value) => setStatus(value as any)}
+            simpleOptions={[
+              { value: 'active', label: 'Active' },
+              { value: 'pending_approval', label: 'Pending Approval' },
+              { value: 'approved', label: 'Approved' },
+              { value: 'on_hold', label: 'On Hold' },
+            ]}
+          />
+        </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+      {/* Vendor and Project Row */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         {/* Vendor combobox */}
         <div>
-          <div className="text-xs text-neutral-500 mb-1">Vendor</div>
+          <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-2">
+            Vendor
+          </label>
           <SharedSelect
             value={vendor}
             onChange={setVendor}
             options={vendorOptions}
-            placeholder="Type to search or create vendor"
+            placeholder="Search or create vendor..."
             allowCreate
             onCreate={ensureVendor}
           />
@@ -308,125 +324,184 @@ export default function BillForm({ onCreated }: Props) {
 
         {/* Project combobox */}
         <div>
-          <div className="text-xs text-neutral-500 mb-1">Project</div>
+          <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-2">
+            Project (Optional)
+          </label>
           <SharedSelect
             value={project}
             onChange={setProject}
             options={projectOptions}
-            placeholder="Type to search or create project"
+            placeholder="Search or create project..."
             allowCreate
             onCreate={ensureProject}
           />
         </div>
       </div>
 
-      {/* Recurrence */}
-      <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
-        <div className="flex items-center gap-2">
+      {/* Bill Type and Scheduling */}
+      <div className="bg-neutral-50 dark:bg-neutral-800 rounded-lg p-4 border border-neutral-200 dark:border-neutral-700">
+        <div className="flex items-center gap-3 mb-4">
           <input
             id="recurring"
             type="checkbox"
             checked={isRecurring}
             onChange={(e) => setIsRecurring(e.target.checked)}
+            className="w-4 h-4 text-blue-600 bg-white border-neutral-300 rounded focus:ring-blue-500 focus:ring-2"
           />
-          <label htmlFor="recurring" className="text-sm">
-            Recurring
+          <label
+            htmlFor="recurring"
+            className="text-sm font-medium text-neutral-700 dark:text-neutral-300"
+          >
+            Make this a recurring bill
           </label>
         </div>
         {!isRecurring ? (
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-2 items-end">
-            <div className="space-y-1 md:col-span-1">
-              <label className="block text-xs text-neutral-500">Due date</label>
-              <input
-                type="date"
-                value={dueDate}
-                onChange={(e) => setDueDate(e.target.value)}
-                className="w-full rounded-xl border border-neutral-200  px-3 py-2 text-sm dark:border-neutral-800"
-                placeholder="Due date"
-              />
+          <div className="space-y-3">
+            <h4 className="text-sm font-medium text-neutral-700 dark:text-neutral-300">
+              One-time Bill
+            </h4>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+              <div>
+                <label className="block text-sm font-medium text-neutral-600 dark:text-neutral-400 mb-1">
+                  Due Date
+                </label>
+                <input
+                  type="date"
+                  value={dueDate}
+                  onChange={(e) => setDueDate(e.target.value)}
+                  className="w-full rounded-lg border border-neutral-300 dark:border-neutral-600 px-3 py-2 text-sm bg-white dark:bg-neutral-800 text-neutral-900 dark:text-neutral-100 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+                />
+              </div>
             </div>
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-2 items-end">
-            <div className="space-y-1">
-              <label className="block text-xs text-neutral-500">
-                Frequency
-              </label>
-              <select
-                className="w-full rounded-xl border border-neutral-200  px-3 py-2 text-sm dark:border-neutral-800"
-                value={frequency}
-                onChange={(e) => setFrequency(e.target.value as any)}
-              >
-                <option value="weekly">Weekly</option>
-                <option value="biweekly">Bi-weekly</option>
-                <option value="monthly">Monthly</option>
-                <option value="quarterly">Quarterly</option>
-                <option value="annually">Annually</option>
-              </select>
-            </div>
-            <div className="space-y-1">
-              <label className="block text-xs text-neutral-500">
-                Start date
-              </label>
-              <input
-                type="date"
-                value={startDate}
-                onChange={(e) => setStartDate(e.target.value)}
-                className="w-full rounded-xl border border-neutral-200  px-3 py-2 text-sm dark:border-neutral-800"
-                placeholder="Start date"
-              />
-            </div>
-            <div className="space-y-1">
-              <label className="block text-xs text-neutral-500">
-                End date (optional)
-              </label>
-              <input
-                type="date"
-                value={endDate}
-                onChange={(e) => setEndDate(e.target.value)}
-                className="w-full rounded-xl border border-neutral-200  px-3 py-2 text-sm dark:border-neutral-800"
-                placeholder="End date (optional)"
-              />
+          <div className="space-y-4">
+            <h4 className="text-sm font-medium text-purple-700 dark:text-purple-300">
+              Recurring Bill Settings
+            </h4>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+              <div>
+                <label className="block text-sm font-medium text-neutral-600 dark:text-neutral-400 mb-1">
+                  Frequency
+                </label>
+                <select
+                  className="w-full rounded-lg border border-neutral-300 dark:border-neutral-600 px-3 py-2 text-sm bg-white dark:bg-neutral-800 text-neutral-900 dark:text-neutral-100 focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all"
+                  value={frequency}
+                  onChange={(e) => setFrequency(e.target.value as any)}
+                >
+                  <option value="weekly">Weekly</option>
+                  <option value="biweekly">Bi-weekly</option>
+                  <option value="monthly">Monthly</option>
+                  <option value="quarterly">Quarterly</option>
+                  <option value="annually">Annually</option>
+                </select>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-neutral-600 dark:text-neutral-400 mb-1">
+                  Start Date
+                </label>
+                <input
+                  type="date"
+                  value={startDate}
+                  onChange={(e) => setStartDate(e.target.value)}
+                  className="w-full rounded-lg border border-neutral-300 dark:border-neutral-600 px-3 py-2 text-sm bg-white dark:bg-neutral-800 text-neutral-900 dark:text-neutral-100 focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-neutral-600 dark:text-neutral-400 mb-1">
+                  End Date (Optional)
+                </label>
+                <input
+                  type="date"
+                  value={endDate}
+                  onChange={(e) => setEndDate(e.target.value)}
+                  className="w-full rounded-lg border border-neutral-300 dark:border-neutral-600 px-3 py-2 text-sm bg-white dark:bg-neutral-800 text-neutral-900 dark:text-neutral-100 focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all"
+                />
+              </div>
             </div>
           </div>
         )}
 
         {/* Auto-approve option for recurring bills */}
         {isRecurring && (
-          <div className="flex items-center gap-2">
-            <input
-              id="autoApprove"
-              type="checkbox"
-              checked={autoApprove}
-              onChange={(e) => setAutoApprove(e.target.checked)}
-            />
-            <label htmlFor="autoApprove" className="text-sm">
-              Auto-approve when due
-            </label>
-            <div className="text-xs text-neutral-500 ml-1">
-              (Skip manual approval process)
+          <div className="mt-4 p-3 bg-purple-50 dark:bg-purple-900/20 rounded-lg border border-purple-200 dark:border-purple-800">
+            <div className="flex items-center gap-3">
+              <input
+                id="autoApprove"
+                type="checkbox"
+                checked={autoApprove}
+                onChange={(e) => setAutoApprove(e.target.checked)}
+                className="w-4 h-4 text-purple-600 bg-white border-neutral-300 rounded focus:ring-purple-500 focus:ring-2"
+              />
+              <div>
+                <label
+                  htmlFor="autoApprove"
+                  className="text-sm font-medium text-purple-700 dark:text-purple-300"
+                >
+                  Auto-approve when due
+                </label>
+                <div className="text-xs text-purple-600 dark:text-purple-400">
+                  Skip manual approval process for routine bills
+                </div>
+              </div>
             </div>
           </div>
         )}
       </div>
 
-      <textarea
-        className="w-full rounded-xl border border-neutral-200  px-3 py-2 text-sm dark:border-neutral-800"
-        placeholder="Notes (optional)"
-        value={notes}
-        onChange={(e) => setNotes(e.target.value)}
-        rows={3}
-      />
+      {/* Notes Section */}
+      <div>
+        <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-2">
+          Notes & Description
+        </label>
+        <textarea
+          className="w-full rounded-lg border border-neutral-300 dark:border-neutral-600 px-4 py-3 text-sm bg-white dark:bg-neutral-800 text-neutral-900 dark:text-neutral-100 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all resize-none"
+          placeholder="Add any additional notes, descriptions, or details about this bill..."
+          value={notes}
+          onChange={(e) => setNotes(e.target.value)}
+          rows={3}
+        />
+      </div>
 
       {error && <div className="text-sm text-red-600">{error}</div>}
 
-      <button
-        type="submit"
-        disabled={loading}
-        className="rounded-xl bg-blue-600 px-3 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-50"
-      >
-        {loading ? 'Saving…' : 'Save Bill'}
-      </button>
+      {/* Submit Button */}
+      <div className="flex items-center justify-between pt-4 border-t border-neutral-200 dark:border-neutral-700">
+        <div className="text-xs text-neutral-500 dark:text-neutral-400">
+          {isRecurring
+            ? 'This will create a recurring bill schedule'
+            : 'This will create a one-time bill'}
+        </div>
+        <button
+          type="submit"
+          disabled={loading || !amount.trim()}
+          className="flex items-center gap-2 px-6 py-3 text-sm font-semibold text-white bg-blue-600 hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed rounded-lg transition-all focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+        >
+          {loading ? (
+            <>
+              <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+              Saving Bill...
+            </>
+          ) : (
+            <>
+              <svg
+                className="h-4 w-4"
+                fill="none"
+                viewBox="0 0 24 24"
+                strokeWidth={1.5}
+                stroke="currentColor"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  d="M12 4.5v15m7.5-7.5h-15"
+                />
+              </svg>
+              Create {isRecurring ? 'Recurring' : ''} Bill
+            </>
+          )}
+        </button>
+      </div>
     </form>
   );
 }

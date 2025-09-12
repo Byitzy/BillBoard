@@ -11,6 +11,7 @@ import {
   Crown,
 } from 'lucide-react';
 import type { Route } from 'next';
+import Image from 'next/image';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useEffect, useState } from 'react';
@@ -89,9 +90,11 @@ export default function Sidebar() {
         style={{ borderRight: '1px solid hsl(var(--border))' }}
       >
         <div className="mb-6 flex items-center gap-3">
-          <img
+          <Image
             src="https://aytzgpwkjmdgznxxtrdd.supabase.co/storage/v1/object/public/brand/BillBoard_icon.jpg"
             alt="BillBoard"
+            width={32}
+            height={32}
             className="h-8 w-8 rounded-md object-cover shadow-sm"
           />
           <div className="text-base font-semibold tracking-wide">

@@ -81,7 +81,7 @@ export function useBillsBatch() {
 
       // return approverMap;
     },
-    [supabase]
+    []
   );
 
   /**

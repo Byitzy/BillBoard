@@ -130,7 +130,7 @@ export function useSavedSearches() {
       //   return null;
       // }
     },
-    [supabase, loadSavedSearches]
+    []
   );
 
   /**
@@ -144,7 +144,7 @@ export function useSavedSearches() {
       setError('Saved searches feature is not available yet');
       return null;
     },
-    [supabase, loadSavedSearches]
+    []
   );
 
   /**
@@ -155,7 +155,7 @@ export function useSavedSearches() {
       setError('Saved searches feature is not available yet');
       return false;
     },
-    [supabase, loadSavedSearches]
+    []
   );
 
   /**
