@@ -198,34 +198,21 @@ export default function BillForm({ onCreated }: Props) {
         .single();
       if (error) throw error;
 
-      // Handle bill occurrences based on type
+      // Handle bill occurrences - use generate API for both recurring and one-time bills
       if (inserted?.id) {
-        if (isRecurring) {
-          // For recurring bills: use the generate API to create scheduled occurrences
-          const { data: sessionRes } = await supabase.auth.getSession();
-          const access = sessionRes.session?.access_token;
-          await fetch(`/api/bills/${inserted.id}/generate`, {
-            method: 'POST',
-            headers: access ? { Authorization: `Bearer ${access}` } : undefined,
-          });
-        } else {
-          // For one-time bills: create occurrence directly in final state
-          const finalState = status === 'active' ? 'pending_approval' : status;
-          const occurrencePayload = {
-            org_id: orgId,
-            bill_id: inserted.id,
-            project_id: projectId,
-            vendor_id: vendorId,
-            sequence: 1,
-            amount_due: amt,
-            due_date: dueDate || new Date().toISOString().split('T')[0],
-            state: finalState,
-          };
+        const { data: sessionRes } = await supabase.auth.getSession();
+        const access = sessionRes.session?.access_token;
 
-          const { error: occError } = await supabase
-            .from('bill_occurrences')
-            .insert(occurrencePayload);
-          if (occError) throw occError;
+        const response = await fetch(`/api/bills/${inserted.id}/generate`, {
+          method: 'POST',
+          headers: access ? { Authorization: `Bearer ${access}` } : undefined,
+        });
+
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(
+            errorData.error || 'Failed to generate bill occurrences'
+          );
         }
       }
 

@@ -7,6 +7,16 @@ const nextConfig = {
     // 74 warnings remaining - mostly unused vars and alerts
     ignoreDuringBuilds: false,
   },
+  images: {
+    remotePatterns: [
+      {
+        protocol: 'https',
+        hostname: 'aytzgpwkjmdgznxxtrdd.supabase.co',
+        port: '',
+        pathname: '/storage/v1/object/public/**',
+      },
+    ],
+  },
   // Performance optimizations
   experimental: {
     optimizePackageImports: [
