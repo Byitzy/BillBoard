@@ -146,8 +146,9 @@ export default function FileUpload({
   );
 
   const getFileIcon = (mime: string) => {
-    if (mime.startsWith('image/')) return <Image className="h-4 w-4" />;
-    return <FileText className="h-4 w-4" />;
+    if (mime.startsWith('image/'))
+      return <Image className="h-4 w-4" aria-hidden="true" />;
+    return <FileText className="h-4 w-4" aria-hidden="true" />;
   };
 
   return (

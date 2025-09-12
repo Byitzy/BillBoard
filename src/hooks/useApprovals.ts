@@ -106,7 +106,7 @@ export function useApprovals(billOccurrenceId?: string) {
     if (billOccurrenceId) {
       fetchApprovals(billOccurrenceId);
     }
-  }, [billOccurrenceId]);
+  }, [billOccurrenceId, fetchApprovals]);
 
   const getUserApproval = (userId: string): Approval | undefined => {
     return approvals.find((approval) => approval.approver_id === userId);

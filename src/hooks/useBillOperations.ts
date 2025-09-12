@@ -3,9 +3,9 @@
  * Consolidates duplicated status update and occurrence loading logic
  */
 
-import { useState, useCallback } from 'react';
-import { getSupabaseClient } from '@/lib/supabase/client';
 import { getEffectiveStatus, type BillStatus } from '@/lib/bills/status';
+import { getSupabaseClient } from '@/lib/supabase/client';
+import { useCallback, useState } from 'react';
 
 export interface BillOperationsResult {
   loading: boolean;
@@ -57,10 +57,8 @@ export function useBillOperations(
       }
 
       if (data?.[0]) {
-        console.log(`Bill ${billId} has occurrence with state:`, data[0].state);
         setBillOccurrenceState(data[0].state);
       } else {
-        console.log(`Bill ${billId} has no occurrences - using bill status`);
         setBillOccurrenceState(null);
       }
     } catch (error) {
@@ -101,7 +99,7 @@ export function useBillOperations(
     } catch (error) {
       console.error('Failed to load approver info:', error);
     }
-  }, [billId, hasOccurrences, supabase]);
+  }, [billId, hasOccurrences]);
 
   /**
    * Update bill status (handles both occurrence and non-occurrence bills)
@@ -190,22 +188,35 @@ export function useBillOperations(
   const deleteBill = useCallback(async (): Promise<boolean> => {
     setLoading(true);
     try {
-      // Get organization ID for security
-      const orgData = await supabase.auth.getUser();
-      if (!orgData.data.user) throw new Error('User not authenticated');
+      // Get user for security (should be cached by Supabase)
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+      if (!user) throw new Error('User not authenticated');
 
-      // Delete in order: comments, attachments, occurrences, then bill
-      // Comments and attachments will cascade delete with bill due to foreign key constraints
+      // Batch delete operations to reduce round trips
+      const deleteOperations = [
+        // Delete bill occurrences first
+        supabase.from('bill_occurrences').delete().eq('bill_id', billId),
+        // Delete the bill itself (this will cascade delete comments and attachments)
+        supabase.from('bills').delete().eq('id', billId),
+      ];
 
-      // Delete bill occurrences first
-      await supabase.from('bill_occurrences').delete().eq('bill_id', billId);
+      // Execute all delete operations in parallel
+      const results = await Promise.allSettled(deleteOperations);
 
-      // Delete the bill itself (this will cascade delete comments and attachments)
-      const { error } = await supabase.from('bills').delete().eq('id', billId);
+      // Check for any errors
+      const failures = results.filter((result) => result.status === 'rejected');
+      if (failures.length > 0) {
+        console.error('Delete operation failures:', failures);
+        throw new Error('Some delete operations failed');
+      }
 
-      if (error) throw error;
+      // Trigger refresh with a small delay to allow UI to settle
+      setTimeout(() => {
+        onUpdate?.();
+      }, 100);
 
-      onUpdate?.(); // Trigger refresh of the bills list
       return true;
     } catch (error) {
       console.error('Failed to delete bill:', error);

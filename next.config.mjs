@@ -23,7 +23,7 @@ const nextConfig = {
       },
     },
   },
-  webpack: (config, { dev }) => {
+  webpack: (config, { dev, isServer }) => {
     if (dev) {
       // Improve dev build speed
       config.optimization.splitChunks = {
@@ -41,6 +41,43 @@ const nextConfig = {
         },
       };
     }
+
+    // Production optimizations
+    if (!dev) {
+      // Enable bundle analyzer in production
+      config.optimization = {
+        ...config.optimization,
+        splitChunks: {
+          chunks: 'all',
+          cacheGroups: {
+            vendor: {
+              test: /[\\/]node_modules[\\/]/,
+              name: 'vendors',
+              chunks: 'all',
+            },
+            supabase: {
+              test: /[\\/]node_modules[\\/]@supabase[\\/]/,
+              name: 'supabase',
+              chunks: 'all',
+              priority: 10,
+            },
+            react: {
+              test: /[\\/]node_modules[\\/](react|react-dom)[\\/]/,
+              name: 'react',
+              chunks: 'all',
+              priority: 20,
+            },
+          },
+        },
+      };
+
+      // Reduce bundle size
+      config.resolve.alias = {
+        ...config.resolve.alias,
+        // Add aliases for heavy components that can be lazy loaded
+      };
+    }
+
     return config;
   },
 };

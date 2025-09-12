@@ -1,5 +1,6 @@
 'use client';
 import { Moon, Sun, Monitor } from 'lucide-react';
+import Image from 'next/image';
 import { useState } from 'react';
 import { useTheme } from './ThemeProvider';
 
@@ -22,9 +23,11 @@ export default function ThemeToggle() {
       key: 'billboard',
       label: 'BillBoard',
       icon: (
-        <img
+        <Image
           src={BILLBOARD_ICON}
           alt="BillBoard"
+          width={16}
+          height={16}
           className="h-4 w-4 rounded-sm object-cover"
         />
       ),

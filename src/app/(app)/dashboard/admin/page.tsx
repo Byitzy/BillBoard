@@ -64,7 +64,7 @@ export default function AdminDashboard() {
 
   useEffect(() => {
     loadAdminDashboard();
-  }, [supabase]);
+  }, []);
 
   async function loadAdminDashboard() {
     setLoading(true);

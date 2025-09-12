@@ -1,9 +1,9 @@
-import { redirect } from 'next/navigation';
 import ClientBillsPage from '@/components/ClientBillsPage';
 import RequireOrg from '@/components/RequireOrg';
+import { type BillRow } from '@/hooks/usePaginatedBills';
 import { getDefaultOrgId } from '@/lib/org';
 import { getServerClient } from '@/lib/supabase/server';
-import { type BillRow } from '@/hooks/usePaginatedBills';
+import { redirect } from 'next/navigation';
 
 // Disable caching for this page to ensure fresh data
 export const dynamic = 'force-dynamic';
@@ -108,25 +108,60 @@ export default async function BillsPage({ searchParams }: BillsPageProps) {
     );
   }
 
-  // Get occurrence states for all bills to determine effective status
+  // Optimize: Batch all related queries together to reduce round trips
   const billIds = bills.map((bill) => bill.id);
   let occurrenceStateMap = new Map();
+  let nextDue: Record<string, string | undefined> = {};
 
   if (billIds.length > 0) {
-    const { data: occurrenceData } = await supabase
-      .from('bill_occurrences')
-      .select('bill_id, state')
-      .in('bill_id', billIds)
-      .order('created_at', { ascending: false });
+    // Execute all related queries in parallel
+    const [occurrenceResult, nextDueResult] = await Promise.allSettled([
+      // Get occurrence states for all bills
+      billIds.length > 0
+        ? supabase
+            .from('bill_occurrences')
+            .select('bill_id, state')
+            .in('bill_id', billIds)
+            .order('created_at', { ascending: false })
+        : Promise.resolve({ data: null }),
 
-    occurrenceData?.forEach((occ) => {
-      if (!occurrenceStateMap.has(occ.bill_id)) {
-        occurrenceStateMap.set(occ.bill_id, occ.state);
-      }
-    });
+      // Get next due dates for recurring bills only
+      bills.filter((b) => !b.due_date).length > 0
+        ? supabase
+            .from('bill_occurrences')
+            .select('bill_id, due_date')
+            .in(
+              'bill_id',
+              bills.filter((b) => !b.due_date).map((b) => b.id)
+            )
+            .gte('due_date', new Date().toISOString().slice(0, 10))
+            .order('due_date', { ascending: true })
+        : Promise.resolve({ data: null }),
+    ]);
+
+    // Process occurrence states
+    if (
+      occurrenceResult.status === 'fulfilled' &&
+      occurrenceResult.value.data
+    ) {
+      occurrenceResult.value.data.forEach((occ: any) => {
+        if (!occurrenceStateMap.has(occ.bill_id)) {
+          occurrenceStateMap.set(occ.bill_id, occ.state);
+        }
+      });
+    }
+
+    // Process next due dates
+    if (nextDueResult.status === 'fulfilled' && nextDueResult.value.data) {
+      const map: Record<string, string> = {};
+      nextDueResult.value.data.forEach((o: any) => {
+        if (!map[o.bill_id]) map[o.bill_id] = o.due_date;
+      });
+      nextDue = map;
+    }
   }
 
-  // Filter by effective status (occurrence state OR bill status)
+  // Filter by effective status (moved after data loading for efficiency)
   bills = bills.filter((bill) => {
     const effectiveStatus = occurrenceStateMap.get(bill.id) || bill.status;
 
@@ -138,30 +173,6 @@ export default async function BillsPage({ searchParams }: BillsPageProps) {
     // Otherwise filter by the specific status
     return effectiveStatus === status;
   });
-
-  // Get next due dates for recurring bills
-  const recurringBills = bills.filter((b) => !b.due_date);
-  let nextDue: Record<string, string | undefined> = {};
-
-  if (recurringBills.length > 0) {
-    const today = new Date();
-    const iso = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
-    const { data: occ } = await supabase
-      .from('bill_occurrences')
-      .select('bill_id,due_date')
-      .in(
-        'bill_id',
-        recurringBills.map((b) => b.id)
-      )
-      .gte('due_date', iso)
-      .order('due_date', { ascending: true });
-
-    const map: Record<string, string> = {};
-    occ?.forEach((o: any) => {
-      if (!map[o.bill_id]) map[o.bill_id] = o.due_date;
-    });
-    nextDue = map;
-  }
 
   // Get filter options for FilterBar
   const [vendorOptionsData, projectOptionsData] = await Promise.all([

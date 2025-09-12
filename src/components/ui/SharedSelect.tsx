@@ -68,7 +68,7 @@ export default function SharedSelect(props: SharedSelectProps) {
       );
       setFilteredOptions(filtered);
     }
-  }, [query, props.simple]); // Only query and simple flag as dependencies
+  }, [query, props.simple, props]); // Include props for options access
 
   // Close dropdown when clicking outside
   useEffect(() => {

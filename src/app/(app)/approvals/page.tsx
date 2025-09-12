@@ -60,7 +60,18 @@ export default function ApprovalsPage() {
   }, []);
 
   useEffect(() => {
-    filterOccurrences();
+    // Filter occurrences based on status
+    if (statusFilter === 'all') {
+      setFilteredOccurrences(billOccurrences);
+    } else {
+      const filtered = billOccurrences.filter((occurrence) => {
+        if (statusFilter === 'on_hold') return occurrence.state === 'on_hold';
+        if (statusFilter === 'pending')
+          return occurrence.state === 'pending_approval';
+        return false;
+      });
+      setFilteredOccurrences(filtered);
+    }
   }, [billOccurrences, statusFilter]);
 
   const getCurrentUser = async () => {

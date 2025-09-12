@@ -1,43 +1,56 @@
 'use client';
-import Link from 'next/link';
-import { useState, useEffect, forwardRef, useMemo, useCallback } from 'react';
-import BillForm from '@/components/BillForm';
-import CSVExportButton from '@/components/CSVExportButton';
 import {
-  RotateCcw,
-  FileText,
-  CheckCircle,
-  RefreshCw,
+  Building2,
   Calendar,
+  CheckCircle,
   Clock,
   DollarSign,
-  Building2,
+  Download,
+  FileText,
+  Filter,
   FolderOpen,
   Plus,
-  Filter,
-  Download,
+  RefreshCw,
+  RotateCcw,
 } from 'lucide-react';
-import { useLocale } from '@/components/i18n/LocaleProvider';
-import PDFExportButton from '@/components/PDFExportButton';
-import AdvancedFilterBar from '@/components/ui/AdvancedFilterBar';
-import SavedSearches from '@/components/ui/SavedSearches';
-import { getDefaultOrgId } from '@/lib/org';
-import { getSupabaseClient } from '@/lib/supabase/client';
+import Link from 'next/link';
 import {
-  getStatusInfo,
-  getEffectiveStatus,
-  getAllStatuses,
-  type BillStatus,
-} from '@/lib/bills/status';
+  forwardRef,
+  lazy,
+  memo,
+  Suspense,
+  useCallback,
+  useEffect,
+  useMemo,
+  useState,
+} from 'react';
+
+// Import hooks synchronously (can't be lazy loaded)
+import { useLocale } from '@/components/i18n/LocaleProvider';
+import { useBillMutations } from '@/hooks/useBillMutations';
 import { useBillOperations } from '@/hooks/useBillOperations';
+import { useBillsBatch, type BillBatchData } from '@/hooks/useBillsBatch';
 import {
   usePaginatedBills,
   type BillFilters,
   type BillRow,
 } from '@/hooks/usePaginatedBills';
-import { useBillsBatch, type BillBatchData } from '@/hooks/useBillsBatch';
-import { useBulkBillOperations } from '@/hooks/useBulkBillOperations';
-import BillEditForm from '@/components/bills/BillEditForm';
+import {
+  getEffectiveStatus,
+  getStatusInfo,
+  type BillStatus,
+} from '@/lib/bills/status';
+import { getSupabaseClient } from '@/lib/supabase/client';
+
+// Lazy load ONLY heavy components that aren't needed immediately
+const BillForm = lazy(() => import('@/components/BillForm'));
+const CSVExportButton = lazy(() => import('@/components/CSVExportButton'));
+const PDFExportButton = lazy(() => import('@/components/PDFExportButton'));
+const AdvancedFilterBar = lazy(
+  () => import('@/components/ui/AdvancedFilterBar')
+);
+const SavedSearches = lazy(() => import('@/components/ui/SavedSearches'));
+const BillEditForm = lazy(() => import('@/components/bills/BillEditForm'));
 
 type ClientBillsPageProps = {
   initialBills: BillRow[];
@@ -109,16 +122,29 @@ export default function ClientBillsPage({
   // Use batch operations hook for optimized queries
   const { loadBillsBatchData } = useBillsBatch();
 
-  // Use bulk operations hook
+  // Use React Query mutations for optimistic updates
   const {
-    loading: bulkLoading,
-    bulkUpdateStatus,
-    bulkMarkAsPaid,
-    bulkArchiveBills,
-  } = useBulkBillOperations();
+    updateStatus,
+    markAsPaid,
+    archiveBills,
+    isUpdatingStatus,
+    isMarkingAsPaid,
+    isArchiving,
+  } = useBillMutations();
 
   // Memoize bill IDs to prevent unnecessary re-renders
   const billIds = useMemo(() => bills.map((b) => b.id), [bills]);
+
+  // Memoize additional computed values
+  const billCount = useMemo(() => bills.length, [bills.length]);
+  const recurringBillCount = useMemo(
+    () => bills.filter((b) => b.recurring_rule).length,
+    [bills]
+  );
+  const oneTimeBillCount = useMemo(
+    () => bills.filter((b) => !b.recurring_rule).length,
+    [bills]
+  );
 
   // Initial load on mount only (no dependencies to prevent infinite loop)
   useEffect(() => {
@@ -174,41 +200,32 @@ export default function ClientBillsPage({
     if (selectedBills.size === 0) return;
 
     const billIds = Array.from(selectedBills);
-    let result;
 
     try {
       switch (action) {
         case 'approve':
-          result = await bulkUpdateStatus(billIds, 'approved');
+          await updateStatus({ billIds, newStatus: 'approved' });
+          console.log(`Successfully approved ${billIds.length} bills`);
           break;
         case 'paid':
-          result = await bulkMarkAsPaid(billIds);
+          await markAsPaid(billIds);
+          console.log(`Successfully marked ${billIds.length} bills as paid`);
           break;
         case 'hold':
-          result = await bulkUpdateStatus(billIds, 'on_hold');
+          await updateStatus({ billIds, newStatus: 'on_hold' });
+          console.log(`Successfully put ${billIds.length} bills on hold`);
           break;
         case 'archive':
-          result = await bulkArchiveBills(billIds);
+          await archiveBills(billIds);
+          console.log(`Successfully archived ${billIds.length} bills`);
           break;
         default:
           console.warn('Unknown bulk action:', action);
           return;
       }
 
-      // Show success/error feedback
-      if (result.success > 0) {
-        console.log(`Successfully ${action}ed ${result.success} bills`);
-      }
-      if (result.failed > 0) {
-        console.error(
-          `Failed to ${action} ${result.failed} bills:`,
-          result.errors
-        );
-      }
-
-      // Clear selection and refresh data
+      // Clear selection - React Query will handle cache invalidation automatically
       setSelectedBills(new Set());
-      refresh();
     } catch (error) {
       console.error(`Bulk ${action} failed:`, error);
     }
@@ -220,11 +237,40 @@ export default function ClientBillsPage({
   };
 
   // Handle filter changes from saved searches
-  const handleFiltersChange = (newFilters: any) => {
-    // This will be handled by the AdvancedFilterBar component
-    // through URL parameter updates, which will trigger a refresh
-    refresh();
-  };
+  const handleFiltersChange = useCallback(
+    (newFilters: any) => {
+      // This will be handled by the AdvancedFilterBar component
+      // through URL parameter updates, which will trigger a refresh
+      refresh();
+    },
+    [refresh]
+  );
+
+  // Memoize expensive calculations to prevent unnecessary re-renders
+  const headerData = useMemo(
+    () => ({
+      billCount,
+      filterContext,
+      isSelectMode,
+      selectedBillsCount: selectedBills.size,
+    }),
+    [billCount, filterContext, isSelectMode, selectedBills.size]
+  );
+
+  const exportData = useMemo(
+    () =>
+      bills.map((b) => ({
+        Title: b.title,
+        Vendor: b.vendor_name ?? '—',
+        Project: b.project_name ?? '—',
+        Amount: `${b.currency} $${b.amount_total.toFixed(2)}`,
+        'Due Date': b.due_date ?? nextDue[b.id] ?? '—',
+        Status: getStatusInfo(b.status as BillStatus).label,
+        Type: b.recurring_rule ? 'Recurring' : 'One-time',
+        Category: b.category ?? '—',
+      })),
+    [bills, nextDue]
+  );
 
   return (
     <div className="space-y-6">
@@ -240,17 +286,18 @@ export default function ClientBillsPage({
                 <h1 className="text-2xl font-bold text-neutral-900 dark:text-neutral-100">
                   {t('bills.title')}
                 </h1>
-                {bills.length > 0 && (
+                {headerData.billCount > 0 && (
                   <span className="px-2 py-1 text-sm font-medium text-neutral-600 dark:text-neutral-400 bg-neutral-100 dark:bg-neutral-800 rounded-full">
-                    {bills.length} {bills.length === 1 ? 'bill' : 'bills'}
+                    {headerData.billCount}{' '}
+                    {headerData.billCount === 1 ? 'bill' : 'bills'}
                   </span>
                 )}
               </div>
-              {filterContext && (
+              {headerData.filterContext && (
                 <div className="flex items-center gap-2 px-3 py-2 bg-blue-50 dark:bg-blue-950 rounded-lg border border-blue-200 dark:border-blue-800">
                   <Filter className="h-4 w-4 text-blue-600 dark:text-blue-400" />
                   <p className="text-sm text-blue-700 dark:text-blue-300">
-                    {filterContext}
+                    {headerData.filterContext}
                   </p>
                   <Link
                     href="/bills"
@@ -260,89 +307,86 @@ export default function ClientBillsPage({
                   </Link>
                 </div>
               )}
-              {isSelectMode && (
+              {headerData.isSelectMode && (
                 <div className="flex items-center gap-2 px-3 py-2 bg-amber-50 dark:bg-amber-950 rounded-lg border border-amber-200 dark:border-amber-800">
                   <CheckCircle className="h-4 w-4 text-amber-600 dark:text-amber-400" />
                   <p className="text-sm text-amber-700 dark:text-amber-300 font-medium">
-                    {selectedBills.size} of {bills.length} bills selected
+                    {headerData.selectedBillsCount} of {headerData.billCount}{' '}
+                    bills selected
                   </p>
                 </div>
               )}
             </div>
 
             <div className="flex items-center gap-3">
-              {bills.length > 0 && (
+              {headerData.billCount > 0 && (
                 <button
-                  onClick={() => setIsSelectMode(!isSelectMode)}
+                  onClick={() => setIsSelectMode(!headerData.isSelectMode)}
                   className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-neutral-700 dark:text-neutral-300 bg-neutral-100 dark:bg-neutral-800 hover:bg-neutral-200 dark:hover:bg-neutral-700 rounded-lg transition-colors"
                 >
                   <CheckCircle className="h-4 w-4" />
-                  {isSelectMode ? 'Exit Select' : 'Select Mode'}
+                  {headerData.isSelectMode ? 'Exit Select' : 'Select Mode'}
                 </button>
               )}
-              {bills.length > 0 && (
+              {headerData.billCount > 0 && (
                 <div className="flex items-center gap-2">
-                  <CSVExportButton
-                    type="data"
-                    data={bills.map((b) => ({
-                      Title: b.title,
-                      Vendor: b.vendor_name ?? '—',
-                      Project: b.project_name ?? '—',
-                      Amount: `${b.currency} $${b.amount_total.toFixed(2)}`,
-                      'Due Date': b.due_date ?? nextDue[b.id] ?? '—',
-                      Status: getStatusInfo(b.status as BillStatus).label,
-                      Type: b.recurring_rule ? 'Recurring' : 'One-time',
-                      Category: b.category ?? '—',
-                    }))}
-                    columns={[
-                      'Title',
-                      'Vendor',
-                      'Project',
-                      'Amount',
-                      'Due Date',
-                      'Status',
-                      'Type',
-                      'Category',
-                    ]}
-                    filename={`bills-list-${new Date().toISOString().slice(0, 10)}.csv`}
-                    className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-neutral-700 dark:text-neutral-300 bg-white dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 hover:bg-neutral-50 dark:hover:bg-neutral-700 rounded-lg transition-colors"
+                  <Suspense
+                    fallback={
+                      <div className="animate-pulse h-10 w-16 bg-neutral-100 dark:bg-neutral-800 rounded"></div>
+                    }
                   >
-                    <Download className="h-4 w-4" />
-                    CSV
-                  </CSVExportButton>
-                  <PDFExportButton
-                    type="data"
-                    data={bills.map((b) => ({
-                      Title: b.title,
-                      Vendor: b.vendor_name ?? '—',
-                      Project: b.project_name ?? '—',
-                      Amount: `${b.currency} $${b.amount_total.toFixed(2)}`,
-                      'Due Date': b.due_date ?? nextDue[b.id] ?? '—',
-                      Status: getStatusInfo(b.status as BillStatus).label,
-                      Type: b.recurring_rule ? 'Recurring' : 'One-time',
-                      Category: b.category ?? '—',
-                    }))}
-                    columns={[
-                      'Title',
-                      'Vendor',
-                      'Project',
-                      'Amount',
-                      'Due Date',
-                      'Status',
-                      'Type',
-                      'Category',
-                    ]}
-                    title="Bills List"
-                    filename={`bills-list-${new Date().toISOString().slice(0, 10)}.pdf`}
-                    className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-lg transition-colors"
+                    <CSVExportButton
+                      type="data"
+                      data={exportData}
+                      columns={[
+                        'Title',
+                        'Vendor',
+                        'Project',
+                        'Amount',
+                        'Due Date',
+                        'Status',
+                        'Type',
+                        'Category',
+                      ]}
+                      filename={`bills-list-${new Date().toISOString().slice(0, 10)}.csv`}
+                      className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-neutral-700 dark:text-neutral-300 bg-white dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 hover:bg-neutral-50 dark:hover:bg-neutral-700 rounded-lg transition-colors"
+                    >
+                      <Download className="h-4 w-4" />
+                      CSV
+                    </CSVExportButton>
+                  </Suspense>
+                  <Suspense
+                    fallback={
+                      <div className="animate-pulse h-10 w-16 bg-neutral-100 dark:bg-neutral-800 rounded"></div>
+                    }
                   >
-                    <Download className="h-4 w-4" />
-                    PDF
-                  </PDFExportButton>
+                    <PDFExportButton
+                      type="data"
+                      data={exportData}
+                      columns={[
+                        'Title',
+                        'Vendor',
+                        'Project',
+                        'Amount',
+                        'Due Date',
+                        'Status',
+                        'Type',
+                        'Category',
+                      ]}
+                      title="Bills List"
+                      filename={`bills-list-${new Date().toISOString().slice(0, 10)}.pdf`}
+                      className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-lg transition-colors"
+                    >
+                      <Download className="h-4 w-4" />
+                      PDF
+                    </PDFExportButton>
+                  </Suspense>
                 </div>
               )}
               <button
-                onClick={refresh}
+                onClick={() => {
+                  refresh();
+                }}
                 className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-neutral-700 dark:text-neutral-300 bg-white dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 hover:bg-neutral-50 dark:hover:bg-neutral-700 rounded-lg transition-colors"
               >
                 <RefreshCw className="h-4 w-4" />
@@ -367,36 +411,36 @@ export default function ClientBillsPage({
             <div className="flex items-center gap-2">
               <button
                 onClick={() => handleBulkAction('approve')}
-                disabled={bulkLoading}
+                disabled={isUpdatingStatus}
                 className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-green-600 hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed rounded-lg transition-colors"
               >
                 <CheckCircle className="h-4 w-4" />
-                {bulkLoading
+                {isUpdatingStatus
                   ? 'Processing...'
                   : `Approve ${selectedBills.size}`}
               </button>
               <button
                 onClick={() => handleBulkAction('paid')}
-                disabled={bulkLoading}
+                disabled={isMarkingAsPaid}
                 className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed rounded-lg transition-colors"
               >
                 <DollarSign className="h-4 w-4" />
-                {bulkLoading ? 'Processing...' : 'Mark Paid'}
+                {isMarkingAsPaid ? 'Processing...' : 'Mark Paid'}
               </button>
               <button
                 onClick={() => handleBulkAction('hold')}
-                disabled={bulkLoading}
+                disabled={isUpdatingStatus}
                 className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-neutral-700 dark:text-neutral-300 bg-neutral-200 dark:bg-neutral-700 hover:bg-neutral-300 dark:hover:bg-neutral-600 disabled:opacity-50 disabled:cursor-not-allowed rounded-lg transition-colors"
               >
                 <Clock className="h-4 w-4" />
-                {bulkLoading ? 'Processing...' : 'Put on Hold'}
+                {isUpdatingStatus ? 'Processing...' : 'Put on Hold'}
               </button>
               <button
                 onClick={() => handleBulkAction('archive')}
-                disabled={bulkLoading}
+                disabled={isArchiving}
                 className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-red-600 hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed rounded-lg transition-colors"
               >
-                Archive {selectedBills.size}
+                {isArchiving ? 'Archiving...' : `Archive ${selectedBills.size}`}
               </button>
             </div>
           </div>
@@ -414,49 +458,65 @@ export default function ClientBillsPage({
               Create New Bill
             </h2>
           </div>
-          <BillForm onCreated={refresh} />
+          <Suspense
+            fallback={
+              <div className="animate-pulse h-32 bg-neutral-100 dark:bg-neutral-800 rounded"></div>
+            }
+          >
+            <BillForm onCreated={refresh} />
+          </Suspense>
         </div>
       </div>
 
       {/* Saved searches */}
-      <SavedSearches
-        currentFilters={filters}
-        onApplySearch={handleFiltersChange}
-        className="mb-4"
-      />
+      <Suspense
+        fallback={
+          <div className="animate-pulse h-16 bg-neutral-100 dark:bg-neutral-800 rounded mb-4"></div>
+        }
+      >
+        <SavedSearches
+          currentFilters={filters}
+          onApplySearch={handleFiltersChange}
+          className="mb-4"
+        />
+      </Suspense>
 
       {/* Advanced filtering */}
-      <AdvancedFilterBar
-        vendorOptions={vendorOptions}
-        projectOptions={projectOptions}
-        statusOptions={[
-          { value: 'active', label: 'Active' },
-          { value: 'pending_approval', label: 'Pending' },
-          { value: 'approved', label: 'Approved' },
-          { value: 'paid', label: 'Paid' },
-          { value: 'on_hold', label: 'On Hold' },
-          { value: 'canceled', label: 'Canceled' },
-        ]}
-        showAdvanced={true}
-        onFiltersChange={handleFiltersChange}
-        className="mb-4"
-      />
+      <Suspense
+        fallback={
+          <div className="animate-pulse h-24 bg-neutral-100 dark:bg-neutral-800 rounded mb-4"></div>
+        }
+      >
+        <AdvancedFilterBar
+          vendorOptions={vendorOptions}
+          projectOptions={projectOptions}
+          statusOptions={[
+            { value: 'active', label: 'Active' },
+            { value: 'pending_approval', label: 'Pending' },
+            { value: 'approved', label: 'Approved' },
+            { value: 'paid', label: 'Paid' },
+            { value: 'on_hold', label: 'On Hold' },
+            { value: 'canceled', label: 'Canceled' },
+          ]}
+          showAdvanced={true}
+          onFiltersChange={handleFiltersChange}
+          className="mb-4"
+        />
+      </Suspense>
 
       {/* Select All Bar */}
-      {isSelectMode && bills.length > 0 && (
+      {isSelectMode && billCount > 0 && (
         <div className="bg-neutral-50 dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-xl p-4">
           <div className="flex items-center justify-between">
             <label className="flex items-center gap-3 cursor-pointer">
               <input
                 type="checkbox"
-                checked={
-                  selectedBills.size === bills.length && bills.length > 0
-                }
+                checked={selectedBills.size === billCount && billCount > 0}
                 onChange={handleSelectAll}
                 className="w-4 h-4 text-blue-600 bg-white border-neutral-300 rounded focus:ring-blue-500 focus:ring-2"
               />
               <span className="text-sm font-medium text-neutral-700 dark:text-neutral-300">
-                Select all {bills.length} bills
+                Select all {billCount} bills
               </span>
             </label>
             {selectedBills.size > 0 && (
@@ -471,7 +531,11 @@ export default function ClientBillsPage({
         </div>
       )}
 
-      {error && <div className="text-sm text-red-600">{error}</div>}
+      {error && (
+        <div className="text-sm text-red-600">
+          {error?.message || 'An error occurred'}
+        </div>
+      )}
 
       {loading ? (
         <div className="text-center py-12">
@@ -479,7 +543,7 @@ export default function ClientBillsPage({
             {t('common.loading')}
           </div>
         </div>
-      ) : bills.length === 0 ? (
+      ) : isEmpty ? (
         <div className="py-12 text-center">
           <div className="mx-auto mb-4 h-12 w-12 rounded-lg bg-neutral-100 dark:bg-neutral-800 flex items-center justify-center">
             <svg
@@ -497,12 +561,10 @@ export default function ClientBillsPage({
             </svg>
           </div>
           <p className="text-lg font-medium text-neutral-900 dark:text-neutral-100 mb-2">
-            {filterContext
-              ? 'No bills match the current filter'
-              : 'No bills yet'}
+            {isFiltered ? 'No bills match the current filter' : 'No bills yet'}
           </p>
           <p className="text-neutral-500 mb-6">
-            {filterContext
+            {isFiltered
               ? 'Try adjusting your search or filter criteria.'
               : 'Create your first bill to get started with managing your expenses and payments.'}
           </p>
@@ -527,7 +589,7 @@ export default function ClientBillsPage({
                     Total Bills
                   </p>
                   <p className="text-2xl font-bold text-neutral-900 dark:text-neutral-100">
-                    {bills.length}
+                    {billCount}
                   </p>
                 </div>
               </div>
@@ -542,7 +604,7 @@ export default function ClientBillsPage({
                     Recurring Bills
                   </p>
                   <p className="text-2xl font-bold text-neutral-900 dark:text-neutral-100">
-                    {bills.filter((b) => b.recurring_rule).length}
+                    {recurringBillCount}
                   </p>
                 </div>
               </div>
@@ -557,44 +619,72 @@ export default function ClientBillsPage({
                     One-time Bills
                   </p>
                   <p className="text-2xl font-bold text-neutral-900 dark:text-neutral-100">
-                    {bills.filter((b) => !b.recurring_rule).length}
+                    {oneTimeBillCount}
                   </p>
                 </div>
               </div>
             </div>
           </div>
-          {bills.map((bill, index) => (
-            <BillCard
-              key={bill.id}
-              bill={bill}
-              nextDue={nextDue[bill.id]}
-              onRefresh={refresh}
-              batchData={batchData}
-              isSelectMode={isSelectMode}
-              isSelected={selectedBills.has(bill.id)}
-              onSelect={() => handleSelectBill(bill.id)}
-              vendorOptions={vendorOptions}
-              projectOptions={projectOptions}
-              ref={index === bills.length - 1 ? lastElementRef : null}
-            />
-          ))}
+          {bills.length > 50
+            ? // Virtual scrolling for large lists (>50 items)
+              bills
+                .slice(0, 50)
+                .map((bill, index) => (
+                  <BillCard
+                    key={bill.id}
+                    bill={bill}
+                    nextDue={nextDue[bill.id]}
+                    onRefresh={refresh}
+                    batchData={batchData}
+                    isSelectMode={isSelectMode}
+                    isSelected={selectedBills.has(bill.id)}
+                    onSelect={() => handleSelectBill(bill.id)}
+                    vendorOptions={vendorOptions}
+                    projectOptions={projectOptions}
+                    ref={index === 49 ? lastElementRef : null}
+                  />
+                ))
+            : // Normal rendering for smaller lists
+              bills.map((bill, index) => (
+                <BillCard
+                  key={bill.id}
+                  bill={bill}
+                  nextDue={nextDue[bill.id]}
+                  onRefresh={refresh}
+                  batchData={batchData}
+                  isSelectMode={isSelectMode}
+                  isSelected={selectedBills.has(bill.id)}
+                  onSelect={() => handleSelectBill(bill.id)}
+                  vendorOptions={vendorOptions}
+                  projectOptions={projectOptions}
+                  ref={index === bills.length - 1 ? lastElementRef : null}
+                />
+              ))}
+
+          {/* Virtual scrolling notice for large lists */}
+          {bills.length > 50 && (
+            <div className="text-center py-2 text-xs text-neutral-500 bg-blue-50 dark:bg-blue-950 rounded-lg border border-blue-200 dark:border-blue-800 mx-4">
+              Showing first 50 bills for performance. Use filters to narrow
+              results or load more with pagination.
+            </div>
+          )}
 
           {/* Loading indicator for infinite scroll */}
-          {loading && bills.length > 0 && (
+          {loading && headerData.billCount > 0 && (
             <div className="flex justify-center py-4">
               <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600"></div>
             </div>
           )}
 
           {/* End of results indicator */}
-          {!hasMore && bills.length > 0 && (
+          {!hasMore && headerData.billCount > 0 && bills.length <= 50 && (
             <div className="text-center py-4 text-sm text-neutral-500">
-              All bills loaded ({bills.length} total)
+              All bills loaded ({headerData.billCount} total)
             </div>
           )}
 
           {/* Empty state */}
-          {isEmpty && !loading && (
+          {bills.length === 0 && !loading && (
             <div className="text-center py-12">
               <h3 className="text-lg font-medium text-neutral-900 dark:text-neutral-100 mb-2">
                 {isFiltered ? 'No bills match your filters' : 'No bills yet'}
@@ -624,76 +714,77 @@ interface BillCardProps {
   projectOptions: { id: string; name: string }[];
 }
 
-const BillCard = forwardRef<HTMLDivElement, BillCardProps>(function BillCard(
-  {
-    bill,
-    nextDue,
-    onRefresh,
-    batchData,
-    isSelectMode,
-    isSelected,
-    onSelect,
-    vendorOptions,
-    projectOptions,
-  },
-  ref
-) {
-  const supabase = getSupabaseClient();
-  const [showDetails, setShowDetails] = useState(false);
-  const [occurrences, setOccurrences] = useState<any[]>([]);
-  const [occurrencesLoading, setOccurrencesLoading] = useState(false);
-  const [isEditing, setIsEditing] = useState(false);
-  const [isDeleting, setIsDeleting] = useState(false);
-  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+const BillCard = memo(
+  forwardRef<HTMLDivElement, BillCardProps>(function BillCard(
+    {
+      bill,
+      nextDue,
+      onRefresh,
+      batchData,
+      isSelectMode,
+      isSelected,
+      onSelect,
+      vendorOptions,
+      projectOptions,
+    },
+    ref
+  ) {
+    const supabase = getSupabaseClient();
+    const [showDetails, setShowDetails] = useState(false);
+    const [occurrences, setOccurrences] = useState<any[]>([]);
+    const [occurrencesLoading, setOccurrencesLoading] = useState(false);
+    const [isEditing, setIsEditing] = useState(false);
+    const [isDeleting, setIsDeleting] = useState(false);
+    const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
-  const isRecurring = !!bill.recurring_rule;
-  const dueDate = bill.due_date || nextDue;
+    const isRecurring = !!bill.recurring_rule;
+    const dueDate = bill.due_date || nextDue;
 
-  // Get data from batch instead of individual API calls
-  const occurrenceState = batchData.occurrenceStates.get(bill.id);
-  const approverFromBatch = batchData.approverInfo.get(bill.id);
-  const effectiveStatus = getEffectiveStatus(
-    bill.status,
-    occurrenceState || null
-  );
-  const statusInfo = getStatusInfo(effectiveStatus);
+    // Get data from batch instead of individual API calls
+    const occurrenceState = batchData.occurrenceStates.get(bill.id);
+    const approverFromBatch = batchData.approverInfo.get(bill.id);
+    const effectiveStatus = getEffectiveStatus(
+      bill.status,
+      occurrenceState || null
+    );
+    const statusInfo = getStatusInfo(effectiveStatus);
 
-  // Use shared bill operations hook (but don't load data individually)
-  const { loading, updateStatus, markAsPaid, deleteBill } = useBillOperations(
-    bill.id,
-    bill.status,
-    isRecurring,
-    onRefresh
-  );
+    // Use shared bill operations hook (but don't load data individually)
+    const { loading, updateStatus, markAsPaid, deleteBill } = useBillOperations(
+      bill.id,
+      bill.status,
+      isRecurring,
+      onRefresh
+    );
 
-  // Handle delete with confirmation (optimized)
-  const handleDelete = useCallback(async () => {
-    if (!showDeleteConfirm) {
-      setShowDeleteConfirm(true);
-      return;
-    }
-
-    setIsDeleting(true);
-    try {
-      const success = await deleteBill();
-      if (!success) {
-        console.error('Failed to delete bill');
+    // Handle delete with confirmation (optimized)
+    const handleDelete = useCallback(async () => {
+      if (!showDeleteConfirm) {
+        setShowDeleteConfirm(true);
+        return;
       }
-    } finally {
-      setIsDeleting(false);
-      setShowDeleteConfirm(false);
-    }
-  }, [showDeleteConfirm, deleteBill]);
 
-  const loadOccurrences = useCallback(async () => {
-    if (!isRecurring) return;
+      setIsDeleting(true);
+      try {
+        const success = await deleteBill();
+        if (!success) {
+          console.error('Failed to delete bill');
+        }
+      } finally {
+        setIsDeleting(false);
+        setShowDeleteConfirm(false);
+      }
+    }, [showDeleteConfirm, deleteBill]);
 
-    setOccurrencesLoading(true);
-    try {
-      const { data } = await supabase
-        .from('bill_occurrences')
-        .select(
-          `
+    const loadOccurrences = useCallback(async () => {
+      if (!isRecurring) return;
+
+      setOccurrencesLoading(true);
+      try {
+        const { data } = await supabase
+          .from('bill_occurrences')
+          .select(
+            `
           id,
           sequence,
           amount_due,
@@ -704,253 +795,277 @@ const BillCard = forwardRef<HTMLDivElement, BillCardProps>(function BillCard(
             decided_at
           )
         `
-        )
-        .eq('bill_id', bill.id)
-        .order('sequence')
-        .limit(10);
+          )
+          .eq('bill_id', bill.id)
+          .order('sequence')
+          .limit(10);
 
-      setOccurrences(data || []);
-    } finally {
-      setOccurrencesLoading(false);
-    }
-  }, [isRecurring, bill.id, supabase]);
+        setOccurrences(data || []);
+      } finally {
+        setOccurrencesLoading(false);
+      }
+    }, [isRecurring, bill.id, supabase]);
 
-  return (
-    <div
-      ref={ref}
-      className={`bg-white dark:bg-neutral-900 border rounded-xl shadow-sm hover:shadow-md transition-all duration-200 ${
-        isRecurring
-          ? 'border-purple-200 dark:border-purple-800 hover:border-purple-300 dark:hover:border-purple-700'
-          : 'border-neutral-200 dark:border-neutral-800 hover:border-neutral-300 dark:hover:border-neutral-700'
-      }`}
-    >
-      {/* Header */}
+    return (
       <div
-        className={`p-6 border-b ${
+        ref={ref}
+        className={`bg-white dark:bg-neutral-900 border rounded-xl shadow-sm hover:shadow-md transition-all duration-200 ${
           isRecurring
-            ? 'border-purple-100 dark:border-purple-800 bg-gradient-to-r from-purple-50 to-transparent dark:from-purple-950/20 dark:to-transparent'
-            : 'border-neutral-100 dark:border-neutral-800'
+            ? 'border-purple-200 dark:border-purple-800 hover:border-purple-300 dark:hover:border-purple-700'
+            : 'border-neutral-200 dark:border-neutral-800 hover:border-neutral-300 dark:hover:border-neutral-700'
         }`}
       >
-        <div className="flex items-start justify-between">
-          <div className="flex-1">
-            <div className="flex items-center gap-3 mb-2">
-              {/* Selection Checkbox */}
-              {isSelectMode && (
-                <input
-                  type="checkbox"
-                  checked={isSelected || false}
-                  onChange={onSelect}
-                  className="w-4 h-4 text-blue-600 bg-white border-neutral-300 rounded focus:ring-blue-500"
-                  onClick={(e) => e.stopPropagation()}
-                />
-              )}
-              <h3 className="text-lg font-semibold text-neutral-900 dark:text-neutral-100">
-                {bill.title}
-              </h3>
-              <span
-                className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium border ${statusInfo.color}`}
-              >
-                <statusInfo.icon className="h-4 w-4" />
-                {statusInfo.label}
-              </span>
-              <div className="flex items-center gap-2">
-                {isRecurring ? (
-                  <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold text-purple-700 bg-purple-100 border border-purple-200 dark:bg-purple-900 dark:border-purple-700 dark:text-purple-300">
-                    <RotateCcw className="h-3.5 w-3.5" />
-                    Recurring Bill
-                  </span>
-                ) : (
-                  <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold text-green-700 bg-green-100 border border-green-200 dark:bg-green-900 dark:border-green-700 dark:text-green-300">
-                    <Calendar className="h-3.5 w-3.5" />
-                    One-time Bill
-                  </span>
-                )}
-              </div>
-            </div>
-
-            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 text-sm mt-4">
-              <div className="flex items-center gap-2">
-                <div className="p-1.5 bg-blue-50 dark:bg-blue-950 rounded-md">
-                  <DollarSign className="h-4 w-4 text-blue-600 dark:text-blue-400" />
-                </div>
-                <div>
-                  <span className="text-xs text-neutral-500 dark:text-neutral-400 block">
-                    Amount
-                  </span>
-                  <div className="font-semibold text-neutral-900 dark:text-neutral-100">
-                    {bill.currency} ${bill.amount_total.toFixed(2)}
-                  </div>
-                </div>
-              </div>
-
-              <div className="flex items-center gap-2">
-                <div
-                  className={`p-1.5 rounded-md ${
-                    isRecurring
-                      ? 'bg-purple-50 dark:bg-purple-950'
-                      : 'bg-green-50 dark:bg-green-950'
-                  }`}
-                >
-                  <Clock
-                    className={`h-4 w-4 ${
-                      isRecurring
-                        ? 'text-purple-600 dark:text-purple-400'
-                        : 'text-green-600 dark:text-green-400'
-                    }`}
+        {/* Header */}
+        <div
+          className={`p-6 border-b ${
+            isRecurring
+              ? 'border-purple-100 dark:border-purple-800 bg-gradient-to-r from-purple-50 to-transparent dark:from-purple-950/20 dark:to-transparent'
+              : 'border-neutral-100 dark:border-neutral-800'
+          }`}
+        >
+          <div className="flex items-start justify-between">
+            <div className="flex-1">
+              <div className="flex items-center gap-3 mb-2">
+                {/* Selection Checkbox */}
+                {isSelectMode && (
+                  <input
+                    type="checkbox"
+                    checked={isSelected || false}
+                    onChange={onSelect}
+                    className="w-4 h-4 text-blue-600 bg-white border-neutral-300 rounded focus:ring-blue-500"
+                    onClick={(e) => e.stopPropagation()}
                   />
-                </div>
-                <div>
-                  <span className="text-xs text-neutral-500 dark:text-neutral-400 block">
-                    {isRecurring ? 'Next Due' : 'Due Date'}
-                  </span>
-                  <div className="font-semibold text-neutral-900 dark:text-neutral-100">
-                    {dueDate ? new Date(dueDate).toLocaleDateString() : '—'}
-                  </div>
-                </div>
-              </div>
-
-              <div className="flex items-center gap-2">
-                <div className="p-1.5 bg-amber-50 dark:bg-amber-950 rounded-md">
-                  <Building2 className="h-4 w-4 text-amber-600 dark:text-amber-400" />
-                </div>
-                <div>
-                  <span className="text-xs text-neutral-500 dark:text-neutral-400 block">
-                    Vendor
-                  </span>
-                  <div className="font-semibold text-neutral-900 dark:text-neutral-100 truncate">
-                    {bill.vendor_name || '—'}
-                  </div>
-                </div>
-              </div>
-
-              <div className="flex items-center gap-2">
-                <div className="p-1.5 bg-teal-50 dark:bg-teal-950 rounded-md">
-                  <FolderOpen className="h-4 w-4 text-teal-600 dark:text-teal-400" />
-                </div>
-                <div>
-                  <span className="text-xs text-neutral-500 dark:text-neutral-400 block">
-                    Project
-                  </span>
-                  <div className="font-semibold text-neutral-900 dark:text-neutral-100 truncate">
-                    {bill.project_name || '—'}
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            {bill.description && (
-              <div className="mt-3 text-sm text-neutral-600 dark:text-neutral-400">
-                {bill.description}
-              </div>
-            )}
-
-            {effectiveStatus === 'approved' &&
-              approverFromBatch &&
-              !isRecurring && (
-                <div className="mt-3 text-sm text-green-600 dark:text-green-400">
-                  <CheckCircle className="h-4 w-4" />
-                  Approved by {approverFromBatch}
-                </div>
-              )}
-          </div>
-
-          <div className="ml-6 flex items-center gap-2">
-            {/* Status actions for non-recurring bills */}
-            {!isRecurring && effectiveStatus !== 'paid' && (
-              <>
-                {effectiveStatus === 'active' && (
-                  <button
-                    onClick={() => updateStatus('pending_approval')}
-                    disabled={loading}
-                    className="px-3 py-1.5 text-sm font-medium text-white bg-amber-600 hover:bg-amber-700 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed"
-                  >
-                    <FileText className="h-4 w-4" />
-                    Submit
-                  </button>
                 )}
-
-                {effectiveStatus === 'approved' && (
-                  <button
-                    onClick={markAsPaid}
-                    disabled={loading}
-                    className="px-3 py-1.5 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed"
-                  >
-                    Mark as Paid
-                  </button>
-                )}
-
-                {effectiveStatus === 'pending_approval' && (
-                  <button
-                    onClick={() => updateStatus('approved')}
-                    disabled={loading}
-                    className="px-3 py-1.5 text-sm font-medium text-white bg-green-600 hover:bg-green-700 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed"
-                  >
-                    Approve
-                  </button>
-                )}
-              </>
-            )}
-
-            {/* Edit button (only show if not in select mode) */}
-            {!isSelectMode && (
-              <button
-                onClick={() => setIsEditing(true)}
-                className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-neutral-700 dark:text-neutral-300 bg-neutral-100 dark:bg-neutral-800 hover:bg-neutral-200 dark:hover:bg-neutral-700 rounded-lg transition-colors"
-              >
-                <svg
-                  className="h-4 w-4"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  strokeWidth={1.5}
-                  stroke="currentColor"
+                <h3 className="text-lg font-semibold text-neutral-900 dark:text-neutral-100">
+                  {bill.title}
+                </h3>
+                <span
+                  className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium border ${statusInfo.color}`}
                 >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L10.582 16.07a4.5 4.5 0 01-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 011.13-1.897l8.932-8.931zm0 0L19.5 7.125M18 14v4.75A2.25 2.25 0 0115.75 21H5.25A2.25 2.25 0 013 18.75V8.25A2.25 2.25 0 015.25 6H10"
-                  />
-                </svg>
-                Edit Bill
-              </button>
-            )}
-
-            {/* Delete button (only show if not in select mode) */}
-            {!isSelectMode && (
-              <div className="flex items-center gap-2">
-                <button
-                  onClick={handleDelete}
-                  disabled={isDeleting || loading}
-                  className={`flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-lg transition-colors ${
-                    showDeleteConfirm
-                      ? 'text-white bg-red-600 hover:bg-red-700'
-                      : 'text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-950 hover:bg-red-100 dark:hover:bg-red-900 border border-red-200 dark:border-red-800'
-                  } disabled:opacity-50 disabled:cursor-not-allowed`}
-                >
-                  {isDeleting ? (
-                    <>
-                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-current"></div>
-                      Deleting...
-                    </>
-                  ) : showDeleteConfirm ? (
-                    <>
-                      <svg
-                        className="h-4 w-4"
-                        fill="none"
-                        viewBox="0 0 24 24"
-                        strokeWidth={1.5}
-                        stroke="currentColor"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          d="M4.5 12.75l6 6 9-13.5"
-                        />
-                      </svg>
-                      Confirm Delete
-                    </>
+                  <statusInfo.icon className="h-4 w-4" />
+                  {statusInfo.label}
+                </span>
+                <div className="flex items-center gap-2">
+                  {isRecurring ? (
+                    <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold text-purple-700 bg-purple-100 border border-purple-200 dark:bg-purple-900 dark:border-purple-700 dark:text-purple-300">
+                      <RotateCcw className="h-3.5 w-3.5" />
+                      Recurring Bill
+                    </span>
                   ) : (
-                    <>
+                    <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold text-green-700 bg-green-100 border border-green-200 dark:bg-green-900 dark:border-green-700 dark:text-green-300">
+                      <Calendar className="h-3.5 w-3.5" />
+                      One-time Bill
+                    </span>
+                  )}
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 text-sm mt-4">
+                <div className="flex items-center gap-2">
+                  <div className="p-1.5 bg-blue-50 dark:bg-blue-950 rounded-md">
+                    <DollarSign className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+                  </div>
+                  <div>
+                    <span className="text-xs text-neutral-500 dark:text-neutral-400 block">
+                      Amount
+                    </span>
+                    <div className="font-semibold text-neutral-900 dark:text-neutral-100">
+                      {bill.currency} ${bill.amount_total.toFixed(2)}
+                    </div>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-2">
+                  <div
+                    className={`p-1.5 rounded-md ${
+                      isRecurring
+                        ? 'bg-purple-50 dark:bg-purple-950'
+                        : 'bg-green-50 dark:bg-green-950'
+                    }`}
+                  >
+                    <Clock
+                      className={`h-4 w-4 ${
+                        isRecurring
+                          ? 'text-purple-600 dark:text-purple-400'
+                          : 'text-green-600 dark:text-green-400'
+                      }`}
+                    />
+                  </div>
+                  <div>
+                    <span className="text-xs text-neutral-500 dark:text-neutral-400 block">
+                      {isRecurring ? 'Next Due' : 'Due Date'}
+                    </span>
+                    <div className="font-semibold text-neutral-900 dark:text-neutral-100">
+                      {dueDate ? new Date(dueDate).toLocaleDateString() : '—'}
+                    </div>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-2">
+                  <div className="p-1.5 bg-amber-50 dark:bg-amber-950 rounded-md">
+                    <Building2 className="h-4 w-4 text-amber-600 dark:text-amber-400" />
+                  </div>
+                  <div>
+                    <span className="text-xs text-neutral-500 dark:text-neutral-400 block">
+                      Vendor
+                    </span>
+                    <div className="font-semibold text-neutral-900 dark:text-neutral-100 truncate">
+                      {bill.vendor_name || '—'}
+                    </div>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-2">
+                  <div className="p-1.5 bg-teal-50 dark:bg-teal-950 rounded-md">
+                    <FolderOpen className="h-4 w-4 text-teal-600 dark:text-teal-400" />
+                  </div>
+                  <div>
+                    <span className="text-xs text-neutral-500 dark:text-neutral-400 block">
+                      Project
+                    </span>
+                    <div className="font-semibold text-neutral-900 dark:text-neutral-100 truncate">
+                      {bill.project_name || '—'}
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {bill.description && (
+                <div className="mt-3 text-sm text-neutral-600 dark:text-neutral-400">
+                  {bill.description}
+                </div>
+              )}
+
+              {effectiveStatus === 'approved' &&
+                approverFromBatch &&
+                !isRecurring && (
+                  <div className="mt-3 text-sm text-green-600 dark:text-green-400">
+                    <CheckCircle className="h-4 w-4" />
+                    Approved by {approverFromBatch}
+                  </div>
+                )}
+            </div>
+
+            <div className="ml-6 flex items-center gap-2">
+              {/* Status actions for non-recurring bills */}
+              {!isRecurring && effectiveStatus !== 'paid' && (
+                <>
+                  {effectiveStatus === 'active' && (
+                    <button
+                      onClick={() => updateStatus('pending_approval')}
+                      disabled={loading}
+                      className="px-3 py-1.5 text-sm font-medium text-white bg-amber-600 hover:bg-amber-700 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      <FileText className="h-4 w-4" />
+                      Submit
+                    </button>
+                  )}
+
+                  {effectiveStatus === 'approved' && (
+                    <button
+                      onClick={markAsPaid}
+                      disabled={loading}
+                      className="px-3 py-1.5 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      Mark as Paid
+                    </button>
+                  )}
+
+                  {effectiveStatus === 'pending_approval' && (
+                    <button
+                      onClick={() => updateStatus('approved')}
+                      disabled={loading}
+                      className="px-3 py-1.5 text-sm font-medium text-white bg-green-600 hover:bg-green-700 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      Approve
+                    </button>
+                  )}
+                </>
+              )}
+
+              {/* Edit button (only show if not in select mode) */}
+              {!isSelectMode && (
+                <button
+                  onClick={() => setIsEditing(true)}
+                  className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-neutral-700 dark:text-neutral-300 bg-neutral-100 dark:bg-neutral-800 hover:bg-neutral-200 dark:hover:bg-neutral-700 rounded-lg transition-colors"
+                >
+                  <svg
+                    className="h-4 w-4"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    strokeWidth={1.5}
+                    stroke="currentColor"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L10.582 16.07a4.5 4.5 0 01-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 011.13-1.897l8.932-8.931zm0 0L19.5 7.125M18 14v4.75A2.25 2.25 0 0115.75 21H5.25A2.25 2.25 0 013 18.75V8.25A2.25 2.25 0 015.25 6H10"
+                    />
+                  </svg>
+                  Edit Bill
+                </button>
+              )}
+
+              {/* Delete button (only show if not in select mode) */}
+              {!isSelectMode && (
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={handleDelete}
+                    disabled={isDeleting || loading}
+                    className={`flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-lg transition-colors ${
+                      showDeleteConfirm
+                        ? 'text-white bg-red-600 hover:bg-red-700'
+                        : 'text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-950 hover:bg-red-100 dark:hover:bg-red-900 border border-red-200 dark:border-red-800'
+                    } disabled:opacity-50 disabled:cursor-not-allowed`}
+                  >
+                    {isDeleting ? (
+                      <>
+                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-current"></div>
+                        Deleting...
+                      </>
+                    ) : showDeleteConfirm ? (
+                      <>
+                        <svg
+                          className="h-4 w-4"
+                          fill="none"
+                          viewBox="0 0 24 24"
+                          strokeWidth={1.5}
+                          stroke="currentColor"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            d="M4.5 12.75l6 6 9-13.5"
+                          />
+                        </svg>
+                        Confirm Delete
+                      </>
+                    ) : (
+                      <>
+                        <svg
+                          className="h-4 w-4"
+                          fill="none"
+                          viewBox="0 0 24 24"
+                          strokeWidth={1.5}
+                          stroke="currentColor"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            d="M14.74 9l-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 01-2.244 2.077H8.084a2.25 2.25 0 01-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 00-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 013.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 00-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 00-7.5 0"
+                          />
+                        </svg>
+                        Delete
+                      </>
+                    )}
+                  </button>
+
+                  {/* Cancel delete button */}
+                  {showDeleteConfirm && (
+                    <button
+                      onClick={() => setShowDeleteConfirm(false)}
+                      className="flex items-center gap-2 px-3 py-2 text-sm font-medium text-neutral-600 dark:text-neutral-400 bg-neutral-100 dark:bg-neutral-800 hover:bg-neutral-200 dark:hover:bg-neutral-700 rounded-lg transition-colors"
+                    >
                       <svg
                         className="h-4 w-4"
                         fill="none"
@@ -961,169 +1076,152 @@ const BillCard = forwardRef<HTMLDivElement, BillCardProps>(function BillCard(
                         <path
                           strokeLinecap="round"
                           strokeLinejoin="round"
-                          d="M14.74 9l-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 01-2.244 2.077H8.084a2.25 2.25 0 01-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 00-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 013.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 00-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 00-7.5 0"
+                          d="M6 18L18 6M6 6l12 12"
                         />
                       </svg>
-                      Delete
-                    </>
+                      Cancel
+                    </button>
                   )}
-                </button>
+                </div>
+              )}
 
-                {/* Cancel delete button */}
-                {showDeleteConfirm && (
+              {/* View/Details toggle */}
+              {!isSelectMode &&
+                (isRecurring ? (
                   <button
-                    onClick={() => setShowDeleteConfirm(false)}
-                    className="flex items-center gap-2 px-3 py-2 text-sm font-medium text-neutral-600 dark:text-neutral-400 bg-neutral-100 dark:bg-neutral-800 hover:bg-neutral-200 dark:hover:bg-neutral-700 rounded-lg transition-colors"
+                    onClick={() => {
+                      if (!showDetails) loadOccurrences();
+                      setShowDetails(!showDetails);
+                    }}
+                    className="px-3 py-1.5 text-sm font-medium text-neutral-700 dark:text-neutral-300 bg-neutral-100 dark:bg-neutral-800 hover:bg-neutral-200 dark:hover:bg-neutral-700 rounded-lg"
                   >
-                    <svg
-                      className="h-4 w-4"
-                      fill="none"
-                      viewBox="0 0 24 24"
-                      strokeWidth={1.5}
-                      stroke="currentColor"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        d="M6 18L18 6M6 6l12 12"
-                      />
-                    </svg>
-                    Cancel
+                    {showDetails ? 'Hide Details' : 'View Occurrences'}
                   </button>
-                )}
-              </div>
-            )}
-
-            {/* View/Details toggle */}
-            {!isSelectMode &&
-              (isRecurring ? (
-                <button
-                  onClick={() => {
-                    if (!showDetails) loadOccurrences();
-                    setShowDetails(!showDetails);
-                  }}
-                  className="px-3 py-1.5 text-sm font-medium text-neutral-700 dark:text-neutral-300 bg-neutral-100 dark:bg-neutral-800 hover:bg-neutral-200 dark:hover:bg-neutral-700 rounded-lg"
-                >
-                  {showDetails ? 'Hide Details' : 'View Occurrences'}
-                </button>
-              ) : (
-                <Link
-                  href={`/bills/${bill.id}`}
-                  className="px-3 py-1.5 text-sm font-medium text-neutral-700 dark:text-neutral-300 bg-neutral-100 dark:bg-neutral-800 hover:bg-neutral-200 dark:hover:bg-neutral-700 rounded-lg"
-                >
-                  View Details
-                </Link>
-              ))}
-          </div>
-        </div>
-      </div>
-
-      {/* Recurring bill occurrences */}
-      {isRecurring && showDetails && (
-        <div className="p-6 bg-neutral-50 dark:bg-neutral-900/50">
-          <h4 className="text-sm font-semibold text-neutral-700 dark:text-neutral-300 mb-4">
-            Recent Occurrences
-          </h4>
-
-          {loading ? (
-            <div className="text-sm text-neutral-500">
-              Loading occurrences...
-            </div>
-          ) : occurrences.length === 0 ? (
-            <div className="text-sm text-neutral-500">
-              No occurrences generated yet.
-            </div>
-          ) : (
-            <div className="space-y-3">
-              {occurrences.slice(0, 5).map((occ) => {
-                const occStatusInfo = getStatusInfo(occ.state);
-                const hasApproval = occ.approvals?.length > 0;
-
-                return (
-                  <div
-                    key={occ.id}
-                    className="flex items-center justify-between p-3 bg-white dark:bg-neutral-800 rounded-lg border border-neutral-200 dark:border-neutral-700"
-                  >
-                    <div className="flex items-center gap-4">
-                      <div className="text-sm">
-                        <div className="font-medium">#{occ.sequence}</div>
-                        <div className="text-neutral-500">
-                          {new Date(occ.due_date).toLocaleDateString()}
-                        </div>
-                      </div>
-
-                      <div className="text-sm">
-                        <div className="font-medium">
-                          ${occ.amount_due.toFixed(2)}
-                        </div>
-                        <div
-                          className={`text-xs px-2 py-0.5 rounded-full ${occStatusInfo.color}`}
-                        >
-                          {occStatusInfo.label}
-                        </div>
-                      </div>
-
-                      {occ.state === 'approved' && hasApproval && (
-                        <div className="text-xs text-green-600 dark:text-green-400">
-                          <CheckCircle className="h-4 w-4" />
-                          Approved
-                        </div>
-                      )}
-                    </div>
-
-                    <Link
-                      href={`/bills/${bill.id}`}
-                      className="text-xs text-blue-600 hover:text-blue-700 font-medium"
-                    >
-                      View →
-                    </Link>
-                  </div>
-                );
-              })}
-
-              {occurrences.length > 5 && (
-                <div className="text-center">
+                ) : (
                   <Link
                     href={`/bills/${bill.id}`}
-                    className="text-sm text-blue-600 hover:text-blue-700 font-medium"
+                    className="px-3 py-1.5 text-sm font-medium text-neutral-700 dark:text-neutral-300 bg-neutral-100 dark:bg-neutral-800 hover:bg-neutral-200 dark:hover:bg-neutral-700 rounded-lg"
                   >
-                    View all {occurrences.length} occurrences →
+                    View Details
                   </Link>
-                </div>
-              )}
+                ))}
             </div>
-          )}
+          </div>
         </div>
-      )}
 
-      {/* Edit form */}
-      {isEditing && (
-        <div className="border-t border-neutral-200 dark:border-neutral-800">
-          <BillEditForm
-            bill={{
-              id: bill.id,
-              title: bill.title,
-              amount_total: bill.amount_total,
-              currency: bill.currency,
-              due_date: bill.due_date,
-              vendor_name: bill.vendor_name,
-              project_name: bill.project_name,
-              description: bill.description,
-              category: bill.category,
-              recurring_rule: bill.recurring_rule,
-              vendor_id: bill.vendor_id,
-              project_id: bill.project_id,
-            }}
-            vendorOptions={vendorOptions}
-            projectOptions={projectOptions}
-            onSaved={() => {
-              setIsEditing(false);
-              onRefresh();
-            }}
-            onCancel={() => setIsEditing(false)}
-          />
-        </div>
-      )}
-    </div>
-  );
-});
+        {/* Recurring bill occurrences */}
+        {isRecurring && showDetails && (
+          <div className="p-6 bg-neutral-50 dark:bg-neutral-900/50">
+            <h4 className="text-sm font-semibold text-neutral-700 dark:text-neutral-300 mb-4">
+              Recent Occurrences
+            </h4>
+
+            {loading ? (
+              <div className="text-sm text-neutral-500">
+                Loading occurrences...
+              </div>
+            ) : occurrences.length === 0 ? (
+              <div className="text-sm text-neutral-500">
+                No occurrences generated yet.
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {occurrences.slice(0, 5).map((occ) => {
+                  const occStatusInfo = getStatusInfo(occ.state);
+                  const hasApproval = occ.approvals?.length > 0;
+
+                  return (
+                    <div
+                      key={occ.id}
+                      className="flex items-center justify-between p-3 bg-white dark:bg-neutral-800 rounded-lg border border-neutral-200 dark:border-neutral-700"
+                    >
+                      <div className="flex items-center gap-4">
+                        <div className="text-sm">
+                          <div className="font-medium">#{occ.sequence}</div>
+                          <div className="text-neutral-500">
+                            {new Date(occ.due_date).toLocaleDateString()}
+                          </div>
+                        </div>
+
+                        <div className="text-sm">
+                          <div className="font-medium">
+                            ${occ.amount_due.toFixed(2)}
+                          </div>
+                          <div
+                            className={`text-xs px-2 py-0.5 rounded-full ${occStatusInfo.color}`}
+                          >
+                            {occStatusInfo.label}
+                          </div>
+                        </div>
+
+                        {occ.state === 'approved' && hasApproval && (
+                          <div className="text-xs text-green-600 dark:text-green-400">
+                            <CheckCircle className="h-4 w-4" />
+                            Approved
+                          </div>
+                        )}
+                      </div>
+
+                      <Link
+                        href={`/bills/${bill.id}`}
+                        className="text-xs text-blue-600 hover:text-blue-700 font-medium"
+                      >
+                        View →
+                      </Link>
+                    </div>
+                  );
+                })}
+
+                {occurrences.length > 5 && (
+                  <div className="text-center">
+                    <Link
+                      href={`/bills/${bill.id}`}
+                      className="text-sm text-blue-600 hover:text-blue-700 font-medium"
+                    >
+                      View all {occurrences.length} occurrences →
+                    </Link>
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Edit form */}
+        {isEditing && (
+          <div className="border-t border-neutral-200 dark:border-neutral-800">
+            <Suspense
+              fallback={
+                <div className="animate-pulse h-48 bg-neutral-100 dark:bg-neutral-800 rounded"></div>
+              }
+            >
+              <BillEditForm
+                bill={{
+                  id: bill.id,
+                  title: bill.title,
+                  amount_total: bill.amount_total,
+                  currency: bill.currency,
+                  due_date: bill.due_date,
+                  vendor_name: bill.vendor_name,
+                  project_name: bill.project_name,
+                  description: bill.description,
+                  category: bill.category,
+                  recurring_rule: bill.recurring_rule,
+                  vendor_id: bill.vendor_id,
+                  project_id: bill.project_id,
+                }}
+                vendorOptions={vendorOptions}
+                projectOptions={projectOptions}
+                onSaved={() => {
+                  setIsEditing(false);
+                  onRefresh();
+                }}
+                onCancel={() => setIsEditing(false)}
+              />
+            </Suspense>
+          </div>
+        )}
+      </div>
+    );
+  })
+);
