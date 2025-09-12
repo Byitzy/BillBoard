@@ -23,6 +23,8 @@ import {
   useEffect,
   useMemo,
   useState,
+  startTransition,
+  useDeferredValue,
 } from 'react';
 
 // Import hooks synchronously (can't be lazy loaded)
@@ -41,6 +43,11 @@ import {
   type BillStatus,
 } from '@/lib/bills/status';
 import { getSupabaseClient } from '@/lib/supabase/client';
+import { useDebounce, useStableCallback } from '@/utils/performance';
+import {
+  usePerformanceMonitor,
+  useTaskMonitor,
+} from '@/hooks/usePerformanceMonitor';
 
 // Lazy load ONLY heavy components that aren't needed immediately
 const BillForm = lazy(() => import('@/components/BillForm'));
@@ -70,6 +77,11 @@ export default function ClientBillsPage({
   projectOptions,
 }: ClientBillsPageProps) {
   const { t } = useLocale();
+
+  // Performance monitoring
+  usePerformanceMonitor('ClientBillsPage');
+  useTaskMonitor();
+
   const [nextDue, setNextDue] = useState<Record<string, string | undefined>>(
     {}
   );
@@ -79,7 +91,7 @@ export default function ClientBillsPage({
     nextDueDates: {},
   });
 
-  // Bulk selection state
+  // Bulk selection state with performance optimizations
   const [selectedBills, setSelectedBills] = useState<Set<string>>(new Set());
   const [isSelectMode, setIsSelectMode] = useState(false);
 
@@ -119,6 +131,10 @@ export default function ClientBillsPage({
     isFiltered,
   } = usePaginatedBills(filters);
 
+  // Defer expensive computations to prevent blocking (after bills is defined)
+  const deferredBills = useDeferredValue(bills);
+  const deferredSelectedBills = useDeferredValue(selectedBills);
+
   // Use batch operations hook for optimized queries
   const { loadBillsBatchData } = useBillsBatch();
 
@@ -132,40 +148,54 @@ export default function ClientBillsPage({
     isArchiving,
   } = useBillMutations();
 
-  // Memoize bill IDs to prevent unnecessary re-renders
-  const billIds = useMemo(() => bills.map((b) => b.id), [bills]);
-
-  // Memoize additional computed values
-  const billCount = useMemo(() => bills.length, [bills.length]);
-  const recurringBillCount = useMemo(
-    () => bills.filter((b) => b.recurring_rule).length,
-    [bills]
-  );
-  const oneTimeBillCount = useMemo(
-    () => bills.filter((b) => !b.recurring_rule).length,
-    [bills]
+  // Memoize expensive computations with deferred values
+  const billIds = useMemo(
+    () => deferredBills.map((b) => b.id),
+    [deferredBills]
   );
 
-  // Initial load on mount only (no dependencies to prevent infinite loop)
+  // Use stable references for computed values to prevent cascading re-renders
+  const billStats = useMemo(
+    () => ({
+      total: deferredBills.length,
+      recurring: deferredBills.filter((b) => b.recurring_rule).length,
+      oneTime: deferredBills.filter((b) => !b.recurring_rule).length,
+    }),
+    [deferredBills]
+  );
+
+  // Debounce expensive operations
+  const debouncedBillCount = useDebounce(billStats.total, 100);
+
+  // Backward compatibility aliases
+  const billCount = debouncedBillCount;
+  const recurringBillCount = billStats.recurring;
+  const oneTimeBillCount = billStats.oneTime;
+
+  // Optimized initial load with transition
   useEffect(() => {
     // Only refresh if we don't have any bills yet
     if (bills.length === 0 && !loading) {
-      refresh();
+      startTransition(() => {
+        refresh();
+      });
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []); // Empty dependency array for mount-only effect
 
   useEffect(() => {
-    // Load batch data for all bills to avoid N+1 queries
+    // Load batch data with transition to prevent blocking
     if (billIds.length > 0) {
-      loadBillsBatchData(billIds)
-        .then((data) => {
-          setBatchData(data);
-          setNextDue(data.nextDueDates);
-        })
-        .catch((err) => {
-          console.error('Failed to load batch data:', err);
-        });
+      startTransition(() => {
+        loadBillsBatchData(billIds)
+          .then((data) => {
+            setBatchData(data);
+            setNextDue(data.nextDueDates);
+          })
+          .catch((err) => {
+            console.error('Failed to load batch data:', err);
+          });
+      });
     } else {
       // Clear batch data when no bills
       setBatchData({
@@ -177,24 +207,28 @@ export default function ClientBillsPage({
     }
   }, [billIds, loadBillsBatchData]); // Use memoized billIds
 
-  // Bulk selection handlers
-  const handleSelectAll = () => {
-    if (selectedBills.size === bills.length) {
-      setSelectedBills(new Set());
-    } else {
-      setSelectedBills(new Set(bills.map((b) => b.id)));
-    }
-  };
+  // Optimized bulk selection handlers with stable references
+  const handleSelectAll = useStableCallback(() => {
+    startTransition(() => {
+      if (deferredSelectedBills.size === billStats.total) {
+        setSelectedBills(new Set());
+      } else {
+        setSelectedBills(new Set(deferredBills.map((b) => b.id)));
+      }
+    });
+  });
 
-  const handleSelectBill = (billId: string) => {
-    const newSelected = new Set(selectedBills);
-    if (newSelected.has(billId)) {
-      newSelected.delete(billId);
-    } else {
-      newSelected.add(billId);
-    }
-    setSelectedBills(newSelected);
-  };
+  const handleSelectBill = useStableCallback((billId: string) => {
+    startTransition(() => {
+      const newSelected = new Set(selectedBills);
+      if (newSelected.has(billId)) {
+        newSelected.delete(billId);
+      } else {
+        newSelected.add(billId);
+      }
+      setSelectedBills(newSelected);
+    });
+  });
 
   const handleBulkAction = async (action: string) => {
     if (selectedBills.size === 0) return;
@@ -246,20 +280,26 @@ export default function ClientBillsPage({
     [refresh]
   );
 
-  // Memoize expensive calculations to prevent unnecessary re-renders
+  // Memoize expensive calculations with deferred values
   const headerData = useMemo(
     () => ({
-      billCount,
+      billCount: debouncedBillCount,
       filterContext,
       isSelectMode,
-      selectedBillsCount: selectedBills.size,
+      selectedBillsCount: deferredSelectedBills.size,
     }),
-    [billCount, filterContext, isSelectMode, selectedBills.size]
+    [
+      debouncedBillCount,
+      filterContext,
+      isSelectMode,
+      deferredSelectedBills.size,
+    ]
   );
 
+  // Defer export data computation to prevent blocking
   const exportData = useMemo(
     () =>
-      bills.map((b) => ({
+      deferredBills.map((b) => ({
         Title: b.title,
         Vendor: b.vendor_name ?? '—',
         Project: b.project_name ?? '—',
@@ -269,7 +309,7 @@ export default function ClientBillsPage({
         Type: b.recurring_rule ? 'Recurring' : 'One-time',
         Category: b.category ?? '—',
       })),
-    [bills, nextDue]
+    [deferredBills, nextDue]
   );
 
   return (
