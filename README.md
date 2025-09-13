@@ -1,185 +1,100 @@
 # BillBoard
 
-BillBoard is a multi-tenant web app for managing organization bills and project-based expenses with a calendar view, approvals, recurring schedules, installments, and exports. It’s designed for Canadian (Quebec) banking context with holiday-aware business day logic.
+BillBoard is a comprehensive bill management and approval system designed for organizations to streamline their financial processes. The application provides a centralized platform for managing bills, tracking approvals, monitoring recurring payments, and maintaining financial oversight across multiple projects and vendors.
 
-## Features
+## Core Functionality
 
-- **Multi-org**: Members and roles per organization with secure RLS policies
-- **Bills & Occurrences**: One-off or recurring schedules with optional installments
-- **Calendar**: Month grid with due markers and suggested submission dates
-- **Approvals & Accounting**: Approve/hold, mark paid/failed workflow
-- **Vendors & Projects**: Simple directories per organization
-- **Super Admin System**: System-wide user and organization management
-- **Quebec Banking**: Holiday-aware business day logic for submissions
-- **Modern UI**: 2025-style dark/light theme with system preference
-- **Testing**: Comprehensive E2E testing with Playwright
-- **Exports**: CSV and PDF generation
-- **Internationalization**: Multi-language support (en-CA, fr-CA, es-ES)
+### Bill Management
 
-## Tech Stack
+- **One-time Bills**: Create and manage individual bills with specific due dates
+- **Recurring Bills**: Set up automated recurring payments with flexible scheduling (weekly, bi-weekly, monthly, quarterly, annually)
+- **Smart Approval Workflow**: Intelligent bill processing that automatically handles routine payments while requiring manual approval for non-standard bills
+- **Bill States**: Track bills through their lifecycle from creation to payment completion
 
-- Next.js 15.5.2 (App Router) + TypeScript
-- Tailwind CSS (dark mode: class) + shadcn/ui + Radix UI
-- Supabase (Postgres, Auth, Storage, Edge Functions) with RLS
-- Vitest (unit tests) and Playwright (E2E testing)
-- pnpm 9, ESLint, Prettier
+### Financial Tracking
 
-## Project Structure
+- **Real-time Dashboard**: Monitor financial metrics including today's totals, weekly summaries, and upcoming payment obligations
+- **Project-based Organization**: Associate bills with specific projects for better cost tracking and budget management
+- **Vendor Management**: Maintain comprehensive vendor directories with contact information and payment history
+- **Multi-currency Support**: Handle bills in CAD, USD, EUR, and GBP
 
-```
-src/
-  app/                # Next.js App Router pages/layout
-  components/         # UI components with shadcn/ui
-  lib/                # Utilities (business days, occurrences, Supabase)
-  types/              # TypeScript type definitions
-tests/
-  e2e/                # Playwright E2E tests
-supabase/
-  schema.sql          # DB schema, enums, RLS helpers
-  edge/
-    generate_occurrences/  # Edge Function for bill schedules
-playwright.config.ts       # Playwright testing configuration
-.github/workflows/ci.yml   # CI pipeline (planned)
-```
+### Approval System
 
-## Getting Started
+- **Role-based Approvals**: Configure approval workflows based on user roles (admin, approver, accountant, data entry, analyst, viewer)
+- **Approval Decisions**: Approve, hold, or reject bills with detailed comments and reasoning
+- **Approval History**: Maintain complete audit trails of all approval decisions and comments
+- **Bulk Operations**: Process multiple bills simultaneously for efficient workflow management
 
-### Prerequisites
+### Calendar Integration
 
-- Node.js 20+
-- pnpm 9.x (`npm i -g pnpm@9`)
-- A Supabase project (or local Supabase)
+- **Monthly Calendar View**: Visual representation of bill due dates and payment schedules
+- **Quebec Business Days**: Intelligent scheduling that accounts for Canadian holidays and business days
+- **Due Date Management**: Automatic calculation of suggested submission dates based on business day logic
+- **Occurrence Tracking**: Monitor individual bill occurrences within recurring payment schedules
 
-### Setup
+### Organization Management
 
-1. Install dependencies
+- **Multi-tenant Architecture**: Support multiple organizations with isolated data and user management
+- **Member Management**: Invite and manage team members with appropriate role assignments
+- **Organization Settings**: Customize branding, themes, and organizational preferences
+- **Super Admin Controls**: System-wide administration capabilities for managing organizations and users
 
-```
-pnpm install
-```
+### Reporting and Analytics
 
-2. Configure environment
+- **Financial Reports**: Generate comprehensive reports on bill status, payment history, and project costs
+- **Export Capabilities**: Export data in CSV and PDF formats for external analysis
+- **KPI Monitoring**: Track key performance indicators including payment trends and approval metrics
+- **Project Breakdowns**: Detailed analysis of costs by project and vendor
 
-- Copy `.env.example` to `.env.local` and fill values.
-- Required:
-  - `NEXT_PUBLIC_SUPABASE_URL`
-  - `NEXT_PUBLIC_SUPABASE_ANON_KEY`
-  - `SUPABASE_SERVICE_ROLE_KEY`
-  - `NEXT_PUBLIC_APP_NAME` (optional, defaults BillBoard)
-  - `NEXT_PUBLIC_DEFAULT_LOCALE` (default `en-CA`)
+### File Management
 
-Auth (Email Magic Link)
+- **Document Attachments**: Upload and manage supporting documents for bills
+- **Secure Storage**: Integrated file storage with proper access controls
+- **Document Organization**: Link attachments to specific bills and occurrences
 
-- In Supabase → Authentication → Providers → Email: enable Email provider.
-- In Supabase → Authentication → URL Configuration: set Site URL (e.g. `http://localhost:3000`) and add Allowed Redirect `http://localhost:3000/auth/callback`.
-- To allow signups via magic link, enable “Allow email signups”. The app is configured to create users via magic link.
+### Notifications and Updates
 
-3. Database schema
+- **Real-time Notifications**: Stay informed about bill status changes and approval requests
+- **System Updates**: Receive information about new features and system improvements
+- **Feedback System**: Submit and track feature requests and bug reports
 
-- Apply `supabase/schema.sql` to your Supabase Postgres instance (via Supabase Studio SQL editor or CLI).
-- RLS helper functions and example policies are included; extend to all tables as needed.
-- Notes:
-  - Requires `pgcrypto` extension for `gen_random_uuid()`.
-  - `has_role` expects a `role[]` enum array (e.g. `ARRAY['admin','data_entry']::role[]`).
+## Key Features
 
-4. Edge Function (Occurrences)
+### Intelligent Bill Processing
 
-- The generator logic is implemented in `src/lib/occurrences.ts`.
-- Port it into a Supabase Edge Function at `supabase/edge/generate_occurrences`.
-- Suggested trigger: regenerate occurrences on bill insert/update.
+- **Auto-approval**: Configure recurring bills to automatically approve when due, reducing manual overhead
+- **Smart Scheduling**: Bills transition from scheduled to pending approval based on due dates
+- **Business Day Logic**: Automatic adjustment for weekends and Canadian holidays
 
-5. Development server
+### User Experience
 
-```
-pnpm dev
-```
+- **Modern Interface**: Clean, responsive design with dark/light theme support
+- **Multi-language Support**: Available in English (Canada), French (Canada), and Spanish
+- **Mobile Responsive**: Full functionality across desktop, tablet, and mobile devices
+- **Accessibility**: Built with accessibility standards in mind
 
-App runs at `http://localhost:3000`.
+### Security and Compliance
 
-### Theme
+- **Row-level Security**: Comprehensive data isolation between organizations
+- **Role-based Access**: Granular permissions based on user roles and responsibilities
+- **Audit Logging**: Complete tracking of all system activities and changes
+- **Secure Authentication**: Magic link authentication with proper session management
 
-- Toggle between Light, Dark, or System from the topbar.
-- Remembers choice in `localStorage` and applies on first paint to avoid flash.
+### Integration Capabilities
 
-### Scripts
+- **API Access**: RESTful API for integration with external systems
+- **Export Functions**: Multiple export formats for data portability
+- **Calendar Integration**: ICS export capabilities for external calendar systems
 
-- `pnpm dev` – Start Next.js dev server
-- `pnpm build` – Build app
-- `pnpm start` – Start production server
-- `pnpm lint` – ESLint
-- `pnpm typecheck` – TypeScript no-emit
-- `pnpm test` – Vitest unit tests
-- `pnpm playwright` – Playwright E2E tests
+## Use Cases
 
-## Testing
+BillBoard is designed for organizations that need to:
 
-### Unit Tests
+- Manage recurring and one-time bills efficiently
+- Implement structured approval workflows
+- Track project-based expenses and budgets
+- Maintain vendor relationships and payment history
+- Ensure compliance with financial approval processes
+- Generate reports for financial analysis and auditing
 
-- Unit tests live under `src/lib/*.test.ts`.
-- Run with: `pnpm test`
-
-### End-to-End Tests
-
-- E2E tests live under `tests/e2e/*.spec.ts`
-- Multi-browser testing (Chrome, Firefox, Safari)
-- Mobile viewport testing
-- Accessibility testing
-
-```bash
-# Run E2E tests
-pnpm playwright
-
-# Visual test runner
-pnpm playwright:ui
-
-# Debug mode (step through tests)
-pnpm playwright:debug
-
-# Run in headed mode (see browser)
-pnpm playwright:headed
-```
-
-## Notable Implementation Details
-
-- Business day helper (Quebec): `src/lib/businessDays.ts`
-  - Weekend detection and a set of commonly observed QC/Canada holidays
-  - `previousBusinessDay(date)` and `nextBusinessDay(date)` used for submission suggestions
-- Occurrence generation: `src/lib/occurrences.ts`
-  - Supports monthly/weekly/yearly rules, optional `byMonthDay`, and installments
-  - Suggested submission date is computed via previous business day
-
-## CI/CD
-
-### Automated Workflows
-
-**CI Pipeline** (`.github/workflows/ci.yml`)
-
-- **Triggers**: Push/PR to `beta` and `main` branches
-- **Jobs**:
-  - **Lint & Type Check**: ESLint code quality + TypeScript validation
-  - **Build & Test**: Production build + unit tests
-  - **E2E Tests**: Playwright tests (PR only) with report artifacts
-  - **Security Audit**: Dependency vulnerability scanning
-- **Features**: Parallel execution, concurrency control, artifact upload
-
-**Deployment Pipeline** (`.github/workflows/deploy.yml`)
-
-- **Triggers**: Push to `main` branch + manual dispatch
-- **Jobs**:
-  - **Deploy**: Vercel production deployment with security audit
-  - **Notify**: Deployment status reporting
-- **Environment**: Production environment protection
-
-### Recommended Git Flow
-
-- **Development**: Use `beta` as default branch for feature development
-- **Production**: Merge `beta` → `main` triggers automatic deployment
-- **Hotfixes**: Direct commits to `main` for emergency fixes
-
-## Roadmap
-
-See `todo.md` for planned sprints and features (auth, RBAC/RLS coverage, tables, exports, polish).
-
-## License
-
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+The system is particularly well-suited for Canadian organizations that need to account for Quebec business days and holidays in their financial planning and approval processes.
